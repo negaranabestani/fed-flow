@@ -8,12 +8,10 @@ logging.basicConfig(level = logging.INFO,format = '%(asctime)s - %(name)s - %(le
 logger = logging.getLogger(__name__)
 
 import sys
-sys.path.append('../')
+sys.path.append('../../')
 from RLEnv import Env
-import config
-import utils
-import RLEnv
-import PPO
+from config import config
+from entity.rl_model import PPO
 
 if config.random:
 	torch.manual_seed(config.random_seed)
@@ -38,7 +36,7 @@ update_epoch = 1
 res = {}
 res['rewards'], res['maxtime'], res['actions'], res['std'] = [], [], [], []
 
-for i_episode in tqdm.tqdm(range(1, config.max_episodes+1)):
+for i_episode in tqdm.tqdm(range(1, config.max_episodes + 1)):
 	done = False # Flag controling finish of one episode
 	if i_episode == 1: # We run two times of initial state to get stable training time
 		first = True

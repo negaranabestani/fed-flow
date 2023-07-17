@@ -1,8 +1,6 @@
-import torch
 import socket
 import time
 import multiprocessing
-import os
 import argparse
 
 import logging
@@ -10,10 +8,10 @@ logging.basicConfig(level = logging.INFO,format = '%(asctime)s - %(name)s - %(le
 logger = logging.getLogger(__name__)
 
 import sys
-sys.path.append('../')
+sys.path.append('../../')
 from Client import Client
-import config
-import utils
+from config import config
+from util import fl_utils
 
 parser=argparse.ArgumentParser()
 parser.add_argument('--offload', help='FedAdapt or classic FL mode', type= utils.str2bool, default= False)

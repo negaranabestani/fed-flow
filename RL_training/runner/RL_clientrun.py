@@ -8,10 +8,10 @@ logging.basicConfig(level = logging.INFO,format = '%(asctime)s - %(name)s - %(le
 logger = logging.getLogger(__name__)
 
 import sys
-sys.path.append('../')
+sys.path.append('../../')
 from RLEnv import RL_Client
-import config
-import utils
+from config import config
+from util import fl_utils
 
 if config.random:
 	torch.manual_seed(config.random_seed)
@@ -34,7 +34,7 @@ rl_client = RL_Client(index, ip_address, config.SERVER_ADDR, config.SERVER_PORT,
 while True:
 	reset_flag = rl_client.recv_msg(rl_client.sock, 'RESET_FLAG')[1]
 	if reset_flag:
-		rl_client.initialize(len(config.model_cfg[config.model_name])-1)
+		rl_client.initialize(len(config.model_cfg[config.model_name]) - 1)
 	else:
 		logger.info('==> Next Timestep..')
 		config.split_layer = rl_client.recv_msg(rl_client.sock, 'SPLIT_LAYERS')[1]

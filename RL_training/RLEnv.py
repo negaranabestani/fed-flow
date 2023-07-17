@@ -15,9 +15,9 @@ import operator
 
 import sys
 sys.path.append('../')
-import config
-import utils
-from Communicator import *
+from config import config
+from util import fl_utils
+from entity.Communicator import *
 
 if config.random:
 	torch.manual_seed(config.random_seed)
@@ -32,7 +32,7 @@ class Env(Communicator):
 		self.model_name = model_name
 		self.batchsize = batchsize
 		self.model_cfg = model_cfg
-		self.state_dim = 2*config.G 
+		self.state_dim = 2 * config.G
 		self.action_dim = config.G
 		self.group_labels = []
 		self.model_flops_list = self.get_model_flops_list(model_cfg, model_name)
@@ -53,7 +53,7 @@ class Env(Communicator):
 		self.uninet = utils.get_model('Unit', self.model_name, 0, self.device, self.model_cfg)
 
 	def reset(self, done, first):
-		split_layers = [config.model_len-1 for i in range(config.K)] # Reset with no offloading
+		split_layers = [config.model_len - 1 for i in range(config.K)] # Reset with no offloading
 		config.split_layer = split_layers
 		thread_number = config.K
 		client_ips = config.CLIENTS_LIST
@@ -126,7 +126,7 @@ class Env(Communicator):
 		msg = ['RESET_FLAG', False]
 		self.scatter(msg)
 
-		msg = ['SPLIT_LAYERS',config.split_layer]
+		msg = ['SPLIT_LAYERS', config.split_layer]
 		self.scatter(msg)
 		
 		#Test network speed
@@ -155,7 +155,7 @@ class Env(Communicator):
 			if split_layers[i] < config.model_len -1: # Only offloading client need initialized in server
 				self.nets[client_ip] = utils.get_model('Server', self.model_name, split_layers[i], self.device, self.model_cfg)
 				self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=config.LR,
-					  momentum=0.9)
+                                                       momentum=0.9)
 
 		self.criterion = nn.CrossEntropyLoss()
 
@@ -333,7 +333,7 @@ class RL_Client(Communicator):
 		self.split_layer = split_layer
 		self.net = utils.get_model('Client', self.model_name, self.split_layer, self.device, self.model_cfg)
 		self.optimizer = optim.SGD(self.net.parameters(), lr=config.LR,
-					  momentum=0.9)
+                                   momentum=0.9)
 		self.criterion = nn.CrossEntropyLoss()
 
 		# First test network speed

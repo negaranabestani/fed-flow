@@ -8,11 +8,11 @@ logging.basicConfig(level = logging.INFO,format = '%(asctime)s - %(name)s - %(le
 logger = logging.getLogger(__name__)
 
 import sys
-sys.path.append('../')
+sys.path.append('../../')
 from Sever import Sever
-import config
-import utils
-import PPO
+from config import config
+from util import fl_utils
+from entity.rl_model import PPO
 
 parser=argparse.ArgumentParser()
 parser.add_argument('--offload', help='FedAdapt or classic FL mode', type= utils.str2bool, default= False)
@@ -27,7 +27,7 @@ sever = Sever(0, config.SERVER_ADDR, config.SERVER_PORT, 'VGG5')
 sever.initialize(config.split_layer, offload, first, LR)
 first = False
 
-state_dim = 2*config.G
+state_dim = 2 * config.G
 action_dim = config.G
 
 if offload:
@@ -60,7 +60,7 @@ for r in range(config.R):
 	test_acc = sever.test(r)
 	res['test_acc_record'].append(test_acc)
 
-	with open(config.home + '/results/FedAdapt_res.pkl','wb') as f:
+	with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
 				pickle.dump(res,f)
 
 	logger.info('Round Finish')

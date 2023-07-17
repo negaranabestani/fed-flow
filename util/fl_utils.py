@@ -1,6 +1,6 @@
 '''Some helper functions for FedAdapt, including:
 	- get_local_dataloader: split dataset and get respective dataloader.
-	- get_model: build the model according to location and split layer.
+	- get_model: build the nn_model according to location and split layer.
 	- send_msg: send msg with type checking.
 	- recv_msg: receive msg with type checking.
 	- split_weights_client: split client's weights from holistic weights.
@@ -20,8 +20,8 @@ from torch.utils.data import DataLoader, Subset
 
 
 import pickle, struct, socket
-from vgg import *
-from config import *
+from entity.nn_model.vgg import *
+from config.config import *
 import collections
 import numpy as np
 

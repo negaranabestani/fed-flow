@@ -7,7 +7,6 @@ import torchvision
 import torchvision.transforms as transforms
 import threading
 import tqdm
-import random
 import numpy as np
 
 import logging
@@ -15,10 +14,10 @@ logging.basicConfig(level = logging.INFO,format = '%(asctime)s - %(name)s - %(le
 logger = logging.getLogger(__name__)
 
 import sys
-sys.path.append('../')
-from Communicator import *
-import utils
-import config
+sys.path.append('../../')
+from entity.Communicator import *
+from util import fl_utils
+from config import config
 
 np.random.seed(0)
 torch.manual_seed(0)
@@ -40,7 +39,7 @@ class Sever(Communicator):
 			logger.info(client_sock)
 			self.client_socks[str(ip)] = client_sock
 
-		self.uninet = utils.get_model('Unit', self.model_name, config.model_len-1, self.device, config.model_cfg)
+		self.uninet = utils.get_model('Unit', self.model_name, config.model_len - 1, self.device, config.model_cfg)
 
 		self.transform_test = transforms.Compose([transforms.ToTensor(),transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 ])
@@ -59,7 +58,7 @@ class Sever(Communicator):
 
 					#offloading weight in server also need to be initialized from the same global weight
 					cweights = utils.get_model('Client', self.model_name, split_layers[i], self.device, config.model_cfg).state_dict()
-					pweights = utils.split_weights_server(self.uninet.state_dict(),cweights,self.nets[client_ip].state_dict())
+					pweights = utils.split_weights_server(self.uninet.state_dict(), cweights, self.nets[client_ip].state_dict())
 					self.nets[client_ip].load_state_dict(pweights)
 
 					self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
@@ -90,7 +89,7 @@ class Sever(Communicator):
 		# Training start
 		self.threads = {}
 		for i in range(len(client_ips)):
-			if config.split_layer[i] == (config.model_len -1):
+			if config.split_layer[i] == (config.model_len - 1):
 				self.threads[client_ips[i]] = threading.Thread(target=self._thread_training_no_offloading, args=(client_ips[i],))
 				logger.info(str(client_ips[i]) + ' no offloading training start')
 				self.threads[client_ips[i]].start()
@@ -147,11 +146,11 @@ class Sever(Communicator):
 		w_local_list =[]
 		for i in range(len(client_ips)):
 			msg = self.recv_msg(self.client_socks[client_ips[i]], 'MSG_LOCAL_WEIGHTS_CLIENT_TO_SERVER')
-			if config.split_layer[i] != (config.model_len -1):
-				w_local = (utils.concat_weights(self.uninet.state_dict(),msg[1],self.nets[client_ips[i]].state_dict()),config.N / config.K)
+			if config.split_layer[i] != (config.model_len - 1):
+				w_local = (utils.concat_weights(self.uninet.state_dict(), msg[1], self.nets[client_ips[i]].state_dict()), config.N / config.K)
 				w_local_list.append(w_local)
 			else:
-				w_local = (msg[1],config.N / config.K)
+				w_local = (msg[1], config.N / config.K)
 				w_local_list.append(w_local)
 		zero_model = utils.zero_init(self.uninet).state_dict()
 		aggregrated_model = utils.fed_avg(zero_model, w_local_list, config.N)
@@ -179,7 +178,7 @@ class Sever(Communicator):
 		logger.info('Test Accuracy: {}'.format(acc))
 
 		# Save checkpoint.
-		torch.save(self.uninet.state_dict(), './'+ config.model_name +'.pth')
+		torch.save(self.uninet.state_dict(), './' + config.model_name + '.pth')
 
 		return acc
 
@@ -203,7 +202,7 @@ class Sever(Communicator):
 		config.split_layer = self.action_to_layer(action)
 		logger.info('Next Round OPs: ' + str(config.split_layer))
 
-		msg = ['SPLIT_LAYERS',config.split_layer]
+		msg = ['SPLIT_LAYERS', config.split_layer]
 		self.scatter(msg)
 		return config.split_layer
 

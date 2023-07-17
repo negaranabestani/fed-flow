@@ -6,10 +6,10 @@ import time
 import numpy as np
 import sys
 
-sys.path.append('../')
-import config
-import utils
-from Communicator import *
+sys.path.append('../../')
+from config import config
+from util import fl_utils
+from entity.Communicator import *
 
 import logging
 logging.basicConfig(level = logging.INFO,format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -24,7 +24,7 @@ class Client(Communicator):
 		self.datalen = datalen
 		self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 		self.model_name = model_name
-		self.uninet = utils.get_model('Unit', self.model_name, config.model_len-1, self.device, config.model_cfg)
+		self.uninet = utils.get_model('Unit', self.model_name, config.model_len - 1, self.device, config.model_cfg)
 
 		logger.info('Connecting to Server.')
 		self.sock.connect((server_addr,server_port))
@@ -42,10 +42,10 @@ class Client(Communicator):
 					  momentum=0.9)
 		logger.debug('Receiving Global Weights..')
 		weights = self.recv_msg(self.sock)[1]
-		if self.split_layer == (config.model_len -1):
+		if self.split_layer == (config.model_len - 1):
 			self.net.load_state_dict(weights)
 		else:
-			pweights = utils.split_weights_client(weights,self.net.state_dict())
+			pweights = utils.split_weights_client(weights, self.net.state_dict())
 			self.net.load_state_dict(pweights)
 		logger.debug('Initialize Finished')
 
@@ -67,7 +67,7 @@ class Client(Communicator):
 		time_training_c = 0
 		self.net.to(self.device)
 		self.net.train()
-		if self.split_layer == (config.model_len -1): # No offloading training
+		if self.split_layer == (config.model_len - 1): # No offloading training
 			for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(trainloader)):
 				inputs, targets = inputs.to(self.device), targets.to(self.device)
 				self.optimizer.zero_grad()
