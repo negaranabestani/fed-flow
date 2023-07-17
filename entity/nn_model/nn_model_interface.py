@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import torch.nn as nn
 
 
+# ToDo add description about each method
 class NNModel(ABC, nn.Module):
     @abstractmethod
     def forward(self, x):
