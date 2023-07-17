@@ -11,6 +11,8 @@
 	- norm_list: normlize each item in a list with sum.
 	- str2bool.
 '''
+import argparse
+
 import torch
 import torch.nn as nn
 import torch.nn.init as init
