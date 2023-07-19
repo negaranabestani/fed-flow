@@ -4,8 +4,11 @@ import multiprocessing
 import socket
 import time
 
+from fl_training.interface.fed_client_interface import FedClientInterface
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+# ToDo use input parser to get list of input options
 
 import sys
 
@@ -28,98 +31,46 @@ logger.info('Preparing Client')
 client = Client(index, ip_address, config.SERVER_ADDR, config.SERVER_PORT, datalen, 'VGG5', split_layer)
 
 offload = args.offload
-first = True  # First initializaiton control
-client.initialize(split_layer, offload, first, LR)
-first = False
 
-logger.info('Preparing Data.')
-cpu_count = multiprocessing.cpu_count()
-trainloader, classes = fl_utils.get_local_dataloader(index, cpu_count)
 
-if offload:
-    logger.info('FedAdapt Training')
-else:
-    logger.info('Classic FL Training')
+class ClientRunner:
+    def run(self, client: FedClientInterface, LR):
+        first = True  # First initializaiton control
+        client.initialize(split_layer, offload, first, LR)
+        first = False
 
-flag = False  # Bandwidth control flag.
+        logger.info('Preparing Data.')
+        cpu_count = multiprocessing.cpu_count()
+        trainloader, classes = fl_utils.get_local_dataloader(index, cpu_count)
 
-for r in range(config.R):
-    logger.info('====================================>')
-    logger.info('ROUND: {} START'.format(r))
+        if offload:
+            logger.info('FedAdapt Training')
+        else:
+            logger.info('Classic FL Training')
 
-    '''
-    # Network bandwidth changing
-    if socket.gethostname() == 'jetson-desktop':
-        if r == 50 and flag == False : #start from next round
-            #cmd = "sudo tc qdisc add dev wlan0 root tbf rate 5mbit latency 10ms burst 1600"
-            pass #Jetson needs rebuild linux kernel
-        if r == 60 and flag == True : #start from next round
-            #cmd = "sudo tc qdisc del dev wlan0 root"
-            pass
+        flag = False  # Bandwidth control flag.
 
-    if socket.gethostname() == 'pi41':
-        if r == 60 and flag == False : #start from next round
-            cmd = "sudo tc qdisc add dev wlan0 root tbf rate 5mbit latency 10ms burst 1600"
-            print(cmd)					
-            os.system(cmd)
-            flag = True
-        if r == 70 and flag == True : #start from next round
-            cmd = "sudo tc qdisc del dev wlan0 root"
-            print(cmd)					
-            os.system(cmd)
-            flag = False
+        for r in range(config.R):
+            logger.info('====================================>')
+            logger.info('ROUND: {} START'.format(r))
+            training_time = client.train(trainloader)
+            logger.info('ROUND: {} END'.format(r))
 
-    if socket.gethostname() == 'pi42':
-        if r == 70 and flag == False : #start from next round
-            cmd = "sudo tc qdisc add dev wlan0 root tbf rate 5mbit latency 10ms burst 1600"
-            print(cmd)					
-            os.system(cmd)
-            flag = True
-        if r == 80 and flag == True : #start from next round
-            cmd = "sudo tc qdisc del dev wlan0 root"
-            print(cmd)					
-            os.system(cmd)
-            flag = False
+            logger.info('==> Waiting for aggregration')
+            client.upload()
 
-    if socket.gethostname() == 'pi31':
-        if r == 80 and flag == False : #start from next round
-            cmd = "sudo tc qdisc add dev wlan0 root tbf rate 5mbit latency 10ms burst 1600"
-            print(cmd)					
-            os.system(cmd)
-            flag = True
-        if r == 90 and flag == True : #start from next round
-            cmd = "sudo tc qdisc del dev wlan0 root"
-            print(cmd)					
-            os.system(cmd)
-            flag = False
+            logger.info('==> Reinitialization for Round : {:}'.format(r + 1))
+            s_time_rebuild = time.time()
+            if offload:
+                config.split_layer = client.recv_msg(client.sock)[1]
 
-    if socket.gethostname() == 'pi32':
-        if r == 90 and flag == False : #start from next round
-            cmd = "sudo tc qdisc add dev wlan0 root tbf rate 5mbit latency 10ms burst 1600"
-            print(cmd)					
-            os.system(cmd)
-            flag = True
-        if r == 100 and flag == True : #start from next round
-            cmd = "sudo tc qdisc del dev wlan0 root"
-            print(cmd)					
-            os.system(cmd)
-            flag = False
-    '''
-    training_time = client.train(trainloader)
-    logger.info('ROUND: {} END'.format(r))
+            if r > 49:
+                LR = config.LR * 0.1
 
-    logger.info('==> Waiting for aggregration')
-    client.upload()
+            client.initialize(config.split_layer[index], offload, first, LR)
+            e_time_rebuild = time.time()
+            logger.info('Rebuild time: ' + str(e_time_rebuild - s_time_rebuild))
+            logger.info('==> Reinitialization Finish')
 
-    logger.info('==> Reinitialization for Round : {:}'.format(r + 1))
-    s_time_rebuild = time.time()
-    if offload:
-        config.split_layer = client.recv_msg(client.sock)[1]
 
-    if r > 49:
-        LR = config.LR * 0.1
-
-    client.initialize(config.split_layer[index], offload, first, LR)
-    e_time_rebuild = time.time()
-    logger.info('Rebuild time: ' + str(e_time_rebuild - s_time_rebuild))
-    logger.info('==> Reinitialization Finish')
+ClientRunner.run(client, LR)
