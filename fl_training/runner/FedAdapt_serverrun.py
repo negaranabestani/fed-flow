@@ -78,5 +78,5 @@ for r in range(config.R):
     if r > 49:
         LR = config.LR * 0.1
 
-    sever.reinitialize(split_layers, offload, first, LR)
+    sever.initialize(split_layers, offload, first, LR)
     logger.info('==> Reinitialization Finish')
