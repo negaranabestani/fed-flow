@@ -25,6 +25,10 @@ class FedServerInterface(ABC, Communicator):
         self.state = None
         self.bandwidth = None
         self.dataset = dataset
+        self.threads = None
+        self.net_threads = None
+        self.ttpi = None
+        self.offloading = None
 
         while len(self.client_socks) < config.K:
             self.sock.listen(5)

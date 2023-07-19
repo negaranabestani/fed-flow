@@ -5,9 +5,9 @@ options = {
     '-c': ['--clustering', 'none', 'help description'],
     '-s': ['--splitting', 'none', 'help description'],
     '-m': ['--model', 'VGG5', 'help description'],
-    '-d': ['--dataset', 'CIFAR10', 'help description']
+    '-d': ['--dataset', 'CIFAR10', 'help description'],
+    '-o': ['--offload', True, 'FedAdapt or classic FL mode']
 }
-
 
 # returns a map of options with their associated values
 def parse_argument(parser: argparse.ArgumentParser()):
@@ -16,4 +16,3 @@ def parse_argument(parser: argparse.ArgumentParser()):
                             default=options.get(op)[1])
     args = parser.parse_args()
     return vars(args)
-

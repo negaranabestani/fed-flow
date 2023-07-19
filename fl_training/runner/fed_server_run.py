@@ -63,7 +63,4 @@ fed_logger.info('Preparing Sever.')
 options_ins = input_utils.parse_argument(parser)
 server_ins = FedServer(0, config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'), options_ins.get('dataset'))
 runner = ServerRunner()
-offloading = True
-if options_ins.get('splitting') is 'none':
-    offloading = False
-runner.run(server_ins, LR, first, options_ins, offloading)
+runner.run(server_ins, LR, first, options_ins, options_ins.get('offload'))

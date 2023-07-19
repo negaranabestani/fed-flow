@@ -1,25 +1,24 @@
 import argparse
-import logging
 import multiprocessing
 import socket
+import sys
 import time
 
-from fl_training.interface.fed_client_interface import FedClientInterface
 from config.logger import fed_logger
-# ToDo use input parser to get list of input options
+from fl_training.interface.fed_client_interface import FedClientInterface
 
-import sys
+# ToDo use input parser to get list of input options
 
 sys.path.append('../../')
 from fl_training.entity.fed_client import Client
 from config import config
-from util import fl_utils
+from util import fl_utils, input_utils
 
 
 class ClientRunner:
-    def run(self, client: FedClientInterface, LR):
+    def run(self, client: FedClientInterface, LR, offload):
         first = True  # First initializaiton control
-        client.initialize(split_layer, offload, first, LR)
+        client.initialize(client.split_layer, offload, first, LR)
         first = False
 
         fed_logger.info('Preparing Data.')
@@ -57,18 +56,18 @@ class ClientRunner:
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--offload', help='FedAdapt or classic FL mode', type=fl_utils.str2bool, default=False)
-args = parser.parse_args()
-
+# parser.add_argument('--offload', help='FedAdapt or classic FL mode', type=fl_utils.str2bool, default=False)
+# args = parser.parse_args()
+options_ins = input_utils.parse_argument(parser)
 ip_address = config.HOST2IP[socket.gethostname()]
 index = config.CLIENTS_CONFIG[ip_address]
 datalen = config.N / config.K
-split_layer = config.split_layer[index]
+# split_layer = config.split_layer[index]
 LR = config.LR
 
 fed_logger.info('Preparing Client')
-client_ins = Client(index, ip_address, config.SERVER_ADDR, config.SERVER_PORT, datalen, 'VGG5', split_layer)
+client_ins = Client(index, ip_address, config.SERVER_ADDR, config.SERVER_PORT, datalen, options_ins.get('model'),
+                    options_ins.get('dataset'), config.split_layer[index])
 
-offload = args.offload
 runner = ClientRunner()
-runner.run(client_ins, LR)
+runner.run(client_ins, LR, options_ins.get('offload'))

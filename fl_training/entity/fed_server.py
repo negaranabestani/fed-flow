@@ -20,13 +20,6 @@ torch.manual_seed(0)
 
 class FedServer(FedServerInterface):
 
-    def __init__(self, index, ip_address, server_port, model_name, dataset):
-        super().__init__(index, ip_address, server_port, model_name, dataset)
-        self.threads = None
-        self.net_threads = None
-        self.ttpi = None
-        self.offloading = None
-
     def initialize(self, split_layers, offload, first, LR):
         if offload or first:
             self.split_layers = split_layers
