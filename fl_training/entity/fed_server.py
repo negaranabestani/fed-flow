@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 import tqdm
 
+from fl_method import clustering
 from fl_training.interface.fed_server_interface import FedServerInterface
 
 sys.path.append('../../')
@@ -89,7 +90,7 @@ class FedServer(FedServerInterface):
             msg = self.recv_msg(self.client_socks[s], 'MSG_TRAINING_TIME_PER_ITERATION')
             self.ttpi[msg[1]] = msg[2]
 
-        self.group_labels = self.clustering(self.ttpi, self.bandwidth)
+        self.group_labels = clustering.bandwidth_clustering(self.bandwidth)
         self.offloading = self.get_offloading(self.split_layers)
         state = self.concat_norm(self.ttpi, self.offloading)
 
@@ -137,87 +138,10 @@ class FedServer(FedServerInterface):
                 w_local = (msg[1], config.N / config.K)
                 w_local_list.append(w_local)
         zero_model = fl_utils.zero_init(self.uninet).state_dict()
-        aggregrated_model = fl_utils.fed_avg(zero_model, w_local_list, config.N)
+        aggregated_model = fl_utils.fed_avg(zero_model, w_local_list, config.N)
 
-        self.uninet.load_state_dict(aggregrated_model)
-        return aggregrated_model
-
-    def test(self, r):
-        self.uninet.eval()
-        test_loss = 0
-        correct = 0
-        total = 0
-        with torch.no_grad():
-            for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(self.testloader)):
-                inputs, targets = inputs.to(self.device), targets.to(self.device)
-                outputs = self.uninet(inputs)
-                loss = self.criterion(outputs, targets)
-
-                test_loss += loss.item()
-                _, predicted = outputs.max(1)
-                total += targets.size(0)
-                correct += predicted.eq(targets).sum().item()
-
-        acc = 100. * correct / total
-        logger.info('Test Accuracy: {}'.format(acc))
-
-        # Save checkpoint.
-        torch.save(self.uninet.state_dict(), './' + config.model_name + '.pth')
-
-        return acc
-
-    def clustering(self, state, bandwidth):
-        # sort bandwidth in config.CLIENTS_LIST order
-        bandwidth_order = []
-        for c in config.CLIENTS_LIST:
-            bandwidth_order.append(bandwidth[c])
-
-        labels = [0, 0, 1, 0, 0]  # Previous clustering results in RL
-        for i in range(len(bandwidth_order)):
-            if bandwidth_order[i] < 5:
-                labels[i] = 2  # If network speed is limited under 5Mbps, we assign the device into group 2
-
-        return labels
-
-    def adaptive_offload(self, agent, state):
-        action = agent.exploit(state)
-        action = self.expand_actions(action, config.CLIENTS_LIST)
-
-        config.split_layer = self.action_to_layer(action)
-        logger.info('Next Round OPs: ' + str(config.split_layer))
-
-        msg = ['SPLIT_LAYERS', config.split_layer]
-        self.scatter(msg)
-        return config.split_layer
-
-    def expand_actions(self, actions, clients_list):  # Expanding group actions to each device
-        full_actions = []
-
-        for i in range(len(clients_list)):
-            full_actions.append(actions[self.group_labels[i]])
-
-        return full_actions
-
-    def action_to_layer(self, action):  # Expanding group actions to each device
-        # first caculate cumulated flops
-        model_state_flops = []
-        cumulated_flops = 0
-
-        for l in config.model_cfg[config.model_name]:
-            cumulated_flops += l[5]
-            model_state_flops.append(cumulated_flops)
-
-        model_flops_list = np.array(model_state_flops)
-        model_flops_list = model_flops_list / cumulated_flops
-
-        split_layer = []
-        for v in action:
-            idx = np.where(np.abs(model_flops_list - v) == np.abs(model_flops_list - v).min())
-            idx = idx[0][-1]
-            if idx >= 5:  # all FC layers combine to one option
-                idx = 6
-            split_layer.append(idx)
-        return split_layer
+        self.uninet.load_state_dict(aggregated_model)
+        return aggregated_model
 
     def concat_norm(self, ttpi, offloading):
         ttpi_order = []

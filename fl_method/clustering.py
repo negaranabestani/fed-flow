@@ -1,9 +1,9 @@
 from config import config
 
 
-def bandwidth_clustering():
+def bandwidth_clustering(bandwidth):
     # sort bandwidth in config.CLIENTS_LIST order
-    bandwidth = config.CLIENTS_BANDWIDTH
+    # bandwidth = config.CLIENTS_BANDWIDTH
     bandwidth_order = []
     for c in config.CLIENTS_LIST:
         bandwidth_order.append(bandwidth[c])
