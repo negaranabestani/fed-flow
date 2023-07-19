@@ -20,6 +20,8 @@ class FedServerInterface(ABC, Communicator):
         self.model_name = model_name
         self.sock.bind((self.ip, self.port))
         self.client_socks = {}
+        self.group_labels = None
+        self.criterion = None
 
         while len(self.client_socks) < config.K:
             self.sock.listen(5)

@@ -3,8 +3,7 @@ import logging
 import pickle
 import time
 
-import torch
-
+from fl_method import splitting
 from fl_training.interface.fed_server_interface import FedServerInterface
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -16,22 +15,12 @@ sys.path.append('../../')
 from config import config
 from util import fl_utils
 from fl_training.entity.fed_server import FedServer
-from entity.rl_model import PPO
 
 
 class ServerRunner:
     def run(self, server: FedServerInterface, LR, first):
         server.initialize(config.split_layer, offload, first, LR)
         first = False
-
-        state_dim = 2 * config.G
-        action_dim = config.G
-
-        if offload:
-            # Initialize trained RL agent
-            agent = PPO.PPO(state_dim, action_dim, config.action_std, config.rl_lr, config.rl_betas, config.rl_gamma,
-                            config.K_epochs, config.eps_clip)
-            agent.policy.load_state_dict(torch.load('./PPO_FedAdapt.pth'))
 
         if offload:
             logger.info('FedAdapt Training')
@@ -47,7 +36,7 @@ class ServerRunner:
 
             s_time = time.time()
             state, bandwidth = server.train(thread_number=config.K, client_ips=config.CLIENTS_LIST)
-            aggregrated_model = server.aggregate(config.CLIENTS_LIST)
+            server.aggregate(config.CLIENTS_LIST)
             e_time = time.time()
 
             # Recording each round training time, bandwidth and test accuracy
@@ -55,7 +44,7 @@ class ServerRunner:
             res['trianing_time'].append(trianing_time)
             res['bandwidth_record'].append(bandwidth)
 
-            test_acc = server.test(r)
+            test_acc = fl_utils.test(server.uninet, server.testloader, server.device, server.criterion)
             res['test_acc_record'].append(test_acc)
 
             with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
@@ -66,7 +55,7 @@ class ServerRunner:
 
             logger.info('==> Reinitialization for Round : {:}'.format(r + 1))
             if offload:
-                split_layers = server.adaptive_offload(agent, state)
+                split_layers = splitting.rl_splitting(state, server.group_labels)
             else:
                 split_layers = config.split_layer
 
