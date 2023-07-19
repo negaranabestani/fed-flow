@@ -10,8 +10,8 @@ import tqdm
 sys.path.append('../../')
 from config import config
 from util import fl_utils
-from entity.Communicator import *
 from fl_training.interface.fed_client_interface import FedClientInterface
+from config.logger import fed_logger
 
 
 np.random.seed(0)
@@ -24,21 +24,21 @@ class Client(FedClientInterface):
         if offload or first:
             self.split_layer = split_layer
 
-            logger.debug('Building Model.')
+            fed_logger.debug('Building Model.')
             self.net = fl_utils.get_model('Client', self.model_name, self.split_layer, self.device, config.model_cfg)
-            logger.debug(self.net)
+            fed_logger.debug(self.net)
             self.criterion = nn.CrossEntropyLoss()
 
         self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
                                    momentum=0.9)
-        logger.debug('Receiving Global Weights..')
+        fed_logger.debug('Receiving Global Weights..')
         weights = self.recv_msg(self.sock)[1]
         if self.split_layer == (config.model_len - 1):
             self.net.load_state_dict(weights)
         else:
             pweights = fl_utils.split_weights_client(weights, self.net.state_dict())
             self.net.load_state_dict(pweights)
-        logger.debug('Initialize Finished')
+        fed_logger.debug('Initialize Finished')
 
     def train(self, trainloader):
         # Network speed test
@@ -49,7 +49,7 @@ class Client(FedClientInterface):
         network_time_end = time.time()
         network_speed = (2 * config.model_size * 8) / (network_time_end - network_time_start)  # Mbit/s
 
-        logger.info('Network speed is {:}'.format(network_speed))
+        fed_logger.info('Network speed is {:}'.format(network_speed))
         msg = ['MSG_TEST_NETWORK', self.ip, network_speed]
         self.send_msg(self.sock, msg)
 
@@ -83,10 +83,10 @@ class Client(FedClientInterface):
                 self.optimizer.step()
 
         e_time_total = time.time()
-        logger.info('Total time: ' + str(e_time_total - s_time_total))
+        fed_logger.info('Total time: ' + str(e_time_total - s_time_total))
 
         training_time_pr = (e_time_total - s_time_total) / int((config.N / (config.K * config.B)))
-        logger.info('training_time_per_iteration: ' + str(training_time_pr))
+        fed_logger.info('training_time_per_iteration: ' + str(training_time_pr))
 
         msg = ['MSG_TRAINING_TIME_PER_ITERATION', self.ip, training_time_pr]
         self.send_msg(self.sock, msg)

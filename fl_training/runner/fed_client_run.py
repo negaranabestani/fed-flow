@@ -5,9 +5,7 @@ import socket
 import time
 
 from fl_training.interface.fed_client_interface import FedClientInterface
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+from config.logger import fed_logger
 # ToDo use input parser to get list of input options
 
 import sys
@@ -24,27 +22,27 @@ class ClientRunner:
         client.initialize(split_layer, offload, first, LR)
         first = False
 
-        logger.info('Preparing Data.')
+        fed_logger.info('Preparing Data.')
         cpu_count = multiprocessing.cpu_count()
         trainloader, classes = fl_utils.get_local_dataloader(index, cpu_count)
 
         if offload:
-            logger.info('FedAdapt Training')
+            fed_logger.info('FedAdapt Training')
         else:
-            logger.info('Classic FL Training')
+            fed_logger.info('Classic FL Training')
 
         flag = False  # Bandwidth control flag.
 
         for r in range(config.R):
-            logger.info('====================================>')
-            logger.info('ROUND: {} START'.format(r))
+            fed_logger.info('====================================>')
+            fed_logger.info('ROUND: {} START'.format(r))
             training_time = client.train(trainloader)
-            logger.info('ROUND: {} END'.format(r))
+            fed_logger.info('ROUND: {} END'.format(r))
 
-            logger.info('==> Waiting for aggregration')
+            fed_logger.info('==> Waiting for aggregration')
             client.upload()
 
-            logger.info('==> Reinitialization for Round : {:}'.format(r + 1))
+            fed_logger.info('==> Reinitialization for Round : {:}'.format(r + 1))
             s_time_rebuild = time.time()
             if offload:
                 config.split_layer = client.recv_msg(client.sock)[1]
@@ -54,8 +52,8 @@ class ClientRunner:
 
             client.initialize(config.split_layer[index], offload, first, LR)
             e_time_rebuild = time.time()
-            logger.info('Rebuild time: ' + str(e_time_rebuild - s_time_rebuild))
-            logger.info('==> Reinitialization Finish')
+            fed_logger.info('Rebuild time: ' + str(e_time_rebuild - s_time_rebuild))
+            fed_logger.info('==> Reinitialization Finish')
 
 
 parser = argparse.ArgumentParser()
@@ -68,7 +66,7 @@ datalen = config.N / config.K
 split_layer = config.split_layer[index]
 LR = config.LR
 
-logger.info('Preparing Client')
+fed_logger.info('Preparing Client')
 client_ins = Client(index, ip_address, config.SERVER_ADDR, config.SERVER_PORT, datalen, 'VGG5', split_layer)
 
 offload = args.offload

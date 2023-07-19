@@ -5,15 +5,14 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import tqdm
 
 from fl_method import clustering, aggregation
 from fl_training.interface.fed_server_interface import FedServerInterface
 
 sys.path.append('../../')
-from entity.Communicator import *
 from util import fl_utils
 from config import config
+from config.logger import fed_logger
 
 np.random.seed(0)
 torch.manual_seed(0)
@@ -73,13 +72,13 @@ class FedServer(FedServerInterface):
             if config.split_layer[i] == (config.model_len - 1):
                 self.threads[client_ips[i]] = threading.Thread(target=self._thread_training_no_offloading,
                                                                args=(client_ips[i],))
-                logger.info(str(client_ips[i]) + ' no offloading training start')
+                fed_logger.info(str(client_ips[i]) + ' no offloading training start')
                 self.threads[client_ips[i]].start()
             else:
-                logger.info(str(client_ips[i]))
+                fed_logger.info(str(client_ips[i]))
                 self.threads[client_ips[i]] = threading.Thread(target=self._thread_training_offloading,
                                                                args=(client_ips[i],))
-                logger.info(str(client_ips[i]) + ' offloading training start')
+                fed_logger.info(str(client_ips[i]) + ' offloading training start')
                 self.threads[client_ips[i]].start()
 
         for i in range(len(client_ips)):
@@ -122,7 +121,7 @@ class FedServer(FedServerInterface):
             msg = ['MSG_SERVER_GRADIENTS_SERVER_TO_CLIENT_' + str(client_ip), inputs.grad]
             self.send_msg(self.client_socks[client_ip], msg)
 
-        logger.info(str(client_ip) + ' offloading training end')
+        fed_logger.info(str(client_ip) + ' offloading training end')
         return 'Finish'
 
     def aggregate(self, client_ips):
@@ -176,6 +175,3 @@ class FedServer(FedServerInterface):
             workload = 0
 
         return offloading
-
-
-
