@@ -1,8 +1,9 @@
 from config import config
 
 
-def bandwith_clustering(self, state, bandwidth):
+def bandwidth_clustering():
     # sort bandwidth in config.CLIENTS_LIST order
+    bandwidth = config.CLIENTS_BANDWIDTH
     bandwidth_order = []
     for c in config.CLIENTS_LIST:
         bandwidth_order.append(bandwidth[c])
@@ -13,3 +14,7 @@ def bandwith_clustering(self, state, bandwidth):
             labels[i] = 2  # If network speed is limited under 5Mbps, we assign the device into group 2
 
     return labels
+
+
+def none_clustering():
+    labels = [0, 0, 0, 0, 0]

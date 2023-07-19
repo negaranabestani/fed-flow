@@ -9,6 +9,8 @@ import numpy as np
 
 import logging
 
+from fl_training.interface.fed_server_interface import FedServerInterface
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -23,9 +25,9 @@ np.random.seed(0)
 torch.manual_seed(0)
 
 
-class Sever(Communicator):
+class FedServer(FedServerInterface):
     def __init__(self, index, ip_address, server_port, model_name):
-        super(Sever, self).__init__(index, ip_address)
+        super(FedServer, self).__init__(index, ip_address)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.port = server_port
         self.model_name = model_name
@@ -159,8 +161,8 @@ class Sever(Communicator):
             msg = self.recv_msg(self.client_socks[client_ips[i]], 'MSG_LOCAL_WEIGHTS_CLIENT_TO_SERVER')
             if config.split_layer[i] != (config.model_len - 1):
                 w_local = (
-                fl_utils.concat_weights(self.uninet.state_dict(), msg[1], self.nets[client_ips[i]].state_dict()),
-                config.N / config.K)
+                    fl_utils.concat_weights(self.uninet.state_dict(), msg[1], self.nets[client_ips[i]].state_dict()),
+                    config.N / config.K)
                 w_local_list.append(w_local)
             else:
                 w_local = (msg[1], config.N / config.K)
