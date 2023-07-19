@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 import tqdm
 
-from fl_method import clustering
+from fl_method import clustering, aggregation
 from fl_training.interface.fed_server_interface import FedServerInterface
 
 sys.path.append('../../')
@@ -138,7 +138,7 @@ class FedServer(FedServerInterface):
                 w_local = (msg[1], config.N / config.K)
                 w_local_list.append(w_local)
         zero_model = fl_utils.zero_init(self.uninet).state_dict()
-        aggregated_model = fl_utils.fed_avg(zero_model, w_local_list, config.N)
+        aggregated_model = aggregation.fed_avg(zero_model, w_local_list, config.N)
 
         self.uninet.load_state_dict(aggregated_model)
         return aggregated_model
