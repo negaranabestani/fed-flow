@@ -1,9 +1,9 @@
-import time
-import torch
-import pickle
 import argparse
-
 import logging
+import pickle
+import time
+
+import torch
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ from entity.rl_model import PPO
 parser = argparse.ArgumentParser()
 parser.add_argument('--offload', help='FedAdapt or classic FL mode', type=fl_utils.str2bool, default=False)
 args = parser.parse_args()
-
+# ToDo use input parser to get list of input options
 LR = config.LR
 offload = args.offload
 first = True  # First initializaiton control

@@ -1,9 +1,8 @@
+import argparse
+import logging
+import multiprocessing
 import socket
 import time
-import multiprocessing
-import argparse
-
-import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -120,7 +119,7 @@ for r in range(config.R):
     if r > 49:
         LR = config.LR * 0.1
 
-    client.reinitialize(config.split_layer[index], offload, first, LR)
+    client.initialize(config.split_layer[index], offload, first, LR)
     e_time_rebuild = time.time()
     logger.info('Rebuild time: ' + str(e_time_rebuild - s_time_rebuild))
     logger.info('==> Reinitialization Finish')
