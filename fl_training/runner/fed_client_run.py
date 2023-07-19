@@ -17,21 +17,6 @@ from fl_training.entity.fed_client import Client
 from config import config
 from util import fl_utils
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--offload', help='FedAdapt or classic FL mode', type=fl_utils.str2bool, default=False)
-args = parser.parse_args()
-
-ip_address = config.HOST2IP[socket.gethostname()]
-index = config.CLIENTS_CONFIG[ip_address]
-datalen = config.N / config.K
-split_layer = config.split_layer[index]
-LR = config.LR
-
-logger.info('Preparing Client')
-client = Client(index, ip_address, config.SERVER_ADDR, config.SERVER_PORT, datalen, 'VGG5', split_layer)
-
-offload = args.offload
-
 
 class ClientRunner:
     def run(self, client: FedClientInterface, LR):
@@ -73,4 +58,19 @@ class ClientRunner:
             logger.info('==> Reinitialization Finish')
 
 
-ClientRunner.run(client, LR)
+parser = argparse.ArgumentParser()
+parser.add_argument('--offload', help='FedAdapt or classic FL mode', type=fl_utils.str2bool, default=False)
+args = parser.parse_args()
+
+ip_address = config.HOST2IP[socket.gethostname()]
+index = config.CLIENTS_CONFIG[ip_address]
+datalen = config.N / config.K
+split_layer = config.split_layer[index]
+LR = config.LR
+
+logger.info('Preparing Client')
+client_ins = Client(index, ip_address, config.SERVER_ADDR, config.SERVER_PORT, datalen, 'VGG5', split_layer)
+
+offload = args.offload
+runner = ClientRunner()
+runner.run(client_ins, LR)
