@@ -20,6 +20,13 @@ torch.manual_seed(0)
 
 class FedServer(FedServerInterface):
 
+    def __init__(self, index, ip_address, server_port, model_name, dataset):
+        super().__init__(index, ip_address, server_port, model_name, dataset)
+        self.threads = None
+        self.net_threads = None
+        self.ttpi = None
+        self.offloading = None
+
     def initialize(self, split_layers, offload, first, LR):
         if offload or first:
             self.split_layers = split_layers
@@ -89,7 +96,6 @@ class FedServer(FedServerInterface):
             msg = self.recv_msg(self.client_socks[s], 'MSG_TRAINING_TIME_PER_ITERATION')
             self.ttpi[msg[1]] = msg[2]
 
-        self.group_labels = clustering.bandwidth_clustering(self.bandwidth)
         self.offloading = self.get_offloading(self.split_layers)
         state = self.concat_norm(self.ttpi, self.offloading)
 
@@ -124,7 +130,7 @@ class FedServer(FedServerInterface):
         fed_logger.info(str(client_ip) + ' offloading training end')
         return 'Finish'
 
-    def aggregate(self, client_ips):
+    def aggregate(self, client_ips, aggregate_method):
         w_local_list = []
         for i in range(len(client_ips)):
             msg = self.recv_msg(self.client_socks[client_ips[i]], 'MSG_LOCAL_WEIGHTS_CLIENT_TO_SERVER')
@@ -137,7 +143,7 @@ class FedServer(FedServerInterface):
                 w_local = (msg[1], config.N / config.K)
                 w_local_list.append(w_local)
         zero_model = fl_utils.zero_init(self.uninet).state_dict()
-        aggregated_model = aggregation.fed_avg(zero_model, w_local_list, config.N)
+        aggregated_model = aggregate_method(zero_model, w_local_list, config.N)
 
         self.uninet.load_state_dict(aggregated_model)
         return aggregated_model
