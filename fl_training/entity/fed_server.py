@@ -1,17 +1,13 @@
+import sys
+import threading
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import threading
 import tqdm
-import numpy as np
-
-import logging
 
 from fl_training.interface.fed_server_interface import FedServerInterface
-
-
-
-import sys
 
 sys.path.append('../../')
 from entity.Communicator import *

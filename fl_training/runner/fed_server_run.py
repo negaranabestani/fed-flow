@@ -56,6 +56,9 @@ class ServerRunner:
             logger.info('==> Reinitialization for Round : {:}'.format(r + 1))
             if offload:
                 split_layers = splitting.rl_splitting(state, server.group_labels)
+                logger.info('Next Round OPs: ' + str(config.split_layer))
+                msg = ['SPLIT_LAYERS', config.split_layer]
+                server.scatter(msg)
             else:
                 split_layers = config.split_layer
 
