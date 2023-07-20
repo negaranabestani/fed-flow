@@ -12,76 +12,27 @@
 	- str2bool.
 '''
 import argparse
+import collections
 
+import numpy as np
 import torch
-import tqdm
 import torch.nn.init as init
-import torchvision
-import torchvision.transforms as transforms
-from torch.utils.data import DataLoader, Subset
-
-import pickle, struct, socket
+import tqdm
 
 from config import config
+from config.logger import fed_logger
 from entity.nn_model.vgg import *
-from config.config import *
-import collections
-import numpy as np
-
-import logging
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
 
 np.random.seed(0)
 torch.manual_seed(0)
-
-
-def get_local_dataloader(CLIENT_IDEX, cpu_count):
-    indices = list(range(N))
-    part_tr = indices[int((N / K) * CLIENT_IDEX): int((N / K) * (CLIENT_IDEX + 1))]
-
-    transform_train = transforms.Compose([
-        transforms.RandomCrop(32, padding=4),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-    ])
-    trainset = torchvision.datasets.CIFAR10(
-        root=dataset_path, train=True, download=False, transform=transform_train)
-    subset = Subset(trainset, part_tr)
-    trainloader = DataLoader(
-        subset, batch_size=B, shuffle=True, num_workers=cpu_count)
-
-    classes = ('plane', 'car', 'bird', 'cat', 'deer',
-               'dog', 'frog', 'horse', 'ship', 'truck')
-    return trainloader, classes
 
 
 def get_model(location, model_name, layer, device, cfg):
     cfg = cfg.copy()
     net = VGG(location, model_name, layer, cfg)
     net = net.to(device)
-    logger.debug(str(net))
+    fed_logger.debug(str(net))
     return net
-
-
-def send_msg(sock, msg):
-    msg_pickle = pickle.dumps(msg)
-    sock.sendall(struct.pack(">I", len(msg_pickle)))
-    sock.sendall(msg_pickle)
-    logger.debug(msg[0] + 'sent to' + str(sock.getpeername()[0]) + ':' + str(sock.getpeername()[1]))
-
-
-def recv_msg(sock, expect_msg_type=None):
-    msg_len = struct.unpack(">I", sock.recv(4))[0]
-    msg = sock.recv(msg_len, socket.MSG_WAITALL)
-    msg = pickle.loads(msg)
-    logger.debug(msg[0] + 'received from' + str(sock.getpeername()[0]) + ':' + str(sock.getpeername()[1]))
-
-    if (expect_msg_type is not None) and (msg[0] != expect_msg_type):
-        raise Exception("Expected " + expect_msg_type + " but received " + msg[0])
-    return msg
 
 
 def split_weights_client(weights, cweights):
@@ -169,7 +120,7 @@ def test(uninet, testloader, device, criterion):
             correct += predicted.eq(targets).sum().item()
 
     acc = 100. * correct / total
-    logger.info('Test Accuracy: {}'.format(acc))
+    fed_logger.info('Test Accuracy: {}'.format(acc))
 
     # Save checkpoint.
     torch.save(uninet.state_dict(), './' + config.model_name + '.pth')

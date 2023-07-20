@@ -16,7 +16,7 @@ import operator
 import sys
 sys.path.append('../')
 from config import config
-from util import fl_utils
+from util import model_utils
 from entity.Communicator import *
 
 if config.random:

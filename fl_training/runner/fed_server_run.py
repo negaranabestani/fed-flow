@@ -5,7 +5,7 @@ import time
 
 sys.path.append('../../')
 from config import config
-from util import fl_utils, input_utils
+from util import model_utils, input_utils
 from fl_training.entity.fed_server import FedServer
 from config.logger import fed_logger
 from fl_training.interface.fed_server_interface import FedServerInterface

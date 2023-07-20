@@ -11,7 +11,7 @@ import sys
 sys.path.append('../../')
 from RLEnv import RL_Client
 from config import config
-from util import fl_utils
+from util import model_utils
 
 if config.random:
 	torch.manual_seed(config.random_seed)

@@ -9,7 +9,7 @@ from config import config
 from config.logger import fed_logger
 from entity.Communicator import Communicator
 from fl_method import fl_method_parser
-from util import fl_utils
+from util import model_utils, data_utils
 
 
 class FedServerInterface(ABC, Communicator):
@@ -39,14 +39,11 @@ class FedServerInterface(ABC, Communicator):
             fed_logger.info(client_sock)
             self.client_socks[str(ip)] = client_sock
 
-        self.uninet = fl_utils.get_model('Unit', self.model_name, config.model_len - 1, self.device, config.model_cfg)
+        self.uninet = model_utils.get_model('Unit', self.model_name, config.model_len - 1, self.device,
+                                            config.model_cfg)
 
-        self.transform_test = transforms.Compose(
-            [transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-             ])
-        self.testset = torchvision.datasets.CIFAR10(root=config.dataset_path, train=False, download=False,
-                                                    transform=self.transform_test)
-        self.testloader = torch.utils.data.DataLoader(self.testset, batch_size=100, shuffle=False, num_workers=4)
+        self.testset = data_utils.get_testset()
+        self.testloader = data_utils.get_testloader(self.testset)
 
     @abstractmethod
     def initialize(self, split_layers, offload, first, LR):

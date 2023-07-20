@@ -7,7 +7,7 @@ import time
 sys.path.append('../../')
 from fl_training.entity.fed_client import Client
 from config import config
-from util import fl_utils, input_utils
+from util import model_utils, input_utils, data_utils
 from config.logger import fed_logger
 from fl_training.interface.fed_client_interface import FedClientInterface
 
@@ -20,7 +20,7 @@ class ClientRunner:
 
         fed_logger.info('Preparing Data.')
         cpu_count = multiprocessing.cpu_count()
-        trainloader, classes = fl_utils.get_local_dataloader(index, cpu_count)
+        trainloader = data_utils.get_local_dataloader(index, cpu_count)
 
         flag = False  # Bandwidth control flag.
 

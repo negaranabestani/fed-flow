@@ -9,7 +9,7 @@ import tqdm
 
 sys.path.append('../../')
 from config import config
-from util import fl_utils
+from util import model_utils
 from fl_training.interface.fed_client_interface import FedClientInterface
 from config.logger import fed_logger
 
@@ -24,7 +24,7 @@ class Client(FedClientInterface):
             self.split_layer = split_layer
 
             fed_logger.debug('Building Model.')
-            self.net = fl_utils.get_model('Client', self.model_name, self.split_layer, self.device, config.model_cfg)
+            self.net = model_utils.get_model('Client', self.model_name, self.split_layer, self.device, config.model_cfg)
             fed_logger.debug(self.net)
             self.criterion = nn.CrossEntropyLoss()
 
@@ -35,7 +35,7 @@ class Client(FedClientInterface):
         if self.split_layer == (config.model_len - 1):
             self.net.load_state_dict(weights)
         else:
-            pweights = fl_utils.split_weights_client(weights, self.net.state_dict())
+            pweights = model_utils.split_weights_client(weights, self.net.state_dict())
             self.net.load_state_dict(pweights)
         fed_logger.debug('Initialize Finished')
 
