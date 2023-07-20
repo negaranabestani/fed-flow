@@ -1,7 +1,7 @@
 from config import config
 
 
-def bandwidth_clustering():
+def bandwidth():
     # sort bandwidth in config.CLIENTS_LIST order
     bandwidth = config.CLIENTS_BANDWIDTH
     bandwidth_order = []
@@ -16,5 +16,8 @@ def bandwidth_clustering():
     return labels
 
 
-def none_clustering():
-    labels = [0, 0, 0, 0, 0]
+def none():
+    labels = []
+    for c in config.CLIENTS_LIST:
+        labels.append(0)
+    return labels

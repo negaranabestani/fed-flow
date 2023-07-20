@@ -4,13 +4,13 @@ import socket
 import sys
 import time
 
-
 sys.path.append('../../')
 from fl_training.entity.fed_client import Client
 from config import config
 from util import fl_utils, input_utils
 from config.logger import fed_logger
 from fl_training.interface.fed_client_interface import FedClientInterface
+
 
 class ClientRunner:
     def run(self, client: FedClientInterface, LR, offload):
@@ -21,11 +21,6 @@ class ClientRunner:
         fed_logger.info('Preparing Data.')
         cpu_count = multiprocessing.cpu_count()
         trainloader, classes = fl_utils.get_local_dataloader(index, cpu_count)
-
-        if offload:
-            fed_logger.info('FedAdapt Training')
-        else:
-            fed_logger.info('Classic FL Training')
 
         flag = False  # Bandwidth control flag.
 
@@ -40,8 +35,8 @@ class ClientRunner:
 
             fed_logger.info('==> Reinitialization for Round : {:}'.format(r + 1))
             s_time_rebuild = time.time()
-            if offload:
-                config.split_layer = client.recv_msg(client.sock)[1]
+
+            config.split_layer = client.recv_msg(client.sock, 'SPLIT_LAYERS')[1]
 
             if r > 49:
                 LR = config.LR * 0.1
@@ -65,6 +60,6 @@ LR = config.LR
 fed_logger.info('Preparing Client')
 client_ins = Client(index, ip_address, config.SERVER_ADDR, config.SERVER_PORT, datalen, options_ins.get('model'),
                     options_ins.get('dataset'), config.split_layer[index])
-
+fed_logger.info("start model: " + str(options_ins.values()))
 runner = ClientRunner()
 runner.run(client_ins, LR, options_ins.get('offload'))

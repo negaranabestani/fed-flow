@@ -51,3 +51,12 @@ def action_to_layer(action):  # Expanding group actions to each device
             idx = 6
         split_layer.append(idx)
     return split_layer
+
+
+def none(state, labels):
+    split_layer = []
+    for c in config.CLIENTS_LIST:
+        split_layer.append(config.model_len - 1)
+
+    config.split_layer = split_layer
+    return config.split_layer

@@ -89,10 +89,6 @@ class FedServer(FedServerInterface):
             msg = self.recv_msg(self.client_socks[s], 'MSG_TRAINING_TIME_PER_ITERATION')
             self.ttpi[msg[1]] = msg[2]
 
-        self.offloading = self.get_offloading(self.split_layers)
-        state = self.concat_norm(self.ttpi, self.offloading)
-
-        return state, self.bandwidth
 
     def _thread_network_testing(self, client_ip):
         msg = self.recv_msg(self.client_socks[client_ip], 'MSG_TEST_NETWORK')
@@ -141,36 +137,3 @@ class FedServer(FedServerInterface):
         self.uninet.load_state_dict(aggregated_model)
         return aggregated_model
 
-    def concat_norm(self, ttpi, offloading):
-        ttpi_order = []
-        offloading_order = []
-        for c in config.CLIENTS_LIST:
-            ttpi_order.append(ttpi[c])
-            offloading_order.append(offloading[c])
-
-        group_max_index = [0 for i in range(config.G)]
-        group_max_value = [0 for i in range(config.G)]
-        for i in range(len(config.CLIENTS_LIST)):
-            label = self.group_labels[i]
-            if ttpi_order[i] >= group_max_value[label]:
-                group_max_value[label] = ttpi_order[i]
-                group_max_index[label] = i
-
-        ttpi_order = np.array(ttpi_order)[np.array(group_max_index)]
-        offloading_order = np.array(offloading_order)[np.array(group_max_index)]
-        state = np.append(ttpi_order, offloading_order)
-        return state
-
-    def get_offloading(self, split_layer):
-        offloading = {}
-        workload = 0
-
-        assert len(split_layer) == len(config.CLIENTS_LIST)
-        for i in range(len(config.CLIENTS_LIST)):
-            for l in range(len(config.model_cfg[config.model_name])):
-                if l <= split_layer[i]:
-                    workload += config.model_cfg[config.model_name][l][5]
-            offloading[config.CLIENTS_LIST[i]] = workload / config.total_flops
-            workload = 0
-
-        return offloading
