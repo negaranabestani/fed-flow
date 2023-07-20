@@ -5,7 +5,7 @@ options = {
     '-c': ['--clustering', 'none', 'help description'],
     '-s': ['--splitting', 'none', 'help description'],
     '-m': ['--model', 'VGG5', 'help description'],
-    '-d': ['--dataset', 'CIFAR10', 'help description'],
+    '-d': ['--dataset', 'cifar-10-python', 'help description'],
     '-o': ['--offload', True, 'FedAdapt or classic FL mode']
 }
 

@@ -1,22 +1,21 @@
 import sys
 
 # Network configration
-SERVER_ADDR = '192.168.0.10'
+SERVER_ADDR = '127.0.0.1'
 SERVER_PORT = 51000
 
-K = 5  # Number of devices
-G = 3  # Number of groups
+K = 1  # Number of devices
+G = 1  # Number of groups
 
 # Unique clients order
-HOST2IP = {'pi41': '192.168.0.14', 'pi42': '192.168.0.15', 'jetson-desktop': '192.168.0.25', 'pi31': '192.168.0.36',
-           'pi32': '192.168.0.29'}
-CLIENTS_CONFIG = {'192.168.0.14': 0, '192.168.0.15': 1, '192.168.0.25': 2, '192.168.0.36': 3, '192.168.0.29': 4}
-CLIENTS_LIST = ['192.168.0.14', '192.168.0.15', '192.168.0.25', '192.168.0.36', '192.168.0.29']
+HOST2IP = {'the-great-green': '127.0.0.1'}
+CLIENTS_CONFIG = {'127.0.0.1': 0}
+CLIENTS_LIST = ['127.0.0.1']
 CLIENTS_BANDWIDTH = []
 
 # Dataset configration
-dataset_name = 'CIFAR10'
-home = sys.path[0].split('FedAdapt')[0] + 'FedAdapt'
+dataset_name = 'cifar-10-python'
+home = sys.path[0].split('fed-flow')[0] + 'fed-flow'
 dataset_path = home + '/dataset/' + dataset_name + '/'
 N = 50000  # data length
 
@@ -33,7 +32,7 @@ model_name = 'VGG5'
 model_size = 1.28
 model_flops = 32.902
 total_flops = 8488192
-split_layer = [6, 6, 6, 6, 6]  # Initial split layers
+split_layer = [6]  # Initial split layers
 model_len = 7
 
 # FL training configration
@@ -54,8 +53,7 @@ rl_gamma = 0.9  # discount factor
 rl_b = 100  # Batchsize
 rl_lr = 0.0003  # parameters for Adam optimizer
 rl_betas = (0.9, 0.999)
-iteration = {'192.168.0.14': 5, '192.168.0.15': 5, '192.168.0.25': 50, '192.168.0.36': 5,
-             '192.168.0.29': 5}  # infer times for each device
+iteration = {'127.0.0.1': 5}  # infer times for each device
 
 random = True
 random_seed = 0

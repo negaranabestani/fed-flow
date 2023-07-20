@@ -13,7 +13,6 @@ from util import fl_utils
 from fl_training.interface.fed_client_interface import FedClientInterface
 from config.logger import fed_logger
 
-
 np.random.seed(0)
 torch.manual_seed(0)
 
@@ -32,7 +31,7 @@ class Client(FedClientInterface):
         self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
                                    momentum=0.9)
         fed_logger.debug('Receiving Global Weights..')
-        weights = self.recv_msg(self.sock)[1]
+        weights = self.recv_msg(self.sock, 'MSG_INITIAL_GLOBAL_WEIGHTS_SERVER_TO_CLIENT')[1]
         if self.split_layer == (config.model_len - 1):
             self.net.load_state_dict(weights)
         else:
@@ -96,4 +95,3 @@ class Client(FedClientInterface):
     def upload(self):
         msg = ['MSG_LOCAL_WEIGHTS_CLIENT_TO_SERVER', self.net.cpu().state_dict()]
         self.send_msg(self.sock, msg)
-

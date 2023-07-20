@@ -4,16 +4,13 @@ import socket
 import sys
 import time
 
-from config.logger import fed_logger
-from fl_training.interface.fed_client_interface import FedClientInterface
-
-# ToDo use input parser to get list of input options
 
 sys.path.append('../../')
 from fl_training.entity.fed_client import Client
 from config import config
 from util import fl_utils, input_utils
-
+from config.logger import fed_logger
+from fl_training.interface.fed_client_interface import FedClientInterface
 
 class ClientRunner:
     def run(self, client: FedClientInterface, LR, offload):
