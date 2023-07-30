@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 import torch.nn as nn
 
 
-# ToDo add description about each method
 class NNModel(ABC, nn.Module):
     def __init__(self, location, split_layer):
         super(NNModel, self).__init__()
@@ -47,6 +46,7 @@ class NNModel(ABC, nn.Module):
 
     @abstractmethod
     def _initialize_weights(self):
+        # you can refer to implemented vgg class to see an example
         pass
 
     @abstractmethod
