@@ -14,9 +14,8 @@ np.random.seed(0)
 torch.manual_seed(0)
 
 
-def get_model(location, model_name, layer, device, cfg):
-    cfg = cfg.copy()
-    net = VGG(location, model_name, layer, cfg)
+def get_model(location, layer, device):
+    net = VGG(location, layer)
     net = net.to(device)
     fed_logger.debug(str(net))
     return net
