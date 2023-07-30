@@ -1,3 +1,4 @@
+import multiprocessing
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -43,7 +44,7 @@ class FedServerInterface(ABC, Communicator):
                                             config.model_cfg)
 
         self.testset = data_utils.get_testset()
-        self.testloader = data_utils.get_testloader(self.testset)
+        self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
 
     @abstractmethod
     def initialize(self, split_layers, offload, first, LR):

@@ -14,9 +14,9 @@ CLIENTS_LIST = ['127.0.0.1']
 CLIENTS_BANDWIDTH = []
 
 # Dataset configration
-dataset_name = 'cifar-10-python'
+dataset_name = ''
 home = sys.path[0].split('fed-flow')[0] + 'fed-flow'
-dataset_path = home + '/dataset/' + dataset_name + '/'
+dataset_path = home + '/dataset/data/'
 N = 50000  # data length
 
 # Model configration

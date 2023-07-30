@@ -1,16 +1,3 @@
-'''Some helper functions for FedAdapt, including:
-	- get_local_dataloader: split dataset and get respective dataloader.
-	- get_model: build the nn_model according to location and split layer.
-	- send_msg: send msg with type checking.
-	- recv_msg: receive msg with type checking.
-	- split_weights_client: split client's weights from holistic weights.
-	- split_weights_server: split server's weights from holistic weights
-	- concat_weights: concatenate server's weights and client's weights.
-	- zero_init: zero initialization.
-	- fed_avg: FedAvg aggregation.
-	- norm_list: normlize each item in a list with sum.
-	- str2bool.
-'''
 import argparse
 import collections
 

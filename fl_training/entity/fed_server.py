@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from fl_method import clustering, aggregation
 from fl_training.interface.fed_server_interface import FedServerInterface
 
 sys.path.append('../../')
@@ -29,21 +28,23 @@ class FedServer(FedServerInterface):
                 client_ip = config.CLIENTS_LIST[i]
                 if split_layers[i] < len(config.model_cfg[
                                              self.model_name]) - 1:  # Only offloading client need initialize optimizer in server
-                    self.nets[client_ip] = model_utils.get_model('Server', self.model_name, split_layers[i], self.device,
-                                                              config.model_cfg)
+                    self.nets[client_ip] = model_utils.get_model('Server', self.model_name, split_layers[i],
+                                                                 self.device,
+                                                                 config.model_cfg)
 
                     # offloading weight in server also need to be initialized from the same global weight
                     cweights = model_utils.get_model('Client', self.model_name, split_layers[i], self.device,
-                                                  config.model_cfg).state_dict()
+                                                     config.model_cfg).state_dict()
                     pweights = model_utils.split_weights_server(self.uninet.state_dict(), cweights,
-                                                             self.nets[client_ip].state_dict())
+                                                                self.nets[client_ip].state_dict())
                     self.nets[client_ip].load_state_dict(pweights)
 
                     self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
                                                            momentum=0.9)
                 else:
-                    self.nets[client_ip] = model_utils.get_model('Server', self.model_name, split_layers[i], self.device,
-                                                              config.model_cfg)
+                    self.nets[client_ip] = model_utils.get_model('Server', self.model_name, split_layers[i],
+                                                                 self.device,
+                                                                 config.model_cfg)
             self.criterion = nn.CrossEntropyLoss()
 
         msg = ['MSG_INITIAL_GLOBAL_WEIGHTS_SERVER_TO_CLIENT', self.uninet.state_dict()]
@@ -88,7 +89,6 @@ class FedServer(FedServerInterface):
         for s in self.client_socks:
             msg = self.recv_msg(self.client_socks[s], 'MSG_TRAINING_TIME_PER_ITERATION')
             self.ttpi[msg[1]] = msg[2]
-
 
     def _thread_network_testing(self, client_ip):
         msg = self.recv_msg(self.client_socks[client_ip], 'MSG_TEST_NETWORK')
@@ -136,4 +136,3 @@ class FedServer(FedServerInterface):
 
         self.uninet.load_state_dict(aggregated_model)
         return aggregated_model
-

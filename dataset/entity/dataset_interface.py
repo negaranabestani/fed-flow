@@ -1,8 +1,9 @@
 import os
-from typing import Callable, Optional, Any
 from abc import abstractmethod
-from torchvision.datasets import VisionDataset
+from typing import Callable, Optional, Any
+
 from torchvision.datasets.utils import download_and_extract_archive, check_integrity
+from torchvision.datasets.vision import VisionDataset
 
 from config import config
 
@@ -13,24 +14,31 @@ class DatasetInterface(VisionDataset):
                  train: bool = True,
                  transform: Optional[Callable] = None,
                  target_transform: Optional[Callable] = None,
-                 download: bool = False, dataset_url=None, base_folder=None,
+                 dataset_url=None, base_folder=None,
                  filename=None):
+        """
+        Args:
+            root: the path to the folder
+            train: true if the data partition is used for training the model
+            download: true if the dataset does not already exist
+            dataset_url: dataset class name should be the same as folder name that holds the actual data
+            base_folder: the last inner folder that holds actual data
+            filename: the final downloaded file name
+        """
 
         self.base_folder = base_folder
-        self.test_list = self.get_test_list()
-        self.train_list = self.get_train_list()
+        self.test_list = None
+        self.train_list = None
         self.dataset_url = dataset_url
         self.batch_size = config.B
         self.filename = filename
         self.train = train  # training set or test set
-        if download:
-            self.download()
-        if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
-        self.downloaded_list = self.set_downloaded_list()
-        super().__init__(root, transform=transform, target_transform=target_transform)
+        # self.is_download = download
+        self.downloaded_list = None
         self.targets = []
-        self.data: Any = self.set_data()
+        self.data: Any = []
+        super().__init__(root=root, transform=transform, target_transform=target_transform)
+        self.get_dataset()
 
     def _check_integrity(self) -> bool:
         for filename, md5 in self.train_list + self.test_list:
@@ -64,3 +72,13 @@ class DatasetInterface(VisionDataset):
     @abstractmethod
     def set_data(self):
         pass
+
+    def get_dataset(self):
+        self.test_list = self.get_test_list()
+        self.train_list = self.get_train_list()
+        if not self._check_integrity():
+            self.download()
+        if not self._check_integrity():
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
+        self.set_downloaded_list()
+        self.data: Any = self.set_data()

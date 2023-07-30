@@ -4,12 +4,12 @@ from typing import Any, Callable, Optional, Tuple
 
 import numpy as np
 from PIL import Image
-from torchvision.datasets.utils import check_integrity, download_and_extract_archive
+from torchvision.datasets.utils import check_integrity
 
 from dataset.entity.dataset_interface import DatasetInterface
 
 
-class CIFAR10(DatasetInterface):
+class cifar10(DatasetInterface):
     """`CIFAR10 <https://www.cs.toronto.edu/~kriz/cifar.html>`_ Dataset.
 
     Args:
@@ -29,7 +29,7 @@ class CIFAR10(DatasetInterface):
 
     base_folder = "cifar-10-batches-py"
     url = "https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz"
-    filename = "cifar-10-python.tar.gz"
+    filename = "cifar10.tar.gz"
     tgz_md5 = "c58f30108f718f92721af3b95e74349a"
     meta = {
         "filename": "batches.meta",
@@ -43,14 +43,13 @@ class CIFAR10(DatasetInterface):
             train: bool = True,
             transform: Optional[Callable] = None,
             target_transform: Optional[Callable] = None,
-            download: bool = False,
     ) -> None:
 
         super().__init__(root,
                          train,
                          transform,
                          target_transform,
-                         download, self.url, self.base_folder,
+                         self.url, self.base_folder,
                          self.filename)
 
         self._load_meta()
@@ -101,12 +100,12 @@ class CIFAR10(DatasetInterface):
             ["data_batch_2", "d4bba439e000b95fd0a9bffe97cbabec"],
             ["data_batch_3", "54ebc095f3ab1f0389bbae665268c751"],
             ["data_batch_4", "634d18415352ddfa80567beed471001a"],
-            ["data_batch_5", "482c414d41f54cd18b22e5b47cb7c3cb"],
+            ["data_batch_5", "482c414d41f54cd18b22e5b47cb7c3cb"]
         ]
 
     def get_test_list(self) -> list:
         return [
-            ["test_batch", "40351d587109b95175f43aff81a1287e"],
+            ["test_batch", "40351d587109b95175f43aff81a1287e"]
         ]
 
     def set_data(self):
