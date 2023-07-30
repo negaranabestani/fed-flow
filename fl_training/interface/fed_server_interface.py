@@ -40,8 +40,7 @@ class FedServerInterface(ABC, Communicator):
             fed_logger.info(client_sock)
             self.client_socks[str(ip)] = client_sock
 
-        self.uninet = model_utils.get_model('Unit', self.model_name, config.model_len - 1, self.device,
-                                            config.model_cfg)
+        self.uninet = model_utils.get_model('Unit', config.model_len - 1, self.device)
 
         self.testset = data_utils.get_testset()
         self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())

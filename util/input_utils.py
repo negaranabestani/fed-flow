@@ -5,7 +5,7 @@ options = {
     '-a': ['--aggregation', 'fed_avg', 'help description'],
     '-c': ['--clustering', 'none_clustering', 'help description'],
     '-s': ['--splitting', 'none_splitting', 'help description'],
-    '-m': ['--model', 'VGG5', 'help description'],
+    '-m': ['--model', 'VGG', 'help description'],
     '-d': ['--dataset', 'cifar10', 'the name of the using dataset'],
     '-o': ['--offload', False, 'FedAdapt or classic FL mode'],
     '-dl': ['--dataset-link', '', 'the link to dataset  python file']
@@ -27,4 +27,5 @@ def parse_argument(parser: argparse.ArgumentParser()):
     args = parser.parse_args()
     option = vars(args)
     config.dataset_name = option.get('dataset')
+    config.model_name = option.get('model')
     return option

@@ -28,7 +28,7 @@ model_cfg = {
              ('D', 8 * 8 * 64, 128, 1, 64, 128 * 8 * 8 * 64),
              ('D', 128, 10, 1, 10, 128 * 10)]
 }
-model_name = 'VGG5'
+model_name = ''
 model_size = 1.28
 model_flops = 32.902
 total_flops = 8488192

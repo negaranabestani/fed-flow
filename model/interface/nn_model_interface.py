@@ -3,6 +3,9 @@ import torch.nn as nn
 
 
 class NNModel(ABC, nn.Module):
+    """
+    class name should be the same as file name
+    """
     def __init__(self, location, split_layer):
         super(NNModel, self).__init__()
         self.cfg = self.get_config()

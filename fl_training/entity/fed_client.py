@@ -24,7 +24,7 @@ class Client(FedClientInterface):
             self.split_layer = split_layer
 
             fed_logger.debug('Building Model.')
-            self.net = model_utils.get_model('Client', self.model_name, self.split_layer, self.device, config.model_cfg)
+            self.net = model_utils.get_model('Client', self.split_layer, self.device)
             fed_logger.debug(self.net)
             self.criterion = nn.CrossEntropyLoss()
 

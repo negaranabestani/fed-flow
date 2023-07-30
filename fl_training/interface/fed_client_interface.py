@@ -15,9 +15,9 @@ class FedClientInterface(ABC, Communicator):
         self.datalen = datalen
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model_name = model_name
-        self.dataset=dataset
+        self.dataset = dataset
         self.split_layer = split_layer
-        self.uninet = model_utils.get_model('Unit', self.model_name, config.model_len - 1, self.device, config.model_cfg)
+        self.uninet = model_utils.get_model('Unit', config.model_len - 1, self.device)
 
         fed_logger.info('Connecting to Server.')
         self.sock.connect((server_addr, server_port))

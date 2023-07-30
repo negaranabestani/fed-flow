@@ -26,15 +26,11 @@ class FedServer(FedServerInterface):
             self.optimizers = {}
             for i in range(len(split_layers)):
                 client_ip = config.CLIENTS_LIST[i]
-                if split_layers[i] < len(config.model_cfg[
-                                             self.model_name]) - 1:  # Only offloading client need initialize optimizer in server
-                    self.nets[client_ip] = model_utils.get_model('Server', self.model_name, split_layers[i],
-                                                                 self.device,
-                                                                 config.model_cfg)
+                if split_layers[i] < len(self.uninet.cfg) - 1:  # Only offloading client need initialize optimizer in server
+                    self.nets[client_ip] = model_utils.get_model('Server', split_layers[i],self.device)
 
                     # offloading weight in server also need to be initialized from the same global weight
-                    cweights = model_utils.get_model('Client', self.model_name, split_layers[i], self.device,
-                                                     config.model_cfg).state_dict()
+                    cweights = model_utils.get_model('Client', split_layers[i], self.device).state_dict()
                     pweights = model_utils.split_weights_server(self.uninet.state_dict(), cweights,
                                                                 self.nets[client_ip].state_dict())
                     self.nets[client_ip].load_state_dict(pweights)
@@ -42,9 +38,7 @@ class FedServer(FedServerInterface):
                     self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
                                                            momentum=0.9)
                 else:
-                    self.nets[client_ip] = model_utils.get_model('Server', self.model_name, split_layers[i],
-                                                                 self.device,
-                                                                 config.model_cfg)
+                    self.nets[client_ip] = model_utils.get_model('Server',  split_layers[i], self.device)
             self.criterion = nn.CrossEntropyLoss()
 
         msg = ['MSG_INITIAL_GLOBAL_WEIGHTS_SERVER_TO_CLIENT', self.uninet.state_dict()]

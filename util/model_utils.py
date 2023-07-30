@@ -13,9 +13,11 @@ from model.entity.nn_model.vgg import *
 np.random.seed(0)
 torch.manual_seed(0)
 
+MODEL_BASE_DIR = 'model.entity.nn_model'
+
 
 def get_model(location, layer, device):
-    net = VGG(location, layer)
+    net = vgg(location, layer)
     net = net.to(device)
     fed_logger.debug(str(net))
     return net
@@ -112,3 +114,13 @@ def test(uninet, testloader, device, criterion):
     torch.save(uninet.state_dict(), './' + config.model_name + '.pth')
 
     return acc
+
+
+def get_class():
+    kls = MODEL_BASE_DIR + config.model_name + '.' + config.model_name
+    parts = kls.split('.')
+    module = ".".join(parts[:-1])
+    m = __import__(module)
+    for comp in parts[1:]:
+        m = getattr(m, comp)
+    return m
