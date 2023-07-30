@@ -35,7 +35,7 @@ class ServerRunner:
             res['bandwidth_record'].append(server.bandwidth)
             with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
                 pickle.dump(res, f)
-            test_acc = fl_utils.test(server.uninet, server.testloader, server.device, server.criterion)
+            test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
             res['test_acc_record'].append(test_acc)
 
 
