@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 from config import config
-from entity.rl_model import PPO
+from model.entity.rl_model import PPO
 
 
 def rl_splitting(state, labels):

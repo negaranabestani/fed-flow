@@ -8,7 +8,7 @@ import tqdm
 
 from config import config
 from config.logger import fed_logger
-from entity.nn_model.vgg import *
+from model.entity.nn_model.vgg import *
 
 np.random.seed(0)
 torch.manual_seed(0)

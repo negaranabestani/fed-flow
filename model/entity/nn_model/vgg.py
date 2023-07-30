@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-from entity.nn_model.nn_model_interface import NNModel
+from model.interface.nn_model_interface import NNModel
 
 
 # Build the VGG nn_model according to location and split_layer
