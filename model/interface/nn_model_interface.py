@@ -4,6 +4,15 @@ import torch.nn as nn
 
 # ToDo add description about each method
 class NNModel(ABC, nn.Module):
+    def __init__(self, location, split_layer):
+        super(NNModel, self).__init__()
+        self.cfg = self.get_config()
+        assert split_layer < len(self.cfg)
+        self.split_layer = split_layer
+        self.location = location
+        self.features, self.denses = self._make_layers(self.cfg)
+        self._initialize_weights()
+
     @abstractmethod
     def forward(self, x):
         pass
@@ -12,7 +21,7 @@ class NNModel(ABC, nn.Module):
     def _make_layers(self, cfg):
         """
         notice that you can change any part of the method if the input and output still matches the requirements
-        :param cfg: the configuration of each layer in a list -> # (Type, in_channels, out_channels, kernel_size, out_size(c_out*h*w), flops(c_out*h*w*k*k*c_in))
+        :param cfg: the configuration of each layer in a list
         :return: nn.Sequential(*features), nn.Sequential(*denses)
         """
         features = []
@@ -31,4 +40,12 @@ class NNModel(ABC, nn.Module):
 
     @abstractmethod
     def _initialize_weights(self):
+        pass
+
+    @abstractmethod
+    def get_config(self):
+        """
+
+        :return: the configuration of each layer in a list  of (Type, in_channels, out_channels, kernel_size, out_size(c_out*h*w), flops(c_out*h*w*k*k*c_in))
+        """
         pass

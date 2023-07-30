@@ -5,14 +5,6 @@ from model.interface.nn_model_interface import NNModel
 
 # Build the VGG nn_model according to location and split_layer
 class VGG(NNModel):
-    def __init__(self, location, vgg_name, split_layer, cfg):
-        super(VGG, self).__init__()
-        assert split_layer < len(cfg[vgg_name])
-        self.split_layer = split_layer
-        self.location = location
-        self.features, self.denses = self._make_layers(cfg[vgg_name])
-        self._initialize_weights()
-
     def forward(self, x):
         if len(self.features) > 0:
             out = self.features(x)
