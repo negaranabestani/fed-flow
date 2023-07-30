@@ -13,9 +13,16 @@ class NNModel(ABC, nn.Module):
         self.features, self.denses = self._make_layers(self.cfg)
         self._initialize_weights()
 
-    @abstractmethod
     def forward(self, x):
-        pass
+        if len(self.features) > 0:
+            out = self.features(x)
+        else:
+            out = x
+        if len(self.denses) > 0:
+            out = out.view(out.size(0), -1)
+            out = self.denses(out)
+
+        return out
 
     @abstractmethod
     def _make_layers(self, cfg):
