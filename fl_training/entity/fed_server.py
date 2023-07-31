@@ -9,7 +9,7 @@ import torch.optim as optim
 from fl_training.interface.fed_server_interface import FedServerInterface
 
 sys.path.append('../../')
-from util import model_utils
+from util import model_utils, message_utils
 from config import config
 from config.logger import fed_logger
 
@@ -26,8 +26,9 @@ class FedServer(FedServerInterface):
             self.optimizers = {}
             for i in range(len(split_layers)):
                 client_ip = config.CLIENTS_LIST[i]
-                if split_layers[i] < len(self.uninet.cfg) - 1:  # Only offloading client need initialize optimizer in server
-                    self.nets[client_ip] = model_utils.get_model('Server', split_layers[i],self.device)
+                if split_layers[i] < len(
+                        self.uninet.cfg) - 1:  # Only offloading client need initialize optimizer in server
+                    self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device)
 
                     # offloading weight in server also need to be initialized from the same global weight
                     cweights = model_utils.get_model('Client', split_layers[i], self.device).state_dict()
@@ -38,10 +39,10 @@ class FedServer(FedServerInterface):
                     self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
                                                            momentum=0.9)
                 else:
-                    self.nets[client_ip] = model_utils.get_model('Server',  split_layers[i], self.device)
+                    self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device)
             self.criterion = nn.CrossEntropyLoss()
 
-        msg = ['MSG_INITIAL_GLOBAL_WEIGHTS_SERVER_TO_CLIENT', self.uninet.state_dict()]
+        msg = [message_utils.initial_global_weights_server_to_client, self.uninet.state_dict()]
         for i in self.client_socks:
             self.send_msg(self.client_socks[i], msg)
 
@@ -58,7 +59,7 @@ class FedServer(FedServerInterface):
 
         self.bandwidth = {}
         for s in self.client_socks:
-            msg = self.recv_msg(self.client_socks[s], 'MSG_TEST_NETWORK')
+            msg = self.recv_msg(self.client_socks[s], message_utils.test_network)
             self.bandwidth[msg[1]] = msg[2]
 
         # Training start
@@ -81,12 +82,12 @@ class FedServer(FedServerInterface):
 
         self.ttpi = {}  # Training time per iteration
         for s in self.client_socks:
-            msg = self.recv_msg(self.client_socks[s], 'MSG_TRAINING_TIME_PER_ITERATION')
+            msg = self.recv_msg(self.client_socks[s], message_utils.training_time_per_iteration_client_to_server)
             self.ttpi[msg[1]] = msg[2]
 
     def _thread_network_testing(self, client_ip):
-        msg = self.recv_msg(self.client_socks[client_ip], 'MSG_TEST_NETWORK')
-        msg = ['MSG_TEST_NETWORK', self.uninet.cpu().state_dict()]
+        msg = self.recv_msg(self.client_socks[client_ip], message_utils.test_network)
+        msg = [message_utils.test_network, self.uninet.cpu().state_dict()]
         self.send_msg(self.client_socks[client_ip], msg)
 
     def _thread_training_no_offloading(self, client_ip):
@@ -95,7 +96,7 @@ class FedServer(FedServerInterface):
     def _thread_training_offloading(self, client_ip):
         iteration = int((config.N / (config.K * config.B)))
         for i in range(iteration):
-            msg = self.recv_msg(self.client_socks[client_ip], 'MSG_LOCAL_ACTIVATIONS_CLIENT_TO_SERVER')
+            msg = self.recv_msg(self.client_socks[client_ip], message_utils.local_activations_client_to_server)
             smashed_layers = msg[1]
             labels = msg[2]
 
@@ -107,7 +108,7 @@ class FedServer(FedServerInterface):
             self.optimizers[client_ip].step()
 
             # Send gradients to client
-            msg = ['MSG_SERVER_GRADIENTS_SERVER_TO_CLIENT_' + str(client_ip), inputs.grad]
+            msg = [message_utils.server_gradients_server_to_client + str(client_ip), inputs.grad]
             self.send_msg(self.client_socks[client_ip], msg)
 
         fed_logger.info(str(client_ip) + ' offloading training end')
@@ -116,7 +117,7 @@ class FedServer(FedServerInterface):
     def aggregate(self, client_ips, aggregate_method):
         w_local_list = []
         for i in range(len(client_ips)):
-            msg = self.recv_msg(self.client_socks[client_ips[i]], 'MSG_LOCAL_WEIGHTS_CLIENT_TO_SERVER')
+            msg = self.recv_msg(self.client_socks[client_ips[i]], message_utils.local_weights_client_to_server)
             if config.split_layer[i] != (config.model_len - 1):
                 w_local = (
                     model_utils.concat_weights(self.uninet.state_dict(), msg[1], self.nets[client_ips[i]].state_dict()),

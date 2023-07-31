@@ -8,7 +8,7 @@ sys.path.append('../../')
 from fl_training.entity.fed_client import Client
 from config import config
 from config.config import *
-from util import input_utils, data_utils
+from util import input_utils, data_utils, message_utils
 from config.logger import fed_logger
 from fl_training.interface.fed_client_interface import FedClientInterface
 
@@ -39,7 +39,7 @@ class ClientRunner:
             fed_logger.info('==> Reinitialization for Round : {:}'.format(r + 1))
             s_time_rebuild = time.time()
 
-            config.split_layer = client.recv_msg(client.sock, 'SPLIT_LAYERS')[1]
+            config.split_layer = client.recv_msg(client.sock, message_utils.split_layers)[1]
 
             if r > 49:
                 LR = config.LR * 0.1

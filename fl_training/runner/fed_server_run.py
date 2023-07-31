@@ -38,8 +38,6 @@ class ServerRunner:
             test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
             res['test_acc_record'].append(test_acc)
 
-
-
             fed_logger.info('Round Finish')
             fed_logger.info('==> Round Training Time: {:}'.format(trianing_time))
             server.split(options)

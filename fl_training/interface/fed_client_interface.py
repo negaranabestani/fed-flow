@@ -1,12 +1,11 @@
-import logging
 from abc import ABC, abstractmethod
 
 import torch
 
 from config import config
+from config.logger import fed_logger
 from entity.Communicator import Communicator
 from util import model_utils
-from config.logger import fed_logger
 
 
 class FedClientInterface(ABC, Communicator):

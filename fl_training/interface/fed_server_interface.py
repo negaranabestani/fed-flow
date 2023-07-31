@@ -3,14 +3,12 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 import torch
-import torchvision
-import torchvision.transforms as transforms
 
 from config import config
 from config.logger import fed_logger
 from entity.Communicator import Communicator
 from fl_method import fl_method_parser
-from util import model_utils, data_utils
+from util import model_utils, data_utils, message_utils
 
 
 class FedServerInterface(ABC, Communicator):
@@ -75,7 +73,7 @@ class FedServerInterface(ABC, Communicator):
     def split(self, options: dict):
         self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(self.state, self.group_labels)
         fed_logger.info('Next Round OPs: ' + str(config.split_layer))
-        msg = ['SPLIT_LAYERS', config.split_layer]
+        msg = [message_utils.split_layers, config.split_layer]
         self.scatter(msg)
 
     def scatter(self, msg):

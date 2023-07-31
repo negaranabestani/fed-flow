@@ -9,7 +9,7 @@ import tqdm
 
 sys.path.append('../../')
 from config import config
-from util import model_utils
+from util import model_utils, message_utils
 from fl_training.interface.fed_client_interface import FedClientInterface
 from config.logger import fed_logger
 
@@ -31,7 +31,7 @@ class Client(FedClientInterface):
         self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
                                    momentum=0.9)
         fed_logger.debug('Receiving Global Weights..')
-        weights = self.recv_msg(self.sock, 'MSG_INITIAL_GLOBAL_WEIGHTS_SERVER_TO_CLIENT')[1]
+        weights = self.recv_msg(self.sock, message_utils.initial_global_weights_server_to_client)[1]
         if self.split_layer == (config.model_len - 1):
             self.net.load_state_dict(weights)
         else:
@@ -42,14 +42,14 @@ class Client(FedClientInterface):
     def train(self, trainloader):
         # Network speed test
         network_time_start = time.time()
-        msg = ['MSG_TEST_NETWORK', self.uninet.cpu().state_dict()]
+        msg = [message_utils.test_network, self.uninet.cpu().state_dict()]
         self.send_msg(self.sock, msg)
-        msg = self.recv_msg(self.sock, 'MSG_TEST_NETWORK')[1]
+        msg = self.recv_msg(self.sock, message_utils.test_network)[1]
         network_time_end = time.time()
         network_speed = (2 * config.model_size * 8) / (network_time_end - network_time_start)  # Mbit/s
 
         fed_logger.info('Network speed is {:}'.format(network_speed))
-        msg = ['MSG_TEST_NETWORK', self.ip, network_speed]
+        msg = [message_utils.test_network, self.ip, network_speed]
         self.send_msg(self.sock, msg)
 
         # Training start
@@ -72,7 +72,7 @@ class Client(FedClientInterface):
                 self.optimizer.zero_grad()
                 outputs = self.net(inputs)
 
-                msg = ['MSG_LOCAL_ACTIVATIONS_CLIENT_TO_SERVER', outputs.cpu(), targets.cpu()]
+                msg = [message_utils.local_activations_client_to_server, outputs.cpu(), targets.cpu()]
                 self.send_msg(self.sock, msg)
 
                 # Wait receiving server gradients
@@ -87,11 +87,11 @@ class Client(FedClientInterface):
         training_time_pr = (e_time_total - s_time_total) / int((config.N / (config.K * config.B)))
         fed_logger.info('training_time_per_iteration: ' + str(training_time_pr))
 
-        msg = ['MSG_TRAINING_TIME_PER_ITERATION', self.ip, training_time_pr]
+        msg = [message_utils.training_time_per_iteration_client_to_server, self.ip, training_time_pr]
         self.send_msg(self.sock, msg)
 
         return e_time_total - s_time_total
 
     def upload(self):
-        msg = ['MSG_LOCAL_WEIGHTS_CLIENT_TO_SERVER', self.net.cpu().state_dict()]
+        msg = [message_utils.local_weights_client_to_server, self.net.cpu().state_dict()]
         self.send_msg(self.sock, msg)
