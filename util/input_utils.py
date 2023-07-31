@@ -9,8 +9,8 @@ options = {
     '-m': ['--model', 'VGG', 'help description'],
     '-d': ['--dataset', 'cifar10', 'the name of the using dataset'],
     '-o': ['--offload', False, 'FedAdapt or classic FL mode'],
-    '-dl': ['--dataset-link', '', 'the link to dataset  python file'],
-    '-ml': ['--model-link', '', 'the link to model  python file']
+    '-dl': ['--datasetlink', '', 'the link to dataset  python file'],
+    '-ml': ['--modellink', '', 'the link to model  python file']
 }
 
 
@@ -30,6 +30,6 @@ def parse_argument(parser: argparse.ArgumentParser()):
     option = vars(args)
     config.dataset_name = option.get('dataset')
     config.model_name = option.get('model')
-    model_utils.download_model(option.get('model-link'))
+    model_utils.download_model(option.get('modellink'))
     return option
 
