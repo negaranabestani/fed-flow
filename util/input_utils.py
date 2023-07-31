@@ -1,5 +1,6 @@
 import argparse
 from config import config
+from util import model_utils
 
 options = {
     '-a': ['--aggregation', 'fed_avg', 'help description'],
@@ -29,5 +30,6 @@ def parse_argument(parser: argparse.ArgumentParser()):
     option = vars(args)
     config.dataset_name = option.get('dataset')
     config.model_name = option.get('model')
+    model_utils.download_model(option.get('model-link'))
     return option
 
