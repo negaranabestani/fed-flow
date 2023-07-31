@@ -129,9 +129,11 @@ def get_class():
 
 
 def download_model(link):
-    urllib.request.urlretrieve(link, MODEL_BASE_DIR)
-    if not check_link_integrity():
-        fed_logger.error('the file is not downloaded correctly or its name doesn\'t follow the proper format')
+    if not link == '':
+        if not check_link_integrity():
+            urllib.request.urlretrieve(link, MODEL_BASE_DIR)
+            if not check_link_integrity():
+                fed_logger.error('the file is not downloaded correctly or its name doesn\'t follow the proper format')
 
 
 def check_link_integrity():
