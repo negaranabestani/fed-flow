@@ -1,5 +1,7 @@
 import argparse
 import collections
+import os.path
+import urllib.request
 
 import numpy as np
 import torch
@@ -124,3 +126,13 @@ def get_class():
     for comp in parts[1:]:
         m = getattr(m, comp)
     return m
+
+
+def download_model(link):
+    urllib.request.urlretrieve(link, MODEL_BASE_DIR)
+    if not check_link_integrity():
+        fed_logger.error('the file is not downloaded correctly or its name doesn\'t follow the proper format')
+
+
+def check_link_integrity():
+    return os.path.exists(MODEL_BASE_DIR + config.model_name)
