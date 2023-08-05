@@ -1,0 +1,4 @@
+from fl_training.interface.fed_edgeserver_interface import FedEdgeServerInterface
+
+
+class FedEdgeServer(FedEdgeServerInterface):

@@ -60,6 +60,6 @@ first = True  # First initializaiton control
 fed_logger.info('Preparing Sever.')
 options_ins = input_utils.parse_argument(parser)
 server_ins = FedServer(0, config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'), options_ins.get('dataset'))
-fed_logger.info("start model: " + str(options_ins.values()))
+fed_logger.info("start mode: " + str(options_ins.values()))
 runner = ServerRunner()
 runner.run(server_ins, LR, first, options_ins, options_ins.get('offload'))

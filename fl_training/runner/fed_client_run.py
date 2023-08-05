@@ -63,6 +63,6 @@ LR = config.LR
 fed_logger.info('Preparing Client')
 client_ins = Client(index, ip_address, config.SERVER_ADDR, config.SERVER_PORT, datalen, options_ins.get('model'),
                     options_ins.get('dataset'), config.split_layer[index])
-fed_logger.info("start model: " + str(options_ins.values()))
+fed_logger.info("start mode: " + str(options_ins.values()))
 runner = ClientRunner()
 runner.run(client_ins, LR, options_ins.get('offload'))
