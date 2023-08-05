@@ -10,7 +10,9 @@ G = 1  # Number of groups
 # Unique clients order
 HOST2IP = {'the-great-green': '127.0.0.1'}
 CLIENTS_CONFIG = {'127.0.0.1': 0}
+EDGE_SERVER_LIST = ['127.0.0.1']
 CLIENTS_LIST = ['127.0.0.1']
+EDGE_MAP = {'127.0.0.1': ['127.0.0.1']}
 CLIENTS_BANDWIDTH = []
 
 # Dataset configration
