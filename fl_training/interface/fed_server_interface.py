@@ -43,6 +43,36 @@ class FedServerInterface(ABC, Communicator):
         self.testset = data_utils.get_testset()
         self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
 
+    def test_network(self):
+        """
+        send message to test network speed
+        """
+
+    def split_layer(self):
+        """
+        receive and send splitting data
+        """
+
+    def forward_weights(self):
+        """
+        send weights after forward propagation
+        """
+
+    def backward_weights(self):
+        """
+        send weights after backward propagation
+        """
+
+    def local_weights(self):
+        """
+        send final weights for aggregation
+        """
+
+    def global_weights(self):
+        """
+        send global weights
+        """
+
     @abstractmethod
     def initialize(self, split_layers, offload, first, LR):
         pass

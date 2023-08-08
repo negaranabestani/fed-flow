@@ -7,7 +7,7 @@ from config import config
 from config.logger import fed_logger
 from entity.Communicator import Communicator
 from fl_method import fl_method_parser
-from util import model_utils, message_utils
+from util import model_utils
 
 
 class FedEdgeServerInterface(ABC, Communicator):
@@ -38,6 +38,36 @@ class FedEdgeServerInterface(ABC, Communicator):
 
         self.uninet = model_utils.get_model('Unit', config.model_len - 1, self.device)
 
+    def test_network(self):
+        """
+        send message to test network speed
+        """
+
+    def split_layer(self):
+        """
+        receive and send splitting data
+        """
+
+    def forward_weights(self):
+        """
+        send weights after forward propagation
+        """
+
+    def backward_weights(self):
+        """
+        send weights after backward propagation
+        """
+
+    def local_weights(self):
+        """
+        send final weights for aggregation
+        """
+
+    def global_weights(self):
+        """
+        receive and send global weights
+        """
+
     @abstractmethod
     def initialize(self, split_layers, offload, first, LR):
         pass
@@ -64,12 +94,6 @@ class FedEdgeServerInterface(ABC, Communicator):
 
     def cluster(self, options: dict):
         self.group_labels = fl_method_parser.fl_methods.get(options.get('clustering'))()
-
-    # def split(self, options: dict):
-    #     self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(self.state, self.group_labels)
-    #     fed_logger.info('Next Round OPs: ' + str(config.split_layer))
-    #     msg = [message_utils.split_layers, config.split_layer]
-    #     self.scatter(msg)
 
     def scatter(self, msg):
         for i in self.client_socks:

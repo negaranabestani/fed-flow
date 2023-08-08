@@ -26,22 +26,41 @@ def get_model(location, layer, device):
 
 
 def split_weights_client(weights, cweights):
+    """
+    evaluate client weights
+    """
     for key in cweights:
         assert cweights[key].size() == weights[key].size()
         cweights[key] = weights[key]
     return cweights
 
 
-def split_weights_server(weights, cweights, sweights):
+def split_weights_server(weights, cweights, sweights,eweights):
+    """
+    evaluate server weights
+    """
     ckeys = list(cweights)
     skeys = list(sweights)
+    ekeys = list(eweights)
     keys = list(weights)
 
     for i in range(len(skeys)):
-        assert sweights[skeys[i]].size() == weights[keys[i + len(ckeys)]].size()
-        sweights[skeys[i]] = weights[keys[i + len(ckeys)]]
+        assert sweights[skeys[i]].size() == weights[keys[i + len(ckeys)+len(ekeys)]].size()
+        sweights[skeys[i]] = weights[keys[i + len(ckeys)+len(ekeys)]]
 
     return sweights
+
+
+def split_weights_edgeserver(weights, cweights, eweights):
+    ckeys = list(cweights)
+    ekeys = list(eweights)
+    keys = list(weights)
+
+    for i in range(len(ekeys)):
+        assert eweights[ekeys[i]].size() == weights[keys[i + len(ckeys)]].size()
+        eweights[ekeys[i]] = weights[keys[i + len(ckeys)]]
+
+    return eweights
 
 
 def concat_weights(weights, cweights, sweights):
