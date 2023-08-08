@@ -20,7 +20,7 @@ class FedServerInterface(ABC, Communicator):
         self.port = server_port
         self.model_name = model_name
         self.sock.bind((self.ip, self.port))
-        self.edge_socks = {}
+        self.socks = {}
         self.group_labels = None
         self.criterion = None
         self.split_layers = None
@@ -35,13 +35,13 @@ class FedServerInterface(ABC, Communicator):
         self.tt_start = {}
         self.tt_end = {}
 
-        while len(self.edge_socks) < config.K:
+        while len(self.socks) < config.K:
             self.sock.listen(5)
             fed_logger.info("Waiting Incoming Connections.")
             (edge_sock, (ip, port)) = self.sock.accept()
             fed_logger.info('Got connection from ' + str(ip))
             fed_logger.info(edge_sock)
-            self.edge_socks[str(ip)] = edge_sock
+            self.socks[str(ip)] = edge_sock
 
         self.uninet = model_utils.get_model('Unit', config.model_len - 1, self.device)
 
@@ -73,8 +73,8 @@ class FedServerInterface(ABC, Communicator):
     def _thread_network_testing(self, edge_ip):
         network_time_start = time.time()
         msg = [message_utils.test_network, self.uninet.cpu().state_dict()]
-        self.send_msg(self.edge_socks[edge_ip], msg)
-        msg = self.recv_msg(self.edge_socks[edge_ip], message_utils.test_network)
+        self.send_msg(self.socks[edge_ip], msg)
+        msg = self.recv_msg(self.socks[edge_ip], message_utils.test_network)
         network_time_end = time.time()
         self.edge_bandwidth[edge_ip] = network_time_end - network_time_start
 
@@ -83,7 +83,7 @@ class FedServerInterface(ABC, Communicator):
         receive client network speed
         """
         for i in edge_ips:
-            msg = self.recv_msg(self.edge_socks[edge_ips[i]], message_utils.client_network)
+            msg = self.recv_msg(self.socks[edge_ips[i]], message_utils.client_network)
             self.client_bandwidth[i] = msg
 
     def split_layer(self):
@@ -93,17 +93,26 @@ class FedServerInterface(ABC, Communicator):
         msg = [message_utils.split_layers, config.split_layer]
         self.scatter(msg)
 
-    def local_weights(self, client_ips):
+    def e_local_weights(self, client_ips):
         """
         send final weights for aggregation
         """
         eweights = []
         for i in range(len(client_ips)):
-            msg = self.recv_msg(self.edge_socks[config.CLIENT_MAP[client_ips[i]]],
+            msg = self.recv_msg(self.socks[config.CLIENT_MAP[client_ips[i]]],
                                 message_utils.local_weights_client_to_server)
             self.tt_end[client_ips[i]] = time.time()
             eweights.append(msg)
         return eweights
+
+    def c_local_weights(self, client_ips):
+        cweights = []
+        for i in range(len(client_ips)):
+            msg = self.recv_msg(self.socks[client_ips[i]],
+                                message_utils.local_weights_client_to_server)
+            self.tt_end[client_ips[i]] = time.time()
+            cweights.append(msg)
+        return cweights
 
     def global_weights(self):
         """
@@ -134,8 +143,8 @@ class FedServerInterface(ABC, Communicator):
         fed_logger.info('Next Round OPs: ' + str(self.split_layer))
 
     def scatter(self, msg):
-        for i in self.edge_socks:
-            self.send_msg(self.edge_socks[i], msg)
+        for i in self.socks:
+            self.send_msg(self.socks[i], msg)
 
     def concat_norm(self, ttpi, offloading):
         ttpi_order = []

@@ -74,7 +74,7 @@ class FedServer(FedServerInterface):
     def _thread_training_offloading(self, client_ip):
         iteration = int((config.N / (config.K * config.B)))
         for i in range(iteration):
-            msg = self.recv_msg(self.edge_socks[config.CLIENT_MAP[client_ip]],
+            msg = self.recv_msg(self.socks[config.CLIENT_MAP[client_ip]],
                                 message_utils.local_activations_client_to_server)
             smashed_layers = msg[1]
             labels = msg[2]
@@ -88,7 +88,7 @@ class FedServer(FedServerInterface):
 
             # Send gradients to client
             msg = [message_utils.server_gradients_server_to_client + str(config.CLIENT_MAP[client_ip]), inputs.grad]
-            self.send_msg(self.edge_socks[config.CLIENT_MAP[client_ip]], msg)
+            self.send_msg(self.socks[config.CLIENT_MAP[client_ip]], msg)
 
         fed_logger.info(str(client_ip) + ' offloading training end')
         return 'Finish'

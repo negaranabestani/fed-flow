@@ -24,32 +24,37 @@ class ServerRunner:
 
             s_time = time.time()
             server.global_weights()
+            if offload:
+                server.client_network(config.EDGE_SERVER_LIST)
 
-            server.client_network(config.EDGE_SERVER_LIST)
+                server.test_network(config.EDGE_SERVER_LIST)
 
-            server.test_network(config.EDGE_SERVER_LIST)
-
-            server.offloading = server.get_offloading(server.split_layers)
+                server.offloading = server.get_offloading(server.split_layers)
 
             server.cluster(options)
 
-            server.state = server.concat_norm(server.ttpi(config.CLIENTS_LIST), server.offloading)
+            if offload:
+                server.state = server.concat_norm(server.ttpi(config.CLIENTS_LIST), server.offloading)
 
-            fed_logger.info('==> Reinitialization for Round : {:}'.format(r + 1))
-            server.split(options)
+                fed_logger.info('==> Reinitialization for Round : {:}'.format(r + 1))
+                server.split(options)
+
             if r > 49:
                 LR = config.LR * 0.1
-            server.initialize(server.split_layers, offload, first, LR)
 
-            fed_logger.info('==> Reinitialization Finish')
+            if offload:
+                server.initialize(server.split_layers, offload, first, LR)
+
+                fed_logger.info('==> Reinitialization Finish')
+
             if offload:
                 server.offloading_train(config.CLIENTS_LIST)
+                local_weights = server.e_local_weights(config.CLIENTS_LIST)
             else:
                 server.no_offloading_train(config.CLIENTS_LIST)
+                local_weights = server.c_local_weights(config.CLIENTS_LIST)
 
-            eweights = server.local_weights(config.CLIENTS_LIST)
-
-            server.call_aggregation(options, eweights)
+            server.call_aggregation(options, local_weights)
             e_time = time.time()
 
             # Recording each round training time, bandwidth and test accuracy
