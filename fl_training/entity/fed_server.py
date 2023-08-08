@@ -21,28 +21,29 @@ torch.manual_seed(0)
 class FedServer(FedServerInterface):
 
     def initialize(self, split_layers, LR):
-            self.split_layers = split_layers
-            self.nets = {}
-            self.optimizers = {}
-            for i in range(len(split_layers)):
-                client_ip = config.CLIENTS_LIST[i]
-                if split_layers[i] < len(
-                        self.uninet.cfg) - 1:  # Only offloading client need initialize optimizer in server
-                    self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device)
+        self.split_layers = split_layers
+        self.nets = {}
+        self.optimizers = {}
+        for i in range(len(split_layers)):
+            client_ip = config.CLIENTS_LIST[i]
+            if split_layers[i] < len(
+                    self.uninet.cfg) - 1:  # Only offloading client need initialize optimizer in server
+                self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device)
 
-                    # offloading weight in server also need to be initialized from the same global weight
-                    eweights = model_utils.get_model('Edge', split_layers[i], self.device).state_dict()
-                    cweights = model_utils.get_model('Client', split_layers[i], self.device).state_dict()
+                # offloading weight in server also need to be initialized from the same global weight
+                eweights = model_utils.get_model('Edge', split_layers[i], self.device).state_dict()
+                cweights = model_utils.get_model('Client', split_layers[i], self.device).state_dict()
 
-                    pweights = model_utils.split_weights_server(self.uninet.state_dict(), cweights,
-                                                                self.nets[client_ip].state_dict(), eweights)
-                    self.nets[client_ip].load_state_dict(pweights)
+                pweights = model_utils.split_weights_server(self.uninet.state_dict(), cweights,
+                                                            self.nets[client_ip].state_dict(), eweights)
+                self.nets[client_ip].load_state_dict(pweights)
 
-                    self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
-                                                           momentum=0.9)
-                # else:
-                #     self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device)
-            self.criterion = nn.CrossEntropyLoss()
+                self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
+                                                       momentum=0.9)
+            # else:
+            #     self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device)
+        self.criterion = nn.CrossEntropyLoss()
+
     def offloading_train(self, client_ips):
         self.threads = {}
         for i in range(len(client_ips)):
@@ -73,7 +74,7 @@ class FedServer(FedServerInterface):
         iteration = int((config.N / (config.K * config.B)))
         for i in range(iteration):
             msg = self.recv_msg(self.socks[config.CLIENT_MAP[client_ip]],
-                                message_utils.local_activations_client_to_server)
+                                message_utils.local_activations_edge_to_server)
             smashed_layers = msg[1]
             labels = msg[2]
 
@@ -85,7 +86,7 @@ class FedServer(FedServerInterface):
             self.optimizers[client_ip].step()
 
             # Send gradients to client
-            msg = [message_utils.server_gradients_server_to_client + str(config.CLIENT_MAP[client_ip]), inputs.grad]
+            msg = [message_utils.server_gradients_server_to_edge + str(config.CLIENT_MAP[client_ip]), inputs.grad]
             self.send_msg(self.socks[config.CLIENT_MAP[client_ip]], msg)
 
         fed_logger.info(str(client_ip) + ' offloading training end')

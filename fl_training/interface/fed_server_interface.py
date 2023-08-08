@@ -90,7 +90,7 @@ class FedServerInterface(ABC, Communicator):
         """
         send splitting data
         """
-        msg = [message_utils.split_layers, config.split_layer]
+        msg = [message_utils.split_layers_server_to_edge, config.split_layer]
         self.scatter(msg)
 
     def e_local_weights(self, client_ips):
@@ -100,7 +100,7 @@ class FedServerInterface(ABC, Communicator):
         eweights = []
         for i in range(len(client_ips)):
             msg = self.recv_msg(self.socks[config.CLIENT_MAP[client_ips[i]]],
-                                message_utils.local_weights_client_to_server)
+                                message_utils.local_weights_edge_to_server)
             self.tt_end[client_ips[i]] = time.time()
             eweights.append(msg)
         return eweights
@@ -114,10 +114,14 @@ class FedServerInterface(ABC, Communicator):
             cweights.append(msg)
         return cweights
 
-    def global_weights(self):
+    def offloading_global_weights(self):
         """
         send global weights
         """
+        msg = [message_utils.initial_global_weights_server_to_edge, self.uninet.state_dict()]
+        self.scatter(msg)
+
+    def no_offloading_gloabal_weights(self):
         msg = [message_utils.initial_global_weights_server_to_client, self.uninet.state_dict()]
         self.scatter(msg)
 
