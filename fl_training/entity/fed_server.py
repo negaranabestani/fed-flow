@@ -20,8 +20,7 @@ torch.manual_seed(0)
 
 class FedServer(FedServerInterface):
 
-    def initialize(self, split_layers, offload, first, LR):
-        if offload or first:
+    def initialize(self, split_layers, LR):
             self.split_layers = split_layers
             self.nets = {}
             self.optimizers = {}
@@ -41,10 +40,9 @@ class FedServer(FedServerInterface):
 
                     self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
                                                            momentum=0.9)
-                else:
-                    self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device)
+                # else:
+                #     self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device)
             self.criterion = nn.CrossEntropyLoss()
-
     def offloading_train(self, client_ips):
         self.threads = {}
         for i in range(len(client_ips)):

@@ -122,7 +122,7 @@ class FedServerInterface(ABC, Communicator):
         self.scatter(msg)
 
     @abstractmethod
-    def initialize(self, split_layers, offload, first, LR):
+    def initialize(self, split_layers, LR):
         pass
 
     @abstractmethod
