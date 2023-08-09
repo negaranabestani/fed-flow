@@ -87,9 +87,11 @@ class FedEdgeServerInterface(ABC, Communicator):
 
     def split_layer(self):
         """
-        send splitting data
+        receive send splitting data to clients
         """
-        msg = [message_utils.split_layers_server_to_edge, config.split_layer]
+        msg = self.recv_msg(self.sock, message_utils.split_layers_server_to_edge)
+        self.split_layers = msg[2]
+        msg = [message_utils.split_layers_edge_to_client, self.split_layers]
         self.scatter(msg)
 
     def e_local_weights(self, client_ips):
