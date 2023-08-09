@@ -56,74 +56,51 @@ class FedServerInterface(ABC, Communicator):
     def no_offloading_train(self, client_ips):
         pass
 
+    @abstractmethod
     def test_network(self, edge_ips):
         """
         send message to test network speed
         """
-        # Network test
-        self.net_threads = {}
-        for i in range(len(edge_ips)):
-            self.net_threads[edge_ips[i]] = threading.Thread(target=self._thread_network_testing,
-                                                             args=(edge_ips[i],))
-            self.net_threads[edge_ips[i]].start()
+        pass
 
-        for i in range(len(edge_ips)):
-            self.net_threads[edge_ips[i]].join()
-
-    def _thread_network_testing(self, edge_ip):
-        network_time_start = time.time()
-        msg = [message_utils.test_server_network, self.uninet.cpu().state_dict()]
-        self.send_msg(self.socks[edge_ip], msg)
-        msg = self.recv_msg(self.socks[edge_ip], message_utils.test_server_network)
-        network_time_end = time.time()
-        self.edge_bandwidth[edge_ip] = network_time_end - network_time_start
-
+    @abstractmethod
     def client_network(self, edge_ips):
         """
         receive client network speed
         """
-        for i in edge_ips:
-            msg = self.recv_msg(self.socks[edge_ips[i]], message_utils.client_network)
-            self.client_bandwidth[i] = msg
+        pass
 
+    @abstractmethod
     def split_layer(self):
         """
         send splitting data
         """
-        msg = [message_utils.split_layers_server_to_edge, config.split_layer]
-        self.scatter(msg)
+        pass
 
+    @abstractmethod
     def e_local_weights(self, client_ips):
         """
-        send final weights for aggregation
+        receive final weights for aggregation in offloading mode
         """
-        eweights = []
-        for i in range(len(client_ips)):
-            msg = self.recv_msg(self.socks[config.CLIENT_MAP[client_ips[i]]],
-                                message_utils.local_weights_edge_to_server)
-            self.tt_end[client_ips[i]] = time.time()
-            eweights.append(msg)
-        return eweights
+        pass
 
+    @abstractmethod
     def c_local_weights(self, client_ips):
-        cweights = []
-        for i in range(len(client_ips)):
-            msg = self.recv_msg(self.socks[client_ips[i]],
-                                message_utils.local_weights_client_to_server)
-            self.tt_end[client_ips[i]] = time.time()
-            cweights.append(msg)
-        return cweights
+        """
+        receive client local weights in no offloading mode
+        """
+        pass
 
+    @abstractmethod
     def offloading_global_weights(self):
         """
         send global weights
         """
-        msg = [message_utils.initial_global_weights_server_to_edge, self.uninet.state_dict()]
-        self.scatter(msg)
+        pass
 
+    @abstractmethod
     def no_offloading_gloabal_weights(self):
-        msg = [message_utils.initial_global_weights_server_to_client, self.uninet.state_dict()]
-        self.scatter(msg)
+        pass
 
     @abstractmethod
     def initialize(self, split_layers, LR):
@@ -139,12 +116,13 @@ class FedServerInterface(ABC, Communicator):
             fed_logger.error("aggregate method is none")
         self.aggregate(config.CLIENTS_LIST, method, eweights)
 
+    @abstractmethod
     def cluster(self, options: dict):
-        self.group_labels = fl_method_parser.fl_methods.get(options.get('clustering'))()
+        pass
 
+    @abstractmethod
     def split(self, options: dict):
-        self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(self.state, self.group_labels)
-        fed_logger.info('Next Round OPs: ' + str(self.split_layer))
+        pass
 
     def scatter(self, msg):
         for i in self.socks:
