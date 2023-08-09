@@ -9,7 +9,7 @@ class FedEdgeServer(FedEdgeServerInterface):
     def initialize(self, split_layers, offload, first, LR):
         if offload or first:
             self.split_layers = split_layers
-            self.nets = {}
+
             self.optimizers = {}
             for i in range(len(split_layers)):
                 client_ip = config.CLIENTS_LIST[i]

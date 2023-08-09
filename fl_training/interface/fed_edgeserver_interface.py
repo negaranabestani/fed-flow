@@ -21,6 +21,7 @@ class FedEdgeServerInterface(ABC, Communicator):
         self.model_name = model_name
         self.sock.bind((self.ip, self.port))
         self.socks = {}
+        self.nets = {}
         self.group_labels = None
         self.criterion = None
         self.split_layers = None
@@ -90,41 +91,35 @@ class FedEdgeServerInterface(ABC, Communicator):
         receive send splitting data to clients
         """
         msg = self.recv_msg(self.sock, message_utils.split_layers_server_to_edge)
-        self.split_layers = msg[2]
+        self.split_layers = msg[1]
         msg = [message_utils.split_layers_edge_to_client, self.split_layers]
         self.scatter(msg)
 
-    def e_local_weights(self, client_ips):
+    def local_weights(self):
         """
-        send final weights for aggregation
+        receive and send final weights for aggregation
         """
-        eweights = []
-        for i in range(len(client_ips)):
-            msg = self.recv_msg(self.socks[config.CLIENT_MAP[client_ips[i]]],
+        weights = []
+        for i in range(config.EDGE_MAP[self.ip]):
+            msg = self.recv_msg(self.socks[config.EDGE_MAP[self.ip][i]],
                                 message_utils.local_weights_edge_to_server)
-            self.tt_end[client_ips[i]] = time.time()
-            eweights.append(msg)
-        return eweights
+            weights.append(msg)
 
-    def c_local_weights(self, client_ips):
-        cweights = []
-        for i in range(len(client_ips)):
-            msg = self.recv_msg(self.socks[client_ips[i]],
-                                message_utils.local_weights_client_to_server)
-            self.tt_end[client_ips[i]] = time.time()
-            cweights.append(msg)
-        return cweights
+        msg = [message_utils.local_weights_edge_to_server, weights]
+        self.send_msg(self.sock, msg)
 
-    def offloading_global_weights(self):
+    def global_weights(self, client_ips: []):
         """
-        send global weights
+        receive global weights
         """
-        msg = [message_utils.initial_global_weights_server_to_edge, self.uninet.state_dict()]
-        self.scatter(msg)
+        weights = self.recv_msg(self.sock, message_utils.local_weights_edge_to_server)[1]
+        for i in range(len(self.split_layers)):
+            if vars(client_ips).__contains__(config.CLIENTS_LIST[i]):
+                cweights = model_utils.get_model('Client', self.split_layers[i], self.device).state_dict()
 
-    def no_offloading_gloabal_weights(self):
-        msg = [message_utils.initial_global_weights_server_to_client, self.uninet.state_dict()]
-        self.scatter(msg)
+                pweights = model_utils.split_weights_edgeserver(weights, cweights,
+                                                                self.nets[config.CLIENTS_LIST[i]].state_dict())
+                self.nets[config.CLIENTS_LIST[i]].load_state_dict(pweights)
 
     @abstractmethod
     def initialize(self, split_layers, LR):
