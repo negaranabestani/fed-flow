@@ -23,7 +23,7 @@ class ServerRunner:
             fed_logger.info('==> Round {:} Start'.format(r))
 
             s_time = time.time()
-            server.global_weights()
+            server.offloading_global_weights()
             server.client_network(config.EDGE_SERVER_LIST)
 
             server.test_network(config.EDGE_SERVER_LIST)

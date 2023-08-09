@@ -45,10 +45,6 @@ class FedEdgeServerInterface(ABC, Communicator):
         self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
 
     @abstractmethod
-    def offloading_train(self, client_ips):
-        pass
-
-    @abstractmethod
     def no_offloading_train(self, client_ips):
         pass
 
@@ -95,17 +91,14 @@ class FedEdgeServerInterface(ABC, Communicator):
         msg = [message_utils.split_layers_edge_to_client, self.split_layers]
         self.scatter(msg)
 
-    def local_weights(self):
+    def local_weights(self, client_ip):
         """
         receive and send final weights for aggregation
         """
-        weights = []
-        for i in range(config.EDGE_MAP[self.ip]):
-            msg = self.recv_msg(self.socks[config.EDGE_MAP[self.ip][i]],
-                                message_utils.local_weights_edge_to_server)
-            weights.append(msg)
+        cweights = self.recv_msg(self.socks[client_ip],
+                                 message_utils.local_weights_edge_to_server)[1]
 
-        msg = [message_utils.local_weights_edge_to_server, weights]
+        msg = [message_utils.local_weights_edge_to_server, cweights]
         self.send_msg(self.sock, msg)
 
     def global_weights(self, client_ips: []):

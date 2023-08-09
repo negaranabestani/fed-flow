@@ -85,7 +85,7 @@ class FedServer(FedServerInterface):
             loss.backward()
             self.optimizers[client_ip].step()
 
-            # Send gradients to client
+            # Send gradients to edge
             msg = [message_utils.server_gradients_server_to_edge + str(config.CLIENT_MAP[client_ip]), inputs.grad]
             self.send_msg(self.socks[config.CLIENT_MAP[client_ip]], msg)
 
