@@ -78,13 +78,12 @@ class FedEdgeServerInterface(ABC, Communicator):
         msg = [message_utils.test_server_network, self.uninet.cpu().state_dict()]
         self.send_msg(self.sock, msg)
 
-    def client_network(self, client_ips):
+    def client_network(self):
         """
-        receive client network speed
+        send client network speed to central server
         """
-        for i in client_ips:
-            msg = self.recv_msg(self.socks[client_ips[i]], message_utils.client_network)
-            self.client_bandwidth[i] = msg
+        msg = [message_utils.client_network, self.client_bandwidth]
+        self.send_msg(self.sock, msg)
 
     def split_layer(self):
         """
