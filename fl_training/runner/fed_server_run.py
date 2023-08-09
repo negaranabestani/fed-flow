@@ -36,6 +36,7 @@ class ServerRunner:
 
             fed_logger.info('==> Reinitialization for Round : {:}'.format(r + 1))
             server.split(options)
+            server.split_layer()
 
             if r > 49:
                 LR = config.LR * 0.1
@@ -71,7 +72,7 @@ class ServerRunner:
             fed_logger.info('==> Round {:} Start'.format(r))
 
             s_time = time.time()
-            server.global_weights()
+            server.no_offloading_gloabal_weights()
             server.cluster(options)
 
             server.no_offloading_train(config.CLIENTS_LIST)

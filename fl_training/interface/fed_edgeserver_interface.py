@@ -2,14 +2,12 @@ import threading
 import time
 from abc import ABC, abstractmethod
 
-import numpy as np
 import torch
 from torch import multiprocessing
 
 from config import config
 from config.logger import fed_logger
 from entity.Communicator import Communicator
-from fl_method import fl_method_parser
 from util import model_utils, message_utils, data_utils
 
 
@@ -44,10 +42,6 @@ class FedEdgeServerInterface(ABC, Communicator):
         self.testset = data_utils.get_testset()
         self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
 
-    @abstractmethod
-    def no_offloading_train(self, client_ips):
-        pass
-
     def test_client_network(self, client_ips):
         """
         send message to test network speed
@@ -70,7 +64,7 @@ class FedEdgeServerInterface(ABC, Communicator):
         network_time_end = time.time()
         self.client_bandwidth[client_ip] = network_time_end - network_time_start
 
-    def _thread_server_network_testing(self):
+    def test_server_network(self):
         msg = self.recv_msg(self.sock, message_utils.test_server_network)
         msg = [message_utils.test_server_network, self.uninet.cpu().state_dict()]
         self.send_msg(self.sock, msg)
@@ -115,69 +109,22 @@ class FedEdgeServerInterface(ABC, Communicator):
                 self.nets[config.CLIENTS_LIST[i]].load_state_dict(pweights)
 
     @abstractmethod
-    def initialize(self, split_layers, LR):
+    def initialize(self, split_layers, LR, client_ips):
         pass
-
-    @abstractmethod
-    def aggregate(self, client_ips, aggregate_method, eweights):
-        pass
-
-    def call_aggregation(self, options: dict, eweights):
-        method = fl_method_parser.fl_methods.get(options.get('aggregation'))
-        if method is None:
-            fed_logger.error("aggregate method is none")
-        self.aggregate(config.CLIENTS_LIST, method, eweights)
-
-    def cluster(self, options: dict):
-        self.group_labels = fl_method_parser.fl_methods.get(options.get('clustering'))()
-
-    def split(self, options: dict):
-        self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(self.state, self.group_labels)
-        fed_logger.info('Next Round OPs: ' + str(self.split_layer))
 
     def scatter(self, msg):
         for i in self.socks:
             self.send_msg(self.socks[i], msg)
 
-    def concat_norm(self, ttpi, offloading):
-        ttpi_order = []
-        offloading_order = []
-        for c in config.CLIENTS_LIST:
-            ttpi_order.append(ttpi[c])
-            offloading_order.append(offloading[c])
+    @abstractmethod
+    def forward_propagation(self, client_ip):
+        pass
 
-        group_max_index = [0 for i in range(config.G)]
-        group_max_value = [0 for i in range(config.G)]
-        for i in range(len(config.CLIENTS_LIST)):
-            label = self.group_labels[i]
-            if ttpi_order[i] >= group_max_value[label]:
-                group_max_value[label] = ttpi_order[i]
-                group_max_index[label] = i
+    @abstractmethod
+    def backward_propagation(self, outputs, client_ip):
+        pass
 
-        ttpi_order = np.array(ttpi_order)[np.array(group_max_index)]
-        offloading_order = np.array(offloading_order)[np.array(group_max_index)]
-        state = np.append(ttpi_order, offloading_order)
-        return state
-
-    def get_offloading(self, split_layer):
-        offloading = {}
-        workload = 0
-
-        assert len(split_layer) == len(config.CLIENTS_LIST)
-        for i in range(len(config.CLIENTS_LIST)):
-            for l in range(len(config.model_cfg[config.model_name])):
-                if l <= split_layer[i]:
-                    workload += config.model_cfg[config.model_name][l][5]
-            offloading[config.CLIENTS_LIST[i]] = workload / config.total_flops
-            workload = 0
-
-        return offloading
-
-    def ttpi(self, client_ips):
-        ttpi = {}
-        for i in range(len(client_ips)):
-            ttpi[client_ips[i]] = self.tt_end[client_ips[i]] - self.tt_start[client_ips[i]]
-        return ttpi
-
-    def bandwith(self):
-        return self.edge_bandwidth
+    @abstractmethod
+    def thread_training(self, client_ip):
+        outputs = self.forward_propagation(client_ip)
+        self.backward_propagation(outputs, client_ip)
