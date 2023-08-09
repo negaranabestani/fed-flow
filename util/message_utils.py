@@ -18,7 +18,8 @@ local_activations_edge_to_server = 'MSG_LOCAL_ACTIVATIONS_EDGE_TO_SERVER'
 split_layers_server_to_edge = 'SPLIT_LAYERS_SERVER_TO_EDGE'
 split_layers_edge_to_client = 'SPLIT_LAYERS_EDGE_TO_CLIENT'
 
-test_network = 'MSG_TEST_NETWORK'
+test_client_network = 'MSG_TEST_CLIENT_NETWORK'
+test_server_network = 'MSG_TEST_SERVER_NETWORK'
 client_network = 'MSG_CLIENT_NETWORK'
 
 server_gradients_server_to_client = 'MSG_SERVER_GRADIENTS_SERVER_TO_CLIENT_'
