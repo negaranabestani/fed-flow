@@ -39,8 +39,6 @@ class ClientRunner:
             fed_logger.info('==> Reinitialization for Round : {:}'.format(r + 1))
             s_time_rebuild = time.time()
 
-            config.split_layer = client.recv_msg(client.sock, message_utils.split_layers)[1]
-
             if r > 49:
                 LR = config.LR * 0.1
 

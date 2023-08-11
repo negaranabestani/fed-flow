@@ -89,7 +89,7 @@ class Client(FedClientInterface):
         """
         receive splitting data
         """
-        pass
+        self.split_layers = self.recv_msg(self.sock, message_utils.split_layers_edge_to_client)[1]
 
     def edge_global_weights(self):
         """
@@ -110,12 +110,6 @@ class Client(FedClientInterface):
         pweights = model_utils.split_weights_client(weights, self.net.state_dict())
         self.net.load_state_dict(pweights)
         fed_logger.debug('Initialize Finished')
-
-    def global_weights(self):
-        """
-        receive global weights
-        """
-        pass
 
     def forward_propagation(self):
         pass
