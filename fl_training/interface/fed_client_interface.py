@@ -26,9 +26,45 @@ class FedClientInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def train(self, trainloader):
+    def upload(self):
         pass
 
     @abstractmethod
-    def upload(self):
+    def test_network(self):
+        """
+        send message to test network speed
+        """
+        pass
+
+    @abstractmethod
+    def split_layer(self):
+        """
+        receive splitting data
+        """
+        pass
+
+    @abstractmethod
+    def local_weights(self, client_ip):
+        """
+        send final weights for aggregation
+        """
+        pass
+
+    @abstractmethod
+    def edge_global_weights(self):
+        """
+        receive global weights
+        """
+        pass
+
+    @abstractmethod
+    def server_global_weights(self):
+        pass
+
+    @abstractmethod
+    def forward_propagation(self):
+        pass
+
+    @abstractmethod
+    def backward_propagation(self, outputs):
         pass

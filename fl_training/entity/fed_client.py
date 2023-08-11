@@ -30,27 +30,8 @@ class Client(FedClientInterface):
 
         self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
                                    momentum=0.9)
-        fed_logger.debug('Receiving Global Weights..')
-        weights = self.recv_msg(self.sock, message_utils.initial_global_weights_server_to_client)[1]
-        if self.split_layer == (config.model_len - 1):
-            self.net.load_state_dict(weights)
-        else:
-            pweights = model_utils.split_weights_client(weights, self.net.state_dict())
-            self.net.load_state_dict(pweights)
-        fed_logger.debug('Initialize Finished')
 
     def train(self, trainloader):
-        # Network speed test
-        network_time_start = time.time()
-        msg = [message_utils.test_network, self.uninet.cpu().state_dict()]
-        self.send_msg(self.sock, msg)
-        msg = self.recv_msg(self.sock, message_utils.test_network)[1]
-        network_time_end = time.time()
-        network_speed = (2 * config.model_size * 8) / (network_time_end - network_time_start)  # Mbit/s
-
-        fed_logger.info('Network speed is {:}'.format(network_speed))
-        msg = [message_utils.test_network, self.ip, network_speed]
-        self.send_msg(self.sock, msg)
 
         # Training start
         s_time_total = time.time()
@@ -95,3 +76,49 @@ class Client(FedClientInterface):
     def upload(self):
         msg = [message_utils.local_weights_client_to_server, self.net.cpu().state_dict()]
         self.send_msg(self.sock, msg)
+
+    def test_network(self):
+        """
+        send message to test network speed
+        """
+        msg = self.recv_msg(self.sock, message_utils.test_client_network)[1]
+        msg = [message_utils.test_client_network, self.uninet.cpu().state_dict()]
+        self.send_msg(self.sock, msg)
+
+    def split_layer(self):
+        """
+        receive splitting data
+        """
+        pass
+
+    def edge_global_weights(self):
+        """
+        send final weights for aggregation
+        """
+        fed_logger.debug('Receiving Global Weights..')
+        weights = self.recv_msg(self.sock, message_utils.initial_global_weights_edge_to_client)[1]
+        pweights = model_utils.split_weights_client(weights, self.net.state_dict())
+        self.net.load_state_dict(pweights)
+        fed_logger.debug('Initialize Finished')
+
+    def server_global_weights(self):
+        """
+        send final weights for aggregation
+        """
+        fed_logger.debug('Receiving Global Weights..')
+        weights = self.recv_msg(self.sock, message_utils.initial_global_weights_server_to_client)[1]
+        pweights = model_utils.split_weights_client(weights, self.net.state_dict())
+        self.net.load_state_dict(pweights)
+        fed_logger.debug('Initialize Finished')
+
+    def global_weights(self):
+        """
+        receive global weights
+        """
+        pass
+
+    def forward_propagation(self):
+        pass
+
+    def backward_propagation(self, outputs):
+        pass
