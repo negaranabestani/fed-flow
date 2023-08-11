@@ -30,6 +30,9 @@ class FedEdgeServer(FedEdgeServerInterface):
         inputs, targets = smashed_layers.to(self.device), labels.to(self.device)
         self.optimizers[client_ip].zero_grad()
         outputs = self.nets[client_ip](inputs)
+
+        msg = [message_utils.local_activations_edge_to_server, outputs.cpu, targets.cpu]
+        self.send_msg(self.sock, msg)
         return outputs
 
     def backward_propagation(self, outputs, client_ip):
@@ -38,6 +41,7 @@ class FedEdgeServer(FedEdgeServerInterface):
         gradients = msg[1].to(self.device)
         outputs.backward(gradients)
         self.optimizers[client_ip].step()
+
 
     def test_client_network(self, client_ips):
         """

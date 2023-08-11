@@ -111,8 +111,28 @@ class Client(FedClientInterface):
         self.net.load_state_dict(pweights)
         fed_logger.debug('Initialize Finished')
 
-    def forward_propagation(self):
-        pass
+    def offloading_train(self):
+        for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(self.train_loader)):
+            inputs, targets = inputs.to(self.device), targets.to(self.device)
+            self.optimizer.zero_grad()
+            outputs = self.net(inputs)
 
-    def backward_propagation(self, outputs):
-        pass
+            msg = [message_utils.local_activations_client_to_edge, outputs.cpu(), targets.cpu()]
+            self.send_msg(self.sock, msg)
+
+            # Wait receiving edge server gradients
+            gradients = self.recv_msg(self.sock)[1].to(self.device)
+
+            outputs.backward(gradients)
+            self.optimizer.step()
+
+    def no_offloading_train(self):
+        self.net.to(self.device)
+        self.net.train()
+        for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(self.train_loader)):
+            inputs, targets = inputs.to(self.device), targets.to(self.device)
+            self.optimizer.zero_grad()
+            outputs = self.net(inputs)
+            loss = self.criterion(outputs, targets)
+            loss.backward()
+            self.optimizer.step()
