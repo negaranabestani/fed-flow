@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 import torch
+from torch import nn, optim
 
 from config import config
 from config.logger import fed_logger
@@ -9,7 +10,7 @@ from util import model_utils
 
 
 class FedClientInterface(ABC, Communicator):
-    def __init__(self, index, ip_address, server_addr, server_port, datalen, model_name, dataset, split_layers,
+    def __init__(self, index, ip_address, server_addr, server_port, datalen, model_name, dataset, LR,
                  train_loader):
         super(FedClientInterface, self).__init__(index, ip_address)
         self.datalen = datalen
@@ -17,14 +18,20 @@ class FedClientInterface(ABC, Communicator):
         self.model_name = model_name
         self.dataset = dataset
         self.train_loader = train_loader
-        self.split_layers = split_layers
+        self.split_layers = None
+        self.net = {}
         self.uninet = model_utils.get_model('Unit', config.model_len - 1, self.device)
+        self.net = self.uninet
+        self.criterion = nn.CrossEntropyLoss()
+
+        self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
+                                   momentum=0.9)
 
         fed_logger.info('Connecting to Server.')
         self.sock.connect((server_addr, server_port))
 
     @abstractmethod
-    def initialize(self, split_layer, offload, first, LR):
+    def initialize(self, split_layer, LR):
         pass
 
     @abstractmethod

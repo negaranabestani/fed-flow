@@ -19,14 +19,14 @@ torch.manual_seed(0)
 
 class Client(FedClientInterface):
 
-    def initialize(self, split_layer, offload, first, LR):
-        if offload or first:
-            self.split_layer = split_layer
+    def initialize(self, split_layer, LR):
 
-            fed_logger.debug('Building Model.')
-            self.net = model_utils.get_model('Client', self.split_layer, self.device)
-            fed_logger.debug(self.net)
-            self.criterion = nn.CrossEntropyLoss()
+        self.split_layers = split_layer
+
+        fed_logger.debug('Building Model.')
+        self.net = model_utils.get_model('Client', self.split_layer, self.device)
+        fed_logger.debug(self.net)
+        self.criterion = nn.CrossEntropyLoss()
 
         self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
                                    momentum=0.9)
