@@ -28,7 +28,14 @@ class FedClientInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def upload(self):
+    def edge_upload(self):
+        """
+        send final weights for aggregation
+        """
+        pass
+
+    @abstractmethod
+    def server_upload(self):
         pass
 
     @abstractmethod
@@ -46,13 +53,6 @@ class FedClientInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def local_weights(self, client_ip):
-        """
-        send final weights for aggregation
-        """
-        pass
-
-    @abstractmethod
     def edge_global_weights(self):
         """
         receive global weights
@@ -64,9 +64,9 @@ class FedClientInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def forward_propagation(self):
+    def offloading_train(self):
         pass
 
     @abstractmethod
-    def backward_propagation(self, outputs):
+    def no_offloading_train(self):
         pass

@@ -31,50 +31,12 @@ class Client(FedClientInterface):
         self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
                                    momentum=0.9)
 
-    def train(self, trainloader):
-
-        # Training start
-        s_time_total = time.time()
-        time_training_c = 0
-        self.net.to(self.device)
-        self.net.train()
-        if self.split_layer == (config.model_len - 1):  # No offloading training
-            for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(trainloader)):
-                inputs, targets = inputs.to(self.device), targets.to(self.device)
-                self.optimizer.zero_grad()
-                outputs = self.net(inputs)
-                loss = self.criterion(outputs, targets)
-                loss.backward()
-                self.optimizer.step()
-
-        else:  # Offloading training
-            for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(trainloader)):
-                inputs, targets = inputs.to(self.device), targets.to(self.device)
-                self.optimizer.zero_grad()
-                outputs = self.net(inputs)
-
-                msg = [message_utils.local_activations_client_to_server, outputs.cpu(), targets.cpu()]
-                self.send_msg(self.sock, msg)
-
-                # Wait receiving server gradients
-                gradients = self.recv_msg(self.sock)[1].to(self.device)
-
-                outputs.backward(gradients)
-                self.optimizer.step()
-
-        e_time_total = time.time()
-        fed_logger.info('Total time: ' + str(e_time_total - s_time_total))
-
-        training_time_pr = (e_time_total - s_time_total) / int((config.N / (config.K * config.B)))
-        fed_logger.info('training_time_per_iteration: ' + str(training_time_pr))
-
-        msg = [message_utils.training_time_per_iteration_client_to_server, self.ip, training_time_pr]
+    def edge_upload(self):
+        msg = [message_utils.local_weights_client_to_server, self.net.cpu().state_dict()]
         self.send_msg(self.sock, msg)
 
-        return e_time_total - s_time_total
-
-    def upload(self):
-        msg = [message_utils.local_weights_client_to_server, self.net.cpu().state_dict()]
+    def server_upload(self):
+        msg = [message_utils.local_weights_client_to_edge, self.net.cpu().state_dict()]
         self.send_msg(self.sock, msg)
 
     def test_network(self):

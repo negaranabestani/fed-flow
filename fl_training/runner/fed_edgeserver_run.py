@@ -1,8 +1,6 @@
 import argparse
-import pickle
 import sys
 import threading
-import time
 
 from fl_training.entity.fed_edge_server import FedEdgeServer
 from fl_training.interface.fed_edgeserver_interface import FedEdgeServerInterface
