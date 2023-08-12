@@ -96,16 +96,16 @@ class FedServer(FedServerInterface):
     def aggregate(self, client_ips, aggregate_method, eweights):
         w_local_list = []
         for i in range(len(eweights)):
-            if config.split_layer[i] != (config.model_len - 1):
-                w_local = (
-                    model_utils.concat_weights(self.uninet.state_dict(), eweights[i],
-                                               self.nets[client_ips[i]].state_dict()),
-                    config.N / config.K)
-                w_local_list.append(w_local)
-            else:
-                w_local = (eweights[i], config.N / config.K)
-                w_local_list.append(w_local)
-
+            # if self.split_layers[i] != (config.model_len - 1):
+            #     w_local = (
+            #         model_utils.concat_weights(self.uninet.state_dict(), eweights[i],
+            #                                    self.nets[client_ips[i]].state_dict()),
+            #         config.N / config.K)
+            #     w_local_list.append(w_local)
+            # else:
+            w_local = (eweights[i], config.N / config.K)
+            # print("------------------------"+str(eweights[i]))
+            w_local_list.append(w_local)
         zero_model = model_utils.zero_init(self.uninet).state_dict()
         aggregated_model = aggregate_method(zero_model, w_local_list, config.N)
         self.uninet.load_state_dict(aggregated_model)
@@ -157,7 +157,7 @@ class FedServer(FedServerInterface):
             msg = self.recv_msg(self.socks[config.CLIENT_MAP[client_ips[i]]],
                                 message_utils.local_weights_edge_to_server)
             self.tt_end[client_ips[i]] = time.time()
-            eweights.append(msg)
+            eweights.append(msg[1])
         return eweights
 
     def c_local_weights(self, client_ips):
@@ -166,7 +166,7 @@ class FedServer(FedServerInterface):
             msg = self.recv_msg(self.socks[client_ips[i]],
                                 message_utils.local_weights_client_to_server)
             self.tt_end[client_ips[i]] = time.time()
-            cweights.append(msg)
+            cweights.append(msg[1])
         return cweights
 
     def offloading_global_weights(self):

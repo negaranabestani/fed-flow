@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 import torch
+from torch import nn
 
 from config import config
 from config.logger import fed_logger
@@ -47,6 +48,7 @@ class FedServerInterface(ABC, Communicator):
 
         self.testset = data_utils.get_testset()
         self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
+        self.criterion = nn.CrossEntropyLoss()
 
     @abstractmethod
     def offloading_train(self, client_ips):
