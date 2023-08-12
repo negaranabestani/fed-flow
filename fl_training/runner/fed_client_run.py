@@ -58,7 +58,7 @@ cpu_count = multiprocessing.cpu_count()
 indices = list(range(N))
 part_tr = indices[int((N / K) * index): int((N / K) * (index + 1))]
 trainloader = data_utils.get_trainloader(data_utils.get_trainset(), part_tr, cpu_count)
-client_ins = Client(index, ip_address, config.SERVER_ADDR, config.SERVER_PORT, datalen, options_ins.get('model'),
+client_ins = Client(index, ip_address, config.SERVER_ADDR, config.EDGESERVER_PORT, datalen, options_ins.get('model'),
                     options_ins.get('dataset'), config.split_layer[index], train_loader=trainloader)
 fed_logger.info("start mode: " + str(options_ins.values()))
 runner = ClientRunner()

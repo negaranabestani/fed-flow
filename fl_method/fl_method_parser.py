@@ -7,5 +7,6 @@ fl_methods = {
     "fed_avg": aggregation.fed_avg,
     "bandwidth": clustering.bandwidth,
     "none_clustering": clustering.none,
-    "none_splitting": splitting.none
+    "none_splitting": splitting.none,
+    "fake_splitting": splitting.fake
 }

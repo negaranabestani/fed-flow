@@ -36,10 +36,13 @@ class NNModel(ABC, nn.Module):
         features = []
         denses = []
         if self.location == 'Server':
-            cfg = cfg[self.split_layer + 1:]
+            cfg = cfg[self.split_layer[1] + 1:]
 
         if self.location == 'Client':
-            cfg = cfg[:self.split_layer + 1]
+            cfg = cfg[:self.split_layer[0] + 1]
+
+        if self.location == 'Edge':
+            cfg = cfg[self.split_layer[0]+1:self.split_layer[1]+1]
 
         if self.location == 'Unit':  # Get the holistic nn_model
             pass

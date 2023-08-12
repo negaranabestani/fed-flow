@@ -60,3 +60,10 @@ def none(state, labels):
 
     config.split_layer = split_layer
     return config.split_layer
+
+
+def fake(state, labels):
+    """
+    a fake splitting list of tuples
+    """
+    return [[3, 4]]

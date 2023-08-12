@@ -2,13 +2,12 @@ import argparse
 import sys
 import threading
 
-from fl_training.entity.fed_edge_server import FedEdgeServer
-from fl_training.interface.fed_edgeserver_interface import FedEdgeServerInterface
-
 sys.path.append('../../')
 from config import config
 from util import input_utils
 from config.logger import fed_logger
+from fl_training.entity.fed_edge_server import FedEdgeServer
+from fl_training.interface.fed_edgeserver_interface import FedEdgeServerInterface
 
 
 class ServerRunner:
@@ -26,7 +25,7 @@ class ServerRunner:
             server.test_client_network(client_ips)
             server.client_network()
             server.test_server_network()
-            server.split_layer()
+            server.split_layer(client_ips)
             server.initialize(server.split_layers, LR, client_ips)
             threads = {}
             for i in range(len(client_ips)):
@@ -46,7 +45,8 @@ parser = argparse.ArgumentParser()
 LR = config.LR
 fed_logger.info('Preparing Sever.')
 options_ins = input_utils.parse_argument(parser)
-edge_server_ins = FedEdgeServer(0, config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
+edge_server_ins = FedEdgeServer(0, config.SERVER_ADDR, config.EDGESERVER_PORT, config.SERVER_ADDR,
+                                config.SERVER_PORT, options_ins.get('model'),
                                 options_ins.get('dataset'))
 fed_logger.info("start mode: " + str(options_ins.values()))
 runner = ServerRunner()

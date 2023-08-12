@@ -27,7 +27,7 @@ class FedServer(FedServerInterface):
         self.optimizers = {}
         for i in range(len(split_layers)):
             client_ip = config.CLIENTS_LIST[i]
-            if split_layers[i] < len(
+            if split_layers[i][0] < len(
                     self.uninet.cfg) - 1:  # Only offloading client need initialize optimizer in server
                 self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device)
 
@@ -145,7 +145,7 @@ class FedServer(FedServerInterface):
         """
         send splitting data
         """
-        msg = [message_utils.split_layers_server_to_edge, config.split_layer]
+        msg = [message_utils.split_layers_server_to_edge, self.split_layers]
         self.scatter(msg)
 
     def e_local_weights(self, client_ips):

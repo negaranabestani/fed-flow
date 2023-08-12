@@ -1,6 +1,4 @@
 import multiprocessing
-import threading
-import time
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -11,14 +9,14 @@ from config import config
 from config.logger import fed_logger
 from entity.Communicator import Communicator
 from fl_method import fl_method_parser
-from util import model_utils, data_utils, message_utils
+from util import model_utils, data_utils
 
 
 class FedServerInterface(ABC, Communicator):
-    def __init__(self, index, ip_address, server_port, model_name, dataset):
+    def __init__(self, index, ip_address, port, model_name, dataset):
         super(FedServerInterface, self).__init__(index, ip_address)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.port = server_port
+        self.port = port
         self.model_name = model_name
         self.sock.bind((self.ip, self.port))
         self.socks = {}
@@ -36,7 +34,7 @@ class FedServerInterface(ABC, Communicator):
         self.tt_start = {}
         self.tt_end = {}
 
-        while len(self.socks) < config.K:
+        while len(self.socks) < len(config.EDGE_SERVER_LIST):
             self.sock.listen(5)
             fed_logger.info("Waiting Incoming Connections.")
             (edge_sock, (ip, port)) = self.sock.accept()

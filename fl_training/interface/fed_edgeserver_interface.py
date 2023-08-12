@@ -10,12 +10,11 @@ from util import model_utils, data_utils
 
 
 class FedEdgeServerInterface(ABC, Communicator):
-    def __init__(self, index, ip_address, server_port, model_name, dataset):
+    def __init__(self, index, ip_address, port, server_addr, server_port, model_name, dataset):
         super(FedEdgeServerInterface, self).__init__(index, ip_address)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.port = server_port
+        self.port = port
         self.model_name = model_name
-        self.sock.bind((self.ip, self.port))
         self.socks = {}
         self.nets = {}
         self.group_labels = None
@@ -26,7 +25,13 @@ class FedEdgeServerInterface(ABC, Communicator):
         self.dataset = dataset
         self.threads = None
         self.net_threads = None
+        self.central_server_communicator = Communicator(0, ip_address)
 
+        fed_logger.info('Connecting to Server.')
+        self.central_server_communicator.sock.connect((server_addr, server_port))
+        fed_logger.info('Connected to Server.')
+
+        self.sock.bind((self.ip, self.port))
         while len(self.socks) < len(config.EDGE_MAP[ip_address]):
             self.sock.listen(5)
             fed_logger.info("Waiting Incoming Connections.")
@@ -59,7 +64,7 @@ class FedEdgeServerInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def split_layer(self):
+    def split_layer(self, client_ips):
         """
         receive send splitting data to clients
         """
