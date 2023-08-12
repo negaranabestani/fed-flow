@@ -43,12 +43,12 @@ class FedEdgeServer(FedEdgeServerInterface):
         outputs = self.nets[client_ip](inputs)
 
         msg = [message_utils.local_activations_edge_to_server, outputs.cpu, targets.cpu]
-        self.send_msg(self.sock, msg)
+        self.central_server_communicator.send_msg(self.sock, msg)
         return outputs
 
     def backward_propagation(self, outputs, client_ip):
-        msg = self.recv_msg(self.socks[self.ip],
-                            message_utils.server_gradients_server_to_edge + str(self.ip))
+        msg = self.central_server_communicator.recv_msg(self.socks[self.ip],
+                                                        message_utils.server_gradients_server_to_edge + str(self.ip))
         gradients = msg[1].to(self.device)
         outputs.backward(gradients)
         self.optimizers[client_ip].step()
@@ -76,22 +76,22 @@ class FedEdgeServer(FedEdgeServerInterface):
         self.client_bandwidth[client_ip] = network_time_end - network_time_start
 
     def test_server_network(self):
-        msg = self.recv_msg(self.sock, message_utils.test_server_network)
+        msg = self.central_server_communicator.recv_msg(self.sock, message_utils.test_server_network)
         msg = [message_utils.test_server_network, self.uninet.cpu().state_dict()]
-        self.send_msg(self.sock, msg)
+        self.central_server_communicator.send_msg(self.sock, msg)
 
     def client_network(self):
         """
         send client network speed to central server
         """
         msg = [message_utils.client_network, self.client_bandwidth]
-        self.send_msg(self.sock, msg)
+        self.central_server_communicator.send_msg(self.sock, msg)
 
     def split_layer(self, client_ips):
         """
         receive send splitting data to clients
         """
-        msg = self.recv_msg(self.sock, message_utils.split_layers_server_to_edge)
+        msg = self.central_server_communicator.recv_msg(self.sock, message_utils.split_layers_server_to_edge)
         self.split_layers = msg[1]
         for i in range(len(self.split_layers)):
             if vars(client_ips).__contains__(config.CLIENTS_LIST[i]):
@@ -107,13 +107,13 @@ class FedEdgeServer(FedEdgeServerInterface):
                                  message_utils.local_weights_edge_to_server)[1]
 
         msg = [message_utils.local_weights_edge_to_server, cweights]
-        self.send_msg(self.sock, msg)
+        self.central_server_communicator.send_msg(self.sock, msg)
 
     def global_weights(self, client_ips: []):
         """
         receive and send global weights
         """
-        weights = self.recv_msg(self.sock, message_utils.local_weights_edge_to_server)[1]
+        weights = self.central_server_communicator.recv_msg(self.sock, message_utils.local_weights_edge_to_server)[1]
         for i in range(len(self.split_layers)):
             if vars(client_ips).__contains__(config.CLIENTS_LIST[i]):
                 cweights = model_utils.get_model('Client', self.split_layers[i], self.device).state_dict()
@@ -128,3 +128,4 @@ class FedEdgeServer(FedEdgeServerInterface):
     def thread_training(self, client_ip):
         outputs = self.forward_propagation(client_ip)
         self.backward_propagation(outputs, client_ip)
+        self.local_weights(client_ip)
