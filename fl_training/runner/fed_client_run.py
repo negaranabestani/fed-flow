@@ -2,13 +2,12 @@ import argparse
 import multiprocessing
 import socket
 import sys
-import time
 
 sys.path.append('../../')
 from fl_training.entity.fed_client import Client
 from config import config
 from config.config import *
-from util import input_utils, data_utils, message_utils
+from util import input_utils, data_utils
 from config.logger import fed_logger
 from fl_training.interface.fed_client_interface import FedClientInterface
 
