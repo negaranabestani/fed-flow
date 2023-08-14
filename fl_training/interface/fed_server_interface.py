@@ -29,7 +29,6 @@ class FedServerInterface(ABC, Communicator):
         self.dataset = dataset
         self.threads = None
         self.net_threads = None
-        self.ttpi = None
         self.offloading = None
         self.tt_start = {}
         self.tt_end = {}
@@ -41,8 +40,8 @@ class FedServerInterface(ABC, Communicator):
             fed_logger.info('Got connection from ' + str(ip))
             fed_logger.info(edge_sock)
             self.socks[str(ip)] = edge_sock
-
-        self.uninet = model_utils.get_model('Unit', config.model_len - 1, self.device)
+        model_len = model_utils.get_unit_model_len()
+        self.uninet = model_utils.get_model('Unit', [model_len - 1, model_len - 1], self.device)
 
         self.testset = data_utils.get_testset()
         self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
@@ -99,7 +98,7 @@ class FedServerInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def no_offloading_gloabal_weights(self):
+    def no_offloading_global_weights(self):
         pass
 
     @abstractmethod
@@ -154,9 +153,9 @@ class FedServerInterface(ABC, Communicator):
 
         assert len(split_layer) == len(config.CLIENTS_LIST)
         for i in range(len(config.CLIENTS_LIST)):
-            for l in range(len(config.model_cfg[config.model_name])):
-                if l <= split_layer[i]:
-                    workload += config.model_cfg[config.model_name][l][5]
+            for l in range(model_utils.get_unit_model_len()):
+                if l <= split_layer[i][0]:
+                    workload += model_utils.get_class()().cfg[l][5]
             offloading[config.CLIENTS_LIST[i]] = workload / config.total_flops
             workload = 0
 
@@ -165,7 +164,8 @@ class FedServerInterface(ABC, Communicator):
     def ttpi(self, client_ips):
         ttpi = {}
         for i in range(len(client_ips)):
-            ttpi[client_ips[i]] = self.tt_end[client_ips[i]] - self.tt_start[client_ips[i]]
+            # ttpi[str(client_ips[i])] = self.tt_end[client_ips[i]] - self.tt_start[client_ips[i]]
+            ttpi[str(client_ips[i])] = 3
         return ttpi
 
     def bandwith(self):

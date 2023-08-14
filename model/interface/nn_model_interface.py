@@ -6,14 +6,21 @@ class NNModel(ABC, nn.Module):
     """
     class name should be the same as file name
     """
-    def __init__(self, location, split_layer):
+
+    def __init__(self):
         super(NNModel, self).__init__()
+        self.split_layer = None
+        self.location = None
         self.cfg = self.get_config()
-        assert split_layer < len(self.cfg)
+        self.features, self.denses = None, None
+
+    def initialize(self, location, split_layer):
+        assert split_layer[0] < len(self.cfg)
         self.split_layer = split_layer
         self.location = location
-        self.features, self.denses = self._make_layers(self.cfg)
+        self.features, self.denses = self._make_layers()
         self._initialize_weights()
+        return self
 
     def forward(self, x):
         if len(self.features) > 0:
@@ -27,12 +34,13 @@ class NNModel(ABC, nn.Module):
         return out
 
     @abstractmethod
-    def _make_layers(self, cfg):
+    def _make_layers(self):
         """
         notice that you can change any part of the method if the input and output still matches the requirements
         :param cfg: the configuration of each layer in a list
         :return: nn.Sequential(*features), nn.Sequential(*denses)
         """
+        cfg = self.get_config()
         features = []
         denses = []
         if self.location == 'Server':
@@ -42,7 +50,7 @@ class NNModel(ABC, nn.Module):
             cfg = cfg[:self.split_layer[0] + 1]
 
         if self.location == 'Edge':
-            cfg = cfg[self.split_layer[0]+1:self.split_layer[1]+1]
+            cfg = cfg[self.split_layer[0] + 1:self.split_layer[1] + 1]
 
         if self.location == 'Unit':  # Get the holistic nn_model
             pass

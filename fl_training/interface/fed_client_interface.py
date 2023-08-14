@@ -10,7 +10,7 @@ from util import model_utils
 
 
 class FedClientInterface(ABC, Communicator):
-    def __init__(self, index, ip_address, server_addr, server_port, datalen, model_name, dataset, LR,
+    def __init__(self, index, ip_address, server_addr, server_port, datalen, model_name, dataset,
                  train_loader):
         super(FedClientInterface, self).__init__(index, ip_address)
         self.datalen = datalen
@@ -20,12 +20,10 @@ class FedClientInterface(ABC, Communicator):
         self.train_loader = train_loader
         self.split_layers = None
         self.net = {}
-        self.uninet = model_utils.get_model('Unit', config.model_len - 1, self.device)
+        model_len = model_utils.get_unit_model_len()
+        self.uninet = model_utils.get_model('Unit', [model_len - 1, model_len - 1], self.device)
         self.net = self.uninet
         self.criterion = nn.CrossEntropyLoss()
-
-        self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
-                                   momentum=0.9)
 
         fed_logger.info('Connecting to Server.')
         self.sock.connect((server_addr, server_port))

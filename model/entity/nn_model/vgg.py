@@ -5,9 +5,10 @@ from model.interface.nn_model_interface import NNModel
 
 # Build the VGG nn_model according to location and split_layer
 class vgg(NNModel):
-    def _make_layers(self, cfg):
+    def _make_layers(self):
         features = []
         denses = []
+        cfg = self.get_config()
         if self.location == 'Server':
             cfg = cfg[self.split_layer[1] + 1:]
 

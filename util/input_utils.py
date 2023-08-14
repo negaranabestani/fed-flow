@@ -6,7 +6,7 @@ options = {
     '-a': ['--aggregation', 'fed_avg', 'help description'],
     '-c': ['--clustering', 'none_clustering', 'help description'],
     '-s': ['--splitting', 'fake_splitting', 'help description'],
-    '-m': ['--model', 'VGG', 'help description'],
+    '-m': ['--model', 'vgg', 'help description'],
     '-d': ['--dataset', 'cifar10', 'the name of the using dataset'],
     '-o': ['--offload', False, 'FedAdapt or classic FL mode'],
     '-dl': ['--datasetlink', '', 'the link to dataset  python file'],

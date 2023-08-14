@@ -15,11 +15,12 @@ from model.entity.nn_model.vgg import *
 np.random.seed(0)
 torch.manual_seed(0)
 
-MODEL_BASE_DIR = 'model.entity.nn_model'
+MODEL_BASE_DIR = 'model.entity.nn_model.'
 
 
 def get_model(location, layer, device):
-    net = vgg(location, layer)
+    net = get_class()()
+    net = net.initialize(location, layer)
     net = net.to(device)
     fed_logger.debug(str(net))
     return net
@@ -35,7 +36,7 @@ def split_weights_client(weights, cweights):
     return cweights
 
 
-def split_weights_server(weights, cweights, sweights,eweights):
+def split_weights_server(weights, cweights, sweights, eweights):
     """
     evaluate server weights
     """
@@ -45,8 +46,8 @@ def split_weights_server(weights, cweights, sweights,eweights):
     keys = list(weights)
 
     for i in range(len(skeys)):
-        assert sweights[skeys[i]].size() == weights[keys[i + len(ckeys)+len(ekeys)]].size()
-        sweights[skeys[i]] = weights[keys[i + len(ckeys)+len(ekeys)]]
+        assert sweights[skeys[i]].size() == weights[keys[i + len(ckeys) + len(ekeys)]].size()
+        sweights[skeys[i]] = weights[keys[i + len(ckeys) + len(ekeys)]]
 
     return sweights
 
@@ -157,3 +158,7 @@ def download_model(link):
 
 def check_link_integrity():
     return os.path.exists(MODEL_BASE_DIR + config.model_name)
+
+
+def get_unit_model_len():
+    return len(get_class()().get_config())

@@ -39,8 +39,8 @@ class FedEdgeServerInterface(ABC, Communicator):
             fed_logger.info('Got connection from ' + str(ip))
             fed_logger.info(client_sock)
             self.socks[str(ip)] = client_sock
-
-        self.uninet = model_utils.get_model('Unit', config.model_len - 1, self.device)
+        model_len = model_utils.get_unit_model_len()
+        self.uninet = model_utils.get_model('Unit', [model_len - 1, model_len - 1], self.device)
 
         self.testset = data_utils.get_testset()
         self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
@@ -97,7 +97,7 @@ class FedEdgeServerInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def backward_propagation(self, outputs, client_ip):
+    def backward_propagation(self, outputs, client_ip, inputs):
         pass
 
     @abstractmethod

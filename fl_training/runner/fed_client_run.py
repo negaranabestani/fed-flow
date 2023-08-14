@@ -18,14 +18,19 @@ class ClientRunner:
         for r in range(config.R):
             fed_logger.info('====================================>')
             fed_logger.info('ROUND: {} START'.format(r))
+            fed_logger.info("receiving global weights")
             client.edge_global_weights()
+            fed_logger.info("test network")
             client.test_network()
+            fed_logger.info("receiving splitting info")
             client.split_layer()
-            client.initialize(client.split_layer, LR)
+            fed_logger.info("initializing client")
+            client.initialize(client.split_layers, LR)
+            fed_logger.info("start training")
             client.offloading_train()
+            fed_logger.info("sending local weights")
             client.edge_upload()
             fed_logger.info('ROUND: {} END'.format(r))
-
             fed_logger.info('==> Waiting for aggregration')
             if r > 49:
                 LR = config.LR * 0.1
@@ -58,8 +63,8 @@ cpu_count = multiprocessing.cpu_count()
 indices = list(range(N))
 part_tr = indices[int((N / K) * index): int((N / K) * (index + 1))]
 trainloader = data_utils.get_trainloader(data_utils.get_trainset(), part_tr, cpu_count)
-client_ins = Client(index, ip_address, config.SERVER_ADDR, config.EDGESERVER_PORT, datalen, options_ins.get('model'),
-                    options_ins.get('dataset'), config.split_layer[index], train_loader=trainloader)
+client_ins = Client(index=index,ip_address= ip_address, server_addr=config.SERVER_ADDR,server_port= config.EDGESERVER_PORT, datalen=datalen, model_name=options_ins.get('model'),
+                    dataset=options_ins.get('dataset'), train_loader=trainloader)
 fed_logger.info("start mode: " + str(options_ins.values()))
 runner = ClientRunner()
 offload = options_ins.get('offload')

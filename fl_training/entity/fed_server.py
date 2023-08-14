@@ -41,8 +41,8 @@ class FedServer(FedServerInterface):
 
                 self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
                                                        momentum=0.9)
-            # else:
-            #     self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device)
+            else:
+                self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device)
         self.criterion = nn.CrossEntropyLoss()
 
     def offloading_train(self, client_ips):
@@ -72,13 +72,20 @@ class FedServer(FedServerInterface):
         pass
 
     def _thread_training_offloading(self, client_ip):
-        iteration = int((config.N / (config.K * config.B)))
-        for i in range(iteration):
+        # iteration = int((config.N / (config.K * config.B)))
+        flag = self.recv_msg(self.socks[config.CLIENT_MAP[client_ip]],
+                             message_utils.local_iteration_flag_edge_to_server)[1]
+        while flag:
+            flag = self.recv_msg(self.socks[config.CLIENT_MAP[client_ip]],
+                                 message_utils.local_iteration_flag_edge_to_server)[1]
+            if not flag:
+                break
+            fed_logger.info(client_ip + " receiving local activations")
             msg = self.recv_msg(self.socks[config.CLIENT_MAP[client_ip]],
                                 message_utils.local_activations_edge_to_server)
             smashed_layers = msg[1]
             labels = msg[2]
-
+            fed_logger.info(client_ip + " training model")
             inputs, targets = smashed_layers.to(self.device), labels.to(self.device)
             self.optimizers[client_ip].zero_grad()
             outputs = self.nets[client_ip](inputs)
@@ -87,8 +94,10 @@ class FedServer(FedServerInterface):
             self.optimizers[client_ip].step()
 
             # Send gradients to edge
+            fed_logger.info(client_ip + " sending gradients")
             msg = [message_utils.server_gradients_server_to_edge + str(config.CLIENT_MAP[client_ip]), inputs.grad]
             self.send_msg(self.socks[config.CLIENT_MAP[client_ip]], msg)
+
 
         fed_logger.info(str(client_ip) + ' offloading training end')
         return 'Finish'
@@ -137,9 +146,11 @@ class FedServer(FedServerInterface):
         """
         receive client network speed
         """
+
         for i in edge_ips:
-            msg = self.recv_msg(self.socks[edge_ips[i]], message_utils.client_network)
-            self.client_bandwidth[i] = msg
+            msg = self.recv_msg(self.socks[str(i)], message_utils.client_network)
+            for k in msg[1].keys():
+                self.client_bandwidth[k] = msg[1][k]
 
     def split_layer(self):
         """
@@ -176,7 +187,7 @@ class FedServer(FedServerInterface):
         msg = [message_utils.initial_global_weights_server_to_edge, self.uninet.state_dict()]
         self.scatter(msg)
 
-    def no_offloading_gloabal_weights(self):
+    def no_offloading_global_weights(self):
         msg = [message_utils.initial_global_weights_server_to_client, self.uninet.state_dict()]
         self.scatter(msg)
 
@@ -186,4 +197,3 @@ class FedServer(FedServerInterface):
     def split(self, options: dict):
         self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(self.state, self.group_labels)
         fed_logger.info('Next Round OPs: ' + str(self.split_layer))
-

@@ -23,31 +23,40 @@ class ServerRunner:
             fed_logger.info('==> Round {:} Start'.format(r))
 
             s_time = time.time()
+            fed_logger.info("sending global weights")
             server.offloading_global_weights()
+            fed_logger.info("receiving client network info")
             server.client_network(config.EDGE_SERVER_LIST)
 
+            fed_logger.info("test edge servers network")
             server.test_network(config.EDGE_SERVER_LIST)
 
+            fed_logger.info("preparing state...")
             server.offloading = server.get_offloading(server.split_layers)
 
+            fed_logger.info("clustering")
             server.cluster(options)
+            fed_logger.info("getting state")
+            ttpi = server.ttpi(config.CLIENTS_LIST)
+            server.state = server.concat_norm(ttpi, server.offloading)
 
-            server.state = server.concat_norm(server.ttpi(config.CLIENTS_LIST), server.offloading)
-
-            fed_logger.info('==> Reinitialization for Round : {:}'.format(r + 1))
+            fed_logger.info("splitting")
             server.split(options)
             server.split_layer()
 
             if r > 49:
                 LR = config.LR * 0.1
 
+            fed_logger.info("initializing server")
             server.initialize(server.split_layers, LR)
 
-            fed_logger.info('==> Reinitialization Finish')
+            # fed_logger.info('==> Reinitialization Finish')
 
+            fed_logger.info("start training")
             server.offloading_train(config.CLIENTS_LIST)
+            fed_logger.info("receiving local weights")
             local_weights = server.e_local_weights(config.CLIENTS_LIST)
-
+            fed_logger.info("aggregating weights")
             server.call_aggregation(options, local_weights)
             e_time = time.time()
 
@@ -57,6 +66,8 @@ class ServerRunner:
             res['bandwidth_record'].append(server.bandwith())
             with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
                 pickle.dump(res, f)
+
+            fed_logger.info("testing accuracy")
             test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
             res['test_acc_record'].append(test_acc)
 
@@ -72,7 +83,7 @@ class ServerRunner:
             fed_logger.info('==> Round {:} Start'.format(r))
 
             s_time = time.time()
-            server.no_offloading_gloabal_weights()
+            server.no_offloading_global_weights()
             server.cluster(options)
 
             server.no_offloading_train(config.CLIENTS_LIST)
