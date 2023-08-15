@@ -110,11 +110,14 @@ LR = config.LR
 
 fed_logger.info('Preparing Sever.')
 options_ins = input_utils.parse_argument(parser)
-server_ins = FedServer(0, config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'), options_ins.get('dataset'))
 fed_logger.info("start mode: " + str(options_ins.values()))
 runner = ServerRunner()
 offload = options_ins.get('offload')
 if offload:
+    server_ins = FedServer(0, config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
+                           options_ins.get('dataset'),config.EDGE_SERVER_LIST)
     runner.run_offload(server_ins, LR, options_ins)
 else:
+    server_ins = FedServer(0, config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
+                           options_ins.get('dataset'),config.CLIENTS_LIST)
     runner.run_no_offload(server_ins, options_ins)

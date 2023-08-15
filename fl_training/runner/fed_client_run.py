@@ -63,13 +63,19 @@ cpu_count = multiprocessing.cpu_count()
 indices = list(range(N))
 part_tr = indices[int((N / K) * index): int((N / K) * (index + 1))]
 trainloader = data_utils.get_trainloader(data_utils.get_trainset(), part_tr, cpu_count)
-client_ins = Client(index=index, ip_address=ip_address, server_addr=config.SERVER_ADDR, server_port=config.SERVER_PORT,
-                    datalen=datalen, model_name=options_ins.get('model'),
-                    dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR)
+
 fed_logger.info("start mode: " + str(options_ins.values()))
 runner = ClientRunner()
 offload = options_ins.get('offload')
 if offload:
+    client_ins = Client(index=index, ip_address=ip_address, server_addr=config.CLIENT_MAP[ip_address],
+                        server_port=config.EDGESERVER_PORT[config.CLIENT_MAP[ip_address]],
+                        datalen=datalen, model_name=options_ins.get('model'),
+                        dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR)
     runner.run_offload(client_ins, LR)
 else:
+    client_ins = Client(index=index, ip_address=ip_address, server_addr=config.SERVER_ADDR,
+                       server_port=config.SERVER_PORT,
+                       datalen=datalen, model_name=options_ins.get('model'),
+                       dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR)
     runner.run_no_offload(client_ins, LR)

@@ -3,7 +3,7 @@ import sys
 # Network configration
 SERVER_ADDR = '127.0.0.1'
 SERVER_PORT = 51000
-EDGESERVER_PORT = 51001
+EDGESERVER_PORT = {'127.0.0.1': 51001}
 
 K = 1  # Number of devices
 G = 1  # Number of groups

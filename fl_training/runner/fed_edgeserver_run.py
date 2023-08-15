@@ -49,9 +49,10 @@ class ServerRunner:
 parser = argparse.ArgumentParser()
 
 LR = config.LR
+ip_address = config.SERVER_ADDR
 fed_logger.info('Preparing Sever.')
 options_ins = input_utils.parse_argument(parser)
-edge_server_ins = FedEdgeServer(0, config.SERVER_ADDR, config.EDGESERVER_PORT, config.SERVER_ADDR,
+edge_server_ins = FedEdgeServer(0, ip_address, config.EDGESERVER_PORT[ip_address], config.SERVER_ADDR,
                                 config.SERVER_PORT, options_ins.get('model'),
                                 options_ins.get('dataset'))
 fed_logger.info("start mode: " + str(options_ins.values()))

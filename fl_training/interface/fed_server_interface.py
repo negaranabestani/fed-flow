@@ -13,7 +13,7 @@ from util import model_utils, data_utils
 
 
 class FedServerInterface(ABC, Communicator):
-    def __init__(self, index, ip_address, port, model_name, dataset):
+    def __init__(self, index, ip_address, port, model_name, dataset,connection_list):
         super(FedServerInterface, self).__init__(index, ip_address)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.port = port
@@ -33,7 +33,7 @@ class FedServerInterface(ABC, Communicator):
         self.tt_start = {}
         self.tt_end = {}
 
-        while len(self.socks) < len(config.EDGE_SERVER_LIST):
+        while len(self.socks) < len(connection_list):
             self.sock.listen(5)
             fed_logger.info("Waiting Incoming Connections.")
             (edge_sock, (ip, port)) = self.sock.accept()
