@@ -80,12 +80,12 @@ class FedServer(FedServerInterface):
                                  message_utils.local_iteration_flag_edge_to_server)[1]
             if not flag:
                 break
-            fed_logger.info(client_ip + " receiving local activations")
+            # fed_logger.info(client_ip + " receiving local activations")
             msg = self.recv_msg(self.socks[config.CLIENT_MAP[client_ip]],
                                 message_utils.local_activations_edge_to_server)
             smashed_layers = msg[1]
             labels = msg[2]
-            fed_logger.info(client_ip + " training model")
+            # fed_logger.info(client_ip + " training model")
             inputs, targets = smashed_layers.to(self.device), labels.to(self.device)
             self.optimizers[client_ip].zero_grad()
             outputs = self.nets[client_ip](inputs)
@@ -94,7 +94,7 @@ class FedServer(FedServerInterface):
             self.optimizers[client_ip].step()
 
             # Send gradients to edge
-            fed_logger.info(client_ip + " sending gradients")
+            # fed_logger.info(client_ip + " sending gradients")
             msg = [message_utils.server_gradients_server_to_edge + str(config.CLIENT_MAP[client_ip]), inputs.grad]
             self.send_msg(self.socks[config.CLIENT_MAP[client_ip]], msg)
 

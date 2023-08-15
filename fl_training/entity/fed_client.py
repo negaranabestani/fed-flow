@@ -78,12 +78,12 @@ class Client(FedClientInterface):
             inputs, targets = inputs.to(self.device), targets.to(self.device)
             self.optimizer.zero_grad()
             outputs = self.net(inputs)
-            fed_logger.info("sending local activations")
+            # fed_logger.info("sending local activations")
             msg = [message_utils.local_activations_client_to_edge, outputs.cpu(), targets.cpu()]
             self.send_msg(self.sock, msg)
 
             # Wait receiving edge server gradients
-            fed_logger.info("receiving gradients")
+            # fed_logger.info("receiving gradients")
             gradients = self.recv_msg(self.sock, message_utils.server_gradients_edge_to_client + str(self.ip))[1].to(
                 self.device)
 
