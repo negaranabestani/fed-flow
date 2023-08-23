@@ -6,7 +6,7 @@ from app.config import config
 from app.config.config import *
 from app.dataset.entity.dataset_interface import DatasetInterface
 
-DATASET_BASE_DIR = "dataset.entity."
+DATASET_BASE_DIR = "app.dataset.entity."
 
 
 def get_trainset():
@@ -41,7 +41,6 @@ def get_testset():
 
 
 def get_class():
-
     kls = DATASET_BASE_DIR + config.dataset_name + '.' + config.dataset_name
     parts = kls.split('.')
     module = ".".join(parts[:-1])

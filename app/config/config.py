@@ -2,24 +2,24 @@ import sys
 
 # Network configration
 SERVER_ADDR = '127.0.0.1'
-SERVER_PORT = 51000
+SERVER_PORT = 51008
 EDGESERVER_PORT = {'127.0.0.1': 51001}
 
-K = 1  # Number of devices
+K = 2  # Number of devices
 G = 1  # Number of groups
 
 # Unique clients order
 HOST2IP = {'the-great-green': '127.0.0.1'}
 CLIENTS_CONFIG = {'127.0.0.1': 0}
 EDGE_SERVER_LIST = ['127.0.0.1']
-CLIENTS_LIST = ['127.0.0.1']
+CLIENTS_LIST = ['127.0.0.1', '127.0.0.1']
 EDGE_MAP = {'127.0.0.1': ['127.0.0.1']}
 CLIENT_MAP = {'127.0.0.1': '127.0.0.1'}
 CLIENTS_BANDWIDTH = []
 
 # Dataset configration
 dataset_name = ''
-home = sys.path[0].split('fed-flow')[0] + 'fed-flow'
+home = sys.path[0].split('fed-flow')[0] + 'fed-flow'+"/app"
 dataset_path = home + '/dataset/data/'
 N = 50000  # data length
 
@@ -40,7 +40,7 @@ split_layer = [[6, 6]]  # Initial split layers
 model_len = 7
 
 # FL training configration
-R = 100  # FL rounds
+R = 1  # FL rounds
 LR = 0.01  # Learning rate
 B = 100  # Batch size
 

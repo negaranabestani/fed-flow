@@ -15,7 +15,7 @@ from app.model.entity.nn_model.vgg import *
 np.random.seed(0)
 torch.manual_seed(0)
 
-MODEL_BASE_DIR = 'model.entity.nn_model.'
+MODEL_BASE_DIR = 'app.model.entity.nn_model.'
 
 
 def get_model(location, layer, device):
