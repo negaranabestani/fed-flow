@@ -1,3 +1,4 @@
+import subprocess
 import sys
 from multiprocessing import Process
 
@@ -6,6 +7,7 @@ import unittest
 
 from app.fl_training.runner.flow import fed_server_flow, fed_client_flow
 from app.config import config
+from app.config.logger import fed_logger
 
 
 def test_classic_1_1_flow():
@@ -38,9 +40,9 @@ def test_classic_1_1_flow():
     #     raise Exception("client failed" + str(r))
     # server.wait()
     # client.wait()
-    server = Process(target=fed_server_run.run, args=(options,))
+    server = Process(target=fed_server_flow.run, args=(options,))
     server.start()
-    client = Process(target=fed_client_run.run, args=(options,))
+    client = Process(target=fed_client_flow.run, args=(options,))
     client.start()
     client.join()
     server.join()
@@ -72,9 +74,9 @@ def test_classic_1_2_flow():
 
     server = Process(target=fed_server_flow.run, args=(options,))
     server.start()
-    client1 = Process(target=fed_client_run.run, args=(options,))
+    client1 = Process(target=fed_client_flow.run, args=(options,))
     client1.start()
-    client2 = Process(target=fed_client_run.run, args=(options,))
+    client2 = Process(target=fed_client_flow.run, args=(options,))
     client2.start()
 
     client2.join()
@@ -91,10 +93,10 @@ def test_classic_1_2_flow():
 
 class TestFed(unittest.TestCase):
     def test_classic_1_1(self):
-        try:
-            test_classic_1_1_flow()
-        except Exception as e:
-            self.fail(str(e))
+        test = subprocess.run(['docker-compose', '-f', 'docker-compose/test_classic_1_1.yaml', 'up'])
+        fed_logger.info("running client")
+        if test.returncode != 0:
+            self.fail(str(test.stderr))
 
     def test_classic_1_2(self):
         try:
