@@ -23,23 +23,12 @@ def test_classic_1_1_flow():
     }
     config.dataset_name = options.get('dataset')
     config.model_name = options.get('model')
-    # try:
-    #     subprocess.run(['python3', '../../app/fl_training/runner/fed_server_flow.py'])
-    # except subprocess.CalledProcessError as e:
-    #     fed_logger.log("server failed: " + str(e))
-    #
-    # server = subprocess.Popen(['python3', '../../app/fl_training/runner/fed_server_flow.py'], stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    # fed_logger.info("running server")
-    # o, r = server.communicate()
-    # if server.returncode != 0:
-    #     raise Exception("server failed: " + str(r))
-    # client = subprocess.Popen(['python3', '../../app/fl_training/runner/fed_client_flow.py'])
-    # fed_logger.info("running client")
-    # o, r = client.communicate()
-    # if client.returncode != 0:
-    #     raise Exception("client failed" + str(r))
-    # server.wait()
-    # client.wait()
+    with open("test_app/integration/test_config/test_classic_1_1.py", "r") as f:
+        data = f.read()
+
+    with open("app/config/config.py", "a") as f:
+        f.write(data)
+
     server = Process(target=fed_server_flow.run, args=(options,))
     server.start()
     client = Process(target=fed_client_flow.run, args=(options,))
@@ -93,7 +82,8 @@ def test_classic_1_2_flow():
 
 class TestFed(unittest.TestCase):
     def test_classic_1_1(self):
-        test = subprocess.run(['docker-compose', '-f', 'docker-compose/test_classic_1_1.yaml', 'up'])
+
+        test = subprocess.run(['docker_compose', '-f', 'docker_compose/test_classic_1_1.yaml', 'up'])
         fed_logger.info("running client")
         if test.returncode != 0:
             self.fail(str(test.stderr))

@@ -2,7 +2,7 @@ from app.config import config
 
 
 def bandwidth():
-    # sort bandwidth in config.CLIENTS_LIST order
+    # sort bandwidth in test_config.CLIENTS_LIST order
     bandwidth = config.CLIENTS_BANDWIDTH
     bandwidth_order = []
     for c in config.CLIENTS_LIST:

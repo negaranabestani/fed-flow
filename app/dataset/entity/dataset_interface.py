@@ -32,7 +32,7 @@ class DatasetInterface(VisionDataset):
         self.dataset_url = dataset_url
         self.batch_size = config.B
         self.filename = filename
-        self.train = train  # training set or test set
+        self.train = train  # training set or test_app set
         # self.is_download = download
         self.downloaded_list = None
         self.targets = []

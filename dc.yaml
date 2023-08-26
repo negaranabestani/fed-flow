@@ -1,13 +1,26 @@
+#version: '3'
+#services:
+#  server:
+#    build: .
+#    ports:
+#      - "5008:5008"
+#    command: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py"
+#  edge1:
+#    build: .
+#    command: bach -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py"
+#  client1:
+#    build: .
+#    command: bach -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py"
+
 version: '3'
 services:
   server:
-    build: .
+    build:
+      context: .
+      dockerfile: server.Dockerfile
     ports:
       - "5008:5008"
-    command: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py"
-  edge1:
-    build: .
-    command: bach -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py"
   client1:
-    build: .
-    command: bach -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py"
+    build:
+      context: .
+      dockerfile: client.Dockerfile

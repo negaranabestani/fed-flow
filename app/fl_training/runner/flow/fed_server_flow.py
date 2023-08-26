@@ -26,7 +26,7 @@ def run_offload(server: FedServerInterface, LR, options):
         fed_logger.info("receiving client network info")
         server.client_network(config.EDGE_SERVER_LIST)
 
-        fed_logger.info("test edge servers network")
+        fed_logger.info("test_app edge servers network")
         server.test_network(config.EDGE_SERVER_LIST)
 
         fed_logger.info("preparing state...")
@@ -58,7 +58,7 @@ def run_offload(server: FedServerInterface, LR, options):
         server.call_aggregation(options, local_weights)
         e_time = time.time()
 
-        # Recording each round training time, bandwidth and test accuracy
+        # Recording each round training time, bandwidth and test_app accuracy
         trianing_time = e_time - s_time
         res['trianing_time'].append(trianing_time)
         res['bandwidth_record'].append(server.bandwith())
@@ -91,7 +91,7 @@ def run_no_offload(server: FedServerInterface, options):
         server.call_aggregation(options, local_weights)
         e_time = time.time()
 
-        # Recording each round training time, bandwidth and test accuracy
+        # Recording each round training time, bandwidth and test_app accuracy
         trianing_time = e_time - s_time
         res['trianing_time'].append(trianing_time)
         res['bandwidth_record'].append(server.bandwith())

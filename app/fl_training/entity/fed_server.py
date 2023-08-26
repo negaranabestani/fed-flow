@@ -72,7 +72,7 @@ class FedServer(FedServerInterface):
         pass
 
     def _thread_training_offloading(self, client_ip):
-        # iteration = int((config.N / (config.K * config.B)))
+        # iteration = int((test_config.N / (test_config.K * test_config.B)))
         flag = self.recv_msg(self.socks[config.CLIENT_MAP[client_ip]],
                              message_utils.local_iteration_flag_edge_to_server)[1]
         while flag:
@@ -105,11 +105,11 @@ class FedServer(FedServerInterface):
     def aggregate(self, client_ips, aggregate_method, eweights):
         w_local_list = []
         for i in range(len(eweights)):
-            # if self.split_layers[i] != (config.model_len - 1):
+            # if self.split_layers[i] != (test_config.model_len - 1):
             #     w_local = (
             #         model_utils.concat_weights(self.uninet.state_dict(), eweights[i],
             #                                    self.nets[client_ips[i]].state_dict()),
-            #         config.N / config.K)
+            #         test_config.N / test_config.K)
             #     w_local_list.append(w_local)
             # else:
             w_local = (eweights[i], config.N / config.K)
@@ -122,9 +122,9 @@ class FedServer(FedServerInterface):
 
     def test_network(self, edge_ips):
         """
-        send message to test network speed
+        send message to test_app network speed
         """
-        # Network test
+        # Network test_app
         self.net_threads = {}
         for i in range(len(edge_ips)):
             self.net_threads[edge_ips[i]] = threading.Thread(target=self._thread_network_testing,

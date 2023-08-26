@@ -39,7 +39,7 @@ class Client(FedClientInterface):
 
     def test_network(self):
         """
-        send message to test network speed
+        send message to test_app network speed
         """
         msg = self.recv_msg(self.sock, message_utils.test_client_network)[1]
         msg = [message_utils.test_client_network, self.uninet.cpu().state_dict()]

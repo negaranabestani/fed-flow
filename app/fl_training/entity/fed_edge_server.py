@@ -81,9 +81,9 @@ class FedEdgeServer(FedEdgeServerInterface):
 
     def test_client_network(self, client_ips):
         """
-        send message to test network speed
+        send message to test_app network speed
         """
-        # Network test
+        # Network test_app
         self.net_threads = {}
         for i in range(len(client_ips)):
             self.net_threads[client_ips[i]] = threading.Thread(target=self._thread_client_network_testing,

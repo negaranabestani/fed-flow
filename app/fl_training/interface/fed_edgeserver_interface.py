@@ -48,7 +48,7 @@ class FedEdgeServerInterface(ABC, Communicator):
     @abstractmethod
     def test_client_network(self, client_ips):
         """
-        send message to test network speed
+        send message to test_app network speed
         """
         pass
 

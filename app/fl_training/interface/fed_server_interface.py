@@ -59,7 +59,7 @@ class FedServerInterface(ABC, Communicator):
     @abstractmethod
     def test_network(self, edge_ips):
         """
-        send message to test network speed
+        send message to test_app network speed
         """
         pass
 

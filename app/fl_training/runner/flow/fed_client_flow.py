@@ -18,7 +18,7 @@ def run_offload(client: FedClientInterface, LR):
         fed_logger.info('ROUND: {} START'.format(r))
         fed_logger.info("receiving global weights")
         client.edge_global_weights()
-        fed_logger.info("test network")
+        fed_logger.info("test_app network")
         client.test_network()
         fed_logger.info("receiving splitting info")
         client.split_layer()
