@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import random
 
 from config import config
 from model.entity.rl_model import PPO
@@ -67,3 +68,19 @@ def fake(state, labels):
     a fake splitting list of tuples
     """
     return [[3, 4]]
+
+
+# HFLP used random partitioning for splitting
+def randomSplitting() -> list[list[int]]:
+    """ Randomly split the model between clients edge devices and cloud server """
+
+    splittingArray = []
+    for i in range(config.K):
+        op1 = random.randint(1, config.model_len - 1)
+        op2 = random.randint(op1, config.model_len - 1)
+        splittingArray.append([op1, op2])
+
+    return splittingArray
+
+# FedMec: which empirically deploys the convolutional layers of a DNN on the device-side while
+# assigning the remaining part to the edge server
