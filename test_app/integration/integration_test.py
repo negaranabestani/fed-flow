@@ -34,5 +34,27 @@ class TestFed(unittest.TestCase):
         if test.returncode != 0:
             self.fail(str(test.stderr))
 
-    def test_classic_1_2(self):
-        pass
+    def test_classic_1_3(self):
+        options = {
+            'aggregation': 'fed_avg',
+            'clustering': 'none_clustering',
+            'splitting': 'fake_splitting',
+            'model': 'vgg',
+            'dataset': 'cifar10',
+            'offload': False,
+            'datasetlink': '',
+            'modellink': ''
+        }
+        config.dataset_name = options.get('dataset')
+        config.model_name = options.get('model')
+
+        with open("test_config/test_classic_1_3_config.py", "r") as f:
+            data = f.read()
+
+        with open("../../app/config/config.py", "a") as f:
+            f.write(data)
+
+        test = subprocess.run(['docker-compose', '-f', 'docker_compose/test_classic_1_3.yaml', 'up', '--build'])
+        fed_logger.info("running client")
+        if test.returncode != 0:
+            self.fail(str(test.stderr))

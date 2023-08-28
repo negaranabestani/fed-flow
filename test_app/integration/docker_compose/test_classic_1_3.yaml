@@ -1,0 +1,20 @@
+version: '3'
+services:
+  server:
+    build:
+      context: ../../../
+      dockerfile: server.Dockerfile
+    ports:
+      - "5008:5008"
+  client1:
+    build:
+      context: ../../../
+      dockerfile: client.Dockerfile
+  client2:
+    build:
+      context: ../../../
+      dockerfile: client.Dockerfile
+  client3:
+    build:
+      context: ../../../
+      dockerfile: client.Dockerfile
