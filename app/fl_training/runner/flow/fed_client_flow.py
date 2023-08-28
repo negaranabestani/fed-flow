@@ -49,8 +49,9 @@ def run_no_offload(client: FedClientInterface, LR):
 
 
 def run(options_ins):
-    ip_address = config.HOST2IP[socket.gethostname()]
-    index = config.CLIENTS_CONFIG[ip_address]
+    ip_address = 'client1'
+    fed_logger.info("client ip: "+socket.gethostname())
+    index = 0
     datalen = config.N / config.K
     LR = config.LR
 
@@ -64,13 +65,13 @@ def run(options_ins):
     fed_logger.info("start mode: " + str(options_ins.values()))
     offload = options_ins.get('offload')
     if offload:
-        client_ins = Client(index=index, ip_address=ip_address, server_addr=config.CLIENT_MAP[ip_address],
+        client_ins = Client( server_addr=config.CLIENT_MAP[ip_address],
                             server_port=config.EDGESERVER_PORT[config.CLIENT_MAP[ip_address]],
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR)
         run_offload(client_ins, LR)
     else:
-        client_ins = Client(index=index, ip_address=ip_address, server_addr=config.SERVER_ADDR,
+        client_ins = Client(server_addr=config.SERVER_ADDR,
                             server_port=config.SERVER_PORT,
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR)

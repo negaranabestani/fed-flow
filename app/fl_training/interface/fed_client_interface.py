@@ -9,9 +9,9 @@ from app.util import model_utils
 
 
 class FedClientInterface(ABC, Communicator):
-    def __init__(self, index, ip_address, server_addr, server_port, datalen, model_name, dataset,
+    def __init__(self, server_addr, server_port, datalen, model_name, dataset,
                  train_loader, LR):
-        super(FedClientInterface, self).__init__(index, ip_address)
+        super(FedClientInterface, self).__init__()
         self.datalen = datalen
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model_name = model_name

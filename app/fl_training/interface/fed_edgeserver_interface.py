@@ -10,8 +10,8 @@ from app.util import data_utils, model_utils
 
 
 class FedEdgeServerInterface(ABC, Communicator):
-    def __init__(self, index, ip_address, port, server_addr, server_port, model_name, dataset):
-        super(FedEdgeServerInterface, self).__init__(index, ip_address)
+    def __init__(self, ip_address, port, server_addr, server_port, model_name, dataset):
+        super(FedEdgeServerInterface, self).__init__()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.port = port
         self.model_name = model_name
@@ -25,7 +25,7 @@ class FedEdgeServerInterface(ABC, Communicator):
         self.dataset = dataset
         self.threads = None
         self.net_threads = None
-        self.central_server_communicator = Communicator(0, ip_address)
+        self.central_server_communicator = Communicator()
 
         fed_logger.info('Connecting to Server.')
         self.central_server_communicator.sock.connect((server_addr, server_port))

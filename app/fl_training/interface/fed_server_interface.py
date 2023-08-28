@@ -13,13 +13,12 @@ from app.util import data_utils, model_utils
 
 
 class FedServerInterface(ABC, Communicator):
-    def __init__(self, index, ip_address, port, model_name, dataset,
-                 connection_list):
-        super(FedServerInterface, self).__init__(index, ip_address)
+    def __init__(self, ip_address, port, model_name, dataset):
+        super(FedServerInterface, self).__init__()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.port = port
         self.model_name = model_name
-        self.sock.bind((self.ip, self.port))
+        self.sock.bind((ip_address, self.port))
         self.socks = {}
         self.group_labels = None
         self.criterion = None
@@ -33,14 +32,17 @@ class FedServerInterface(ABC, Communicator):
         self.offloading = None
         self.tt_start = {}
         self.tt_end = {}
-
-        while len(self.socks) < len(connection_list):
+        i = 0
+        while len(self.socks) < config.K:
             self.sock.listen(5)
             fed_logger.info("Waiting For Incoming Connections.")
             (edge_sock, (ip, port)) = self.sock.accept()
             fed_logger.info('Got connection from ' + str(ip))
             fed_logger.info(edge_sock)
+            config.CLIENTS_CONFIG[ip] = i
+            config.CLIENTS_LIST.append(str(ip))
             self.socks[str(ip)] = edge_sock
+            i += 1
         model_len = model_utils.get_unit_model_len()
         self.uninet = model_utils.get_model('Unit', [model_len - 1, model_len - 1], self.device)
 

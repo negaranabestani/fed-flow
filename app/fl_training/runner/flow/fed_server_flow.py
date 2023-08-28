@@ -1,11 +1,10 @@
-import argparse
 import pickle
 import sys
 import time
 
 sys.path.append('../../../../')
 from app.config import config
-from app.util import input_utils, model_utils
+from app.util import model_utils
 from app.fl_training.entity.fed_server import FedServer
 from app.config.logger import fed_logger
 from app.fl_training.interface.fed_server_interface import FedServerInterface
@@ -111,15 +110,12 @@ def run(options_ins):
 
     offload = options_ins.get('offload')
     if offload:
-        server_ins = FedServer(0, config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
-                               options_ins.get('dataset'), config.EDGE_SERVER_LIST)
+        server_ins = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
+                               options_ins.get('dataset'))
         run_offload(server_ins, LR, options_ins)
     else:
-        server_ins = FedServer(0, config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
-                               options_ins.get('dataset'), config.CLIENTS_LIST)
+        server_ins = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
+                               options_ins.get('dataset'))
         run_no_offload(server_ins, options_ins)
 
 
-# parser = argparse.ArgumentParser()
-# options = input_utils.parse_argument(parser)
-# run(options)
