@@ -90,7 +90,7 @@ def run_no_offload(server: FedServerInterface, options):
         server.call_aggregation(options, local_weights)
         e_time = time.time()
 
-        # Recording each round training time, bandwidth and test_app accuracy
+        # Recording each round training time, bandwidth and test accuracy
         trianing_time = e_time - s_time
         res['trianing_time'].append(trianing_time)
         res['bandwidth_record'].append(server.bandwith())

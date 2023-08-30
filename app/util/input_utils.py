@@ -10,7 +10,8 @@ options = {
     '-d': ['--dataset', 'cifar10', 'the name of the using dataset'],
     '-o': ['--offload', False, 'FedAdapt or classic FL mode'],
     '-dl': ['--datasetlink', '', 'the link to dataset  python file'],
-    '-ml': ['--modellink', '', 'the link to model  python file']
+    '-ml': ['--modellink', '', 'the link to model  python file'],
+    '-i': ['--index', '0', 'the device index']
 }
 
 
@@ -30,6 +31,6 @@ def parse_argument(parser: argparse.ArgumentParser()):
     option = vars(args)
     config.dataset_name = option.get('dataset')
     config.model_name = option.get('model')
+    config.index = int(option.get('index'))
     model_utils.download_model(option.get('modellink'))
     return option
-

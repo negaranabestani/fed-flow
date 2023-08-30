@@ -18,10 +18,11 @@ import sys
 # CLIENT_MAP = {'127.0.0.1': '127.0.0.1'}
 
 CLIENTS_BANDWIDTH = []
+index = ''
 
 # Dataset configration
 dataset_name = ''
-home = sys.path[0].split('fed-flow')[0] + 'fed-flow'+"/app"
+home = sys.path[0].split('fed-flow')[0] + 'fed-flow' + "/app"
 dataset_path = home + '/dataset/data/'
 N = 50000  # data length
 
@@ -42,7 +43,7 @@ split_layer = [[6, 6]]  # Initial split layers
 model_len = 7
 
 # FL training configration
-R = 2  # FL rounds
+R = 1  # FL rounds
 LR = 0.01  # Learning rate
 B = 100  # Batch size
 
@@ -64,36 +65,6 @@ iteration = {'127.0.0.1': 5}  # infer times for each device
 random = True
 random_seed = 0
 # Network configration
-SERVER_ADDR = 'server'
-
-SERVER_PORT = 51008
-EDGESERVER_PORT = {'127.0.0.1': 51001}
-
-K = 1  # Number of devices
-G = 1  # Number of groups
-
-# Unique clients order
-HOST2IP = {}
-CLIENTS_CONFIG = {}
-EDGE_SERVER_LIST = ['127.0.0.1']
-CLIENTS_LIST = []
-EDGE_MAP = {'127.0.0.1': ['127.0.0.1']}
-CLIENT_MAP = {'127.0.0.1': '127.0.0.1'}# Network configration
-SERVER_ADDR = 'server'
-
-SERVER_PORT = 51008
-EDGESERVER_PORT = {'127.0.0.1': 51001}
-
-K = 3  # Number of devices
-G = 1  # Number of groups
-
-# Unique clients order
-HOST2IP = {}
-CLIENTS_CONFIG = {}
-EDGE_SERVER_LIST = ['127.0.0.1']
-CLIENTS_LIST = []
-EDGE_MAP = {'127.0.0.1': ['127.0.0.1']}
-CLIENT_MAP = {'127.0.0.1': '127.0.0.1'}# Network configration
 SERVER_ADDR = 'server'
 
 SERVER_PORT = 51008

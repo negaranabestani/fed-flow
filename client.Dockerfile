@@ -11,4 +11,6 @@ WORKDIR /fed-flow/
 COPY app /fed-flow/app
 
 WORKDIR /fed-flow/app/fl_training/runner/
-ENTRYPOINT ["python3", "fed_client_run.py"]
+ARG INDEX
+ENV i=$INDEX
+ENTRYPOINT python3 fed_client_run.py -i $i

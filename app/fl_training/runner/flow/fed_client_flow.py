@@ -1,4 +1,3 @@
-import argparse
 import multiprocessing
 import socket
 import sys
@@ -7,7 +6,7 @@ sys.path.append('../../../../')
 from app.fl_training.entity.fed_client import Client
 from app.config import config
 from app.config.config import *
-from app.util import input_utils, data_utils
+from app.util import data_utils
 from app.config.logger import fed_logger
 from app.fl_training.interface.fed_client_interface import FedClientInterface
 
@@ -50,8 +49,8 @@ def run_no_offload(client: FedClientInterface, LR):
 
 def run(options_ins):
     ip_address = 'client1'
-    fed_logger.info("client ip: "+socket.gethostname())
-    index = 0
+    fed_logger.info("start mode: " + str(options_ins.values()))
+    index = config.index
     datalen = config.N / config.K
     LR = config.LR
 
@@ -62,10 +61,10 @@ def run(options_ins):
     part_tr = indices[int((N / K) * index): int((N / K) * (index + 1))]
     trainloader = data_utils.get_trainloader(data_utils.get_trainset(), part_tr, cpu_count)
 
-    fed_logger.info("start mode: " + str(options_ins.values()))
+
     offload = options_ins.get('offload')
     if offload:
-        client_ins = Client( server_addr=config.CLIENT_MAP[ip_address],
+        client_ins = Client(server_addr=config.CLIENT_MAP[ip_address],
                             server_port=config.EDGESERVER_PORT[config.CLIENT_MAP[ip_address]],
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR)
@@ -76,7 +75,6 @@ def run(options_ins):
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR)
         run_no_offload(client_ins, LR)
-
 
 # parser = argparse.ArgumentParser()
 # options = input_utils.parse_argument(parser)
