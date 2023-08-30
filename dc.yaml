@@ -20,7 +20,10 @@ services:
       dockerfile: server.Dockerfile
     ports:
       - "5008:5008"
+    hostname: server
   client1:
     build:
       context: .
       dockerfile: client.Dockerfile
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0"
+    hostname: client1

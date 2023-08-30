@@ -11,7 +11,7 @@ from app.config.logger import fed_logger
 class Communicator(object):
     def __init__(self):
         self.sock = socket.socket()
-        self.ip = socket.gethostbyaddr
+        self.ip = socket.gethostbyname(socket.gethostname())
 
     def send_msg(self, sock, msg):
         msg_pickle = pickle.dumps(msg)

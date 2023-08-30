@@ -48,7 +48,7 @@ def run_no_offload(client: FedClientInterface, LR):
 
 
 def run(options_ins):
-    ip_address = 'client1'
+    ip_address = '127.0.0.1'
     fed_logger.info("start mode: " + str(options_ins.values()))
     index = config.index
     datalen = config.N / config.K
@@ -60,7 +60,6 @@ def run(options_ins):
     indices = list(range(N))
     part_tr = indices[int((N / K) * index): int((N / K) * (index + 1))]
     trainloader = data_utils.get_trainloader(data_utils.get_trainset(), part_tr, cpu_count)
-
 
     offload = options_ins.get('offload')
     if offload:

@@ -14,6 +14,7 @@ class FedEdgeServerInterface(ABC, Communicator):
         super(FedEdgeServerInterface, self).__init__()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.port = port
+        self.ip = ip_address
         self.model_name = model_name
         self.socks = {}
         self.nets = {}
@@ -31,12 +32,13 @@ class FedEdgeServerInterface(ABC, Communicator):
         self.central_server_communicator.sock.connect((server_addr, server_port))
         fed_logger.info('Connected to Server.')
 
-        self.sock.bind((self.ip, self.port))
+        self.sock.bind((ip_address, self.port))
         while len(self.socks) < len(config.EDGE_MAP[ip_address]):
             self.sock.listen(5)
             fed_logger.info("Waiting Incoming Connections.")
             (client_sock, (ip, port)) = self.sock.accept()
             fed_logger.info('Got connection from ' + str(ip))
+            config.CLIENTS_LIST.append(str(ip))
             fed_logger.info(client_sock)
             self.socks[str(ip)] = client_sock
         model_len = model_utils.get_unit_model_len()

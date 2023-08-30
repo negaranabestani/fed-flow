@@ -5,7 +5,7 @@ from app.util import model_utils
 options = {
     '-a': ['--aggregation', 'fed_avg', 'help description'],
     '-c': ['--clustering', 'none_clustering', 'help description'],
-    '-s': ['--splitting', 'fake_splitting', 'help description'],
+    '-s': ['--splitting', 'none_splitting', 'help description'],
     '-m': ['--model', 'vgg', 'help description'],
     '-d': ['--dataset', 'cifar10', 'the name of the using dataset'],
     '-o': ['--offload', False, 'FedAdapt or classic FL mode'],

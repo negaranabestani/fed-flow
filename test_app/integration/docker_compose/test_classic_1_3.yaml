@@ -6,6 +6,7 @@ services:
       dockerfile: server.Dockerfile
     ports:
       - "5008:5008"
+    hostname: server
   client1:
     build:
       context: ../../../
@@ -14,6 +15,7 @@ services:
         - INDEX=0
     depends_on:
       - server
+    hostname: client1
   client2:
     build:
       context: ../../../
@@ -22,6 +24,7 @@ services:
         - INDEX=1
     depends_on:
       - server
+    hostname: client2
   client3:
     build:
       context: ../../../
@@ -30,19 +33,4 @@ services:
         - INDEX=2
     depends_on:
       - server
-#  client4:
-#    build:
-#      context: ../../../
-#      dockerfile: client.Dockerfile
-#      args:
-#        - INDEX=3
-#    depends_on:
-#      - server
-#  client5:
-#    build:
-#      context: ../../../
-#      dockerfile: client.Dockerfile
-#      args:
-#        - INDEX=4
-#    depends_on:
-#      - server
+    hostname: client3

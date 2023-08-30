@@ -1,4 +1,5 @@
 import pickle
+import socket
 import sys
 import time
 
@@ -107,7 +108,6 @@ def run(options_ins):
     LR = config.LR
     fed_logger.info('Preparing Sever.')
     fed_logger.info("start mode: " + str(options_ins.values()))
-
     offload = options_ins.get('offload')
     if offload:
         server_ins = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
@@ -117,5 +117,3 @@ def run(options_ins):
         server_ins = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
                                options_ins.get('dataset'))
         run_no_offload(server_ins, options_ins)
-
-

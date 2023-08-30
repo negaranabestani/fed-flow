@@ -1,3 +1,4 @@
+import socket
 import sys
 import threading
 
@@ -47,10 +48,11 @@ def run(options_ins):
     LR = config.LR
     ip_address = config.SERVER_ADDR
     fed_logger.info('Preparing Sever.')
-    edge_server_ins = FedEdgeServer(0, ip_address, config.EDGESERVER_PORT[ip_address], config.SERVER_ADDR,
+    edge_server_ins = FedEdgeServer(ip_address, config.EDGESERVER_PORT[ip_address], config.SERVER_ADDR,
                                     config.SERVER_PORT, options_ins.get('model'),
                                     options_ins.get('dataset'))
     fed_logger.info("start mode: " + str(options_ins.values()))
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>"+socket.gethostname())
     run_offload(edge_server_ins, LR)
 
 
