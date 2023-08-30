@@ -1,3 +1,4 @@
+import socket
 import sys
 
 import numpy as np
@@ -82,7 +83,7 @@ class Client(FedClientInterface):
 
             # Wait receiving edge server gradients
             # fed_logger.info("receiving gradients")
-            gradients = self.recv_msg(self.sock, message_utils.server_gradients_edge_to_client + str(self.ip))[1].to(
+            gradients = self.recv_msg(self.sock, message_utils.server_gradients_edge_to_client + socket.gethostname())[1].to(
                 self.device)
 
             outputs.backward(gradients)

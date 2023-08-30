@@ -48,7 +48,7 @@ def run_no_offload(client: FedClientInterface, LR):
 
 
 def run(options_ins):
-    ip_address = '127.0.0.1'
+    ip_address = socket.gethostname()
     fed_logger.info("start mode: " + str(options_ins.values()))
     index = config.index
     datalen = config.N / config.K

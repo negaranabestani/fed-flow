@@ -1,3 +1,4 @@
+import socket
 import threading
 import time
 
@@ -37,19 +38,19 @@ class FedEdgeServer(FedEdgeServerInterface):
         pass
 
     def forward_propagation(self, client_ip):
-        flag = self.recv_msg(self.socks[config.CLIENT_MAP[client_ip]],
+        flag = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
                              message_utils.local_iteration_flag_client_to_edge)[1]
         flmsg = [message_utils.local_iteration_flag_edge_to_server, flag]
         self.central_server_communicator.send_msg(self.central_server_communicator.sock, flmsg)
         while flag:
-            flag = self.recv_msg(self.socks[config.CLIENT_MAP[client_ip]],
+            flag = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
                                  message_utils.local_iteration_flag_client_to_edge)[1]
             flmsg = [message_utils.local_iteration_flag_edge_to_server, flag]
             self.central_server_communicator.send_msg(self.central_server_communicator.sock, flmsg)
             if not flag:
                 break
             # fed_logger.info(client_ip + " receiving local activations")
-            msg = self.recv_msg(self.socks[client_ip],
+            msg = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
                                 message_utils.local_activations_client_to_edge)
             smashed_layers = msg[1]
             labels = msg[2]
@@ -71,8 +72,8 @@ class FedEdgeServer(FedEdgeServerInterface):
             outputs.backward(gradients)
             self.optimizers[client_ip].step()
             # fed_logger.info(client_ip + " sending gradients")
-            msg = [message_utils.server_gradients_edge_to_client + str(config.CLIENT_MAP[client_ip]), inputs.grad]
-            self.send_msg(self.socks[config.CLIENT_MAP[client_ip]], msg)
+            msg = [message_utils.server_gradients_edge_to_client + client_ip, inputs.grad]
+            self.send_msg(self.socks[socket.gethostbyname(client_ip)], msg)
 
         fed_logger.info(str(client_ip) + ' offloading training end')
 
@@ -96,8 +97,8 @@ class FedEdgeServer(FedEdgeServerInterface):
     def _thread_client_network_testing(self, client_ip):
         network_time_start = time.time()
         msg = [message_utils.test_client_network, self.uninet.cpu().state_dict()]
-        self.send_msg(self.socks[client_ip], msg)
-        msg = self.recv_msg(self.socks[client_ip], message_utils.test_client_network)
+        self.send_msg(self.socks[socket.gethostbyname(client_ip)], msg)
+        msg = self.recv_msg(self.socks[socket.gethostbyname(client_ip)], message_utils.test_client_network)
         network_time_end = time.time()
         self.client_bandwidth[client_ip] = network_time_end - network_time_start
 
@@ -125,13 +126,13 @@ class FedEdgeServer(FedEdgeServerInterface):
             if client_ips.__contains__(config.CLIENTS_LIST[i]):
                 client_ip = config.CLIENTS_LIST[i]
                 msg = [message_utils.split_layers_edge_to_client, self.split_layers[i]]
-                self.send_msg(self.socks[client_ip], msg)
+                self.send_msg(self.socks[socket.gethostbyname(client_ip)], msg)
 
     def local_weights(self, client_ip):
         """
         receive and send final weights for aggregation
         """
-        cweights = self.recv_msg(self.socks[client_ip],
+        cweights = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
                                  message_utils.local_weights_client_to_edge)[1]
 
         msg = [message_utils.local_weights_edge_to_server, cweights]

@@ -67,16 +67,16 @@ random_seed = 0
 # Network configration
 SERVER_ADDR = 'server'
 
-SERVER_PORT = 51008
-EDGESERVER_PORT = {'127.0.0.1': 51001}
+SERVER_PORT = 5002
+EDGESERVER_PORT = {'edge1': 5001}
 
-K = 3  # Number of devices
+K = 1  # Number of devices
 G = 1  # Number of groups
 
 # Unique clients order
 HOST2IP = {}
 CLIENTS_CONFIG = {}
-EDGE_SERVER_LIST = ['127.0.0.1']
-CLIENTS_LIST = ['client1', 'client2', 'client3']
-EDGE_MAP = {'127.0.0.1': ['127.0.0.1']}
-CLIENT_MAP = {'127.0.0.1': '127.0.0.1'}
+EDGE_SERVER_LIST = ['edge1']
+CLIENTS_LIST = ['client1']
+EDGE_MAP = {'edge1': ['client1']}
+CLIENT_MAP = {'client1': 'edge1'}

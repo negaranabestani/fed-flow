@@ -20,11 +20,11 @@ def run_offload(server: FedEdgeServerInterface, LR):
         fed_logger.info('==> Round {:} Start'.format(r))
         fed_logger.info("receiving global weights")
         server.global_weights(client_ips)
-        fed_logger.info("test_app clients network")
+        fed_logger.info("test clients network")
         server.test_client_network(client_ips)
         fed_logger.info("sending clients network")
         server.client_network()
-        fed_logger.info("test_app server network")
+        fed_logger.info("test server network")
         server.test_server_network()
         fed_logger.info("receiving and sending splitting info")
         server.split_layer(client_ips)
@@ -46,13 +46,12 @@ def run_offload(server: FedEdgeServerInterface, LR):
 
 def run(options_ins):
     LR = config.LR
-    ip_address = config.SERVER_ADDR
+    ip_address = socket.gethostname()
     fed_logger.info('Preparing Sever.')
     edge_server_ins = FedEdgeServer(ip_address, config.EDGESERVER_PORT[ip_address], config.SERVER_ADDR,
                                     config.SERVER_PORT, options_ins.get('model'),
                                     options_ins.get('dataset'))
     fed_logger.info("start mode: " + str(options_ins.values()))
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>"+socket.gethostname())
     run_offload(edge_server_ins, LR)
 
 

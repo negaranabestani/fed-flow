@@ -158,7 +158,7 @@ class FedServerInterface(ABC, Communicator):
             for l in range(model_utils.get_unit_model_len()):
                 if l <= split_layer[i][0]:
                     workload += model_utils.get_class()().cfg[l][5]
-            offloading[socket.gethostbyname(config.CLIENTS_LIST[i])] = workload / config.total_flops
+            offloading[config.CLIENTS_LIST[i]] = workload / config.total_flops
             workload = 0
 
         return offloading
@@ -167,7 +167,7 @@ class FedServerInterface(ABC, Communicator):
         ttpi = {}
         for i in range(len(client_ips)):
             # ttpi[str(client_ips[i])] = self.tt_end[client_ips[i]] - self.tt_start[client_ips[i]]
-            ttpi[str(socket.gethostbyname(config.CLIENTS_LIST[i]))] = 3
+            ttpi[config.CLIENTS_LIST[i]] = 3
         return ttpi
 
     def bandwith(self):

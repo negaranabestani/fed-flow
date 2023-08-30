@@ -26,7 +26,7 @@ def run_offload(server: FedServerInterface, LR, options):
         fed_logger.info("receiving client network info")
         server.client_network(config.EDGE_SERVER_LIST)
 
-        fed_logger.info("test_app edge servers network")
+        fed_logger.info("test edge servers network")
         server.test_network(config.EDGE_SERVER_LIST)
 
         fed_logger.info("preparing state...")

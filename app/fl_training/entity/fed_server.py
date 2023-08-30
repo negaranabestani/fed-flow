@@ -123,7 +123,7 @@ class FedServer(FedServerInterface):
 
     def test_network(self, edge_ips):
         """
-        send message to test_app network speed
+        send message to test network speed
         """
         # Network test_app
         self.net_threads = {}
@@ -138,8 +138,8 @@ class FedServer(FedServerInterface):
     def _thread_network_testing(self, edge_ip):
         network_time_start = time.time()
         msg = [message_utils.test_server_network, self.uninet.cpu().state_dict()]
-        self.send_msg(self.socks[edge_ip], msg)
-        msg = self.recv_msg(self.socks[edge_ip], message_utils.test_server_network)
+        self.send_msg(self.socks[socket.gethostbyname(edge_ip)], msg)
+        msg = self.recv_msg(self.socks[socket.gethostbyname(edge_ip)], message_utils.test_server_network)
         network_time_end = time.time()
         self.edge_bandwidth[edge_ip] = network_time_end - network_time_start
 
