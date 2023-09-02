@@ -148,8 +148,6 @@ class FedEdgeServer(FedEdgeServerInterface):
         for i in range(len(self.split_layers)):
             if client_ips.__contains__(config.CLIENTS_LIST[i]):
                 cweights = model_utils.get_model('Client', self.split_layers[i], self.device).state_dict()
-
-                print("-------------------" + str(self.nets))
                 pweights = model_utils.split_weights_edgeserver(weights, cweights,
                                                                 self.nets[config.CLIENTS_LIST[i]].state_dict())
                 self.nets[config.CLIENTS_LIST[i]].load_state_dict(pweights)
