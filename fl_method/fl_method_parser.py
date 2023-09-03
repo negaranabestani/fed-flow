@@ -8,5 +8,7 @@ fl_methods = {
     "bandwidth": clustering.bandwidth,
     "none_clustering": clustering.none,
     "none_splitting": splitting.none,
-    "fake_splitting": splitting.fake
+    "fake_splitting": splitting.fake,
+    "random_splitting": splitting.randomSplitting,
+    "fedmec_splitting": splitting.FedMec,
 }

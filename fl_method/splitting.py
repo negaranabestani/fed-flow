@@ -82,5 +82,14 @@ def randomSplitting() -> list[list[int]]:
 
     return splittingArray
 
+
 # FedMec: which empirically deploys the convolutional layers of a DNN on the device-side while
 # assigning the remaining part to the edge server
+def FedMec():
+    for i in config.model_cfg[config.model_name]:
+        """ C means convolutional layer """
+        if i[0] == 'C':
+            lastConvolutionalLayerIndex = config.model_cfg[config.model_name].index(i)
+
+    splittingArray = [[lastConvolutionalLayerIndex, config.model_len - 1] for _ in range(config.K)]
+    return splittingArray
