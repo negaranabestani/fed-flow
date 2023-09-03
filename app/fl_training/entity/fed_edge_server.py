@@ -40,13 +40,13 @@ class FedEdgeServer(FedEdgeServerInterface):
     def forward_propagation(self, client_ip):
         flag = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
                              message_utils.local_iteration_flag_client_to_edge)[1]
-        flmsg = [message_utils.local_iteration_flag_edge_to_server, flag]
-        self.central_server_communicator.send_msg(self.central_server_communicator.sock, flmsg)
+        flmsg = [message_utils.local_iteration_flag_edge_to_server + "_" + client_ip, flag]
+        self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, flmsg)
         while flag:
             flag = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
                                  message_utils.local_iteration_flag_client_to_edge)[1]
-            flmsg = [message_utils.local_iteration_flag_edge_to_server, flag]
-            self.central_server_communicator.send_msg(self.central_server_communicator.sock, flmsg)
+            flmsg = [message_utils.local_iteration_flag_edge_to_server + "_" + client_ip, flag]
+            self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, flmsg)
             if not flag:
                 break
             # fed_logger.info(client_ip + " receiving local activations")
@@ -59,14 +59,12 @@ class FedEdgeServer(FedEdgeServerInterface):
             self.optimizers[client_ip].zero_grad()
             outputs = self.nets[client_ip](inputs)
 
-
             # fed_logger.info(client_ip + " sending local activations")
-            msg = [message_utils.local_activations_edge_to_server, outputs.cpu(), targets.cpu()]
-            self.central_server_communicator.send_msg(self.central_server_communicator.sock, msg)
+            msg = [message_utils.local_activations_edge_to_server + "_" + client_ip, outputs.cpu(), targets.cpu()]
+            self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, msg)
             # fed_logger.info(client_ip + " receiving gradients")
-            msg = self.central_server_communicator.recv_msg(self.central_server_communicator.sock,
-                                                            message_utils.server_gradients_server_to_edge + str(
-                                                                self.ip))
+            msg = self.central_server_socks[client_ip].recv_msg(self.central_server_socks[client_ip].sock,
+                                                            message_utils.server_gradients_server_to_edge + client_ip)
             gradients = msg[1].to(self.device)
             # fed_logger.info(client_ip + " training model backward")
             outputs.backward(gradients)
@@ -135,8 +133,8 @@ class FedEdgeServer(FedEdgeServerInterface):
         cweights = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
                                  message_utils.local_weights_client_to_edge)[1]
 
-        msg = [message_utils.local_weights_edge_to_server, cweights]
-        self.central_server_communicator.send_msg(self.central_server_communicator.sock, msg)
+        msg = [message_utils.local_weights_edge_to_server + "_" + client_ip, cweights]
+        self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, msg)
 
     def global_weights(self, client_ips: []):
         """

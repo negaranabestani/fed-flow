@@ -34,7 +34,7 @@ def run_offload(server: FedEdgeServerInterface, LR):
         fed_logger.info("start training")
         for i in range(len(client_ips)):
             threads[client_ips[i]] = threading.Thread(target=server.thread_training,
-                                                      args=(client_ips[i],))
+                                                      args=(client_ips[i],), name=client_ips[i])
             threads[client_ips[i]].start()
 
         for i in range(len(client_ips)):
@@ -53,5 +53,3 @@ def run(options_ins):
                                     options_ins.get('dataset'))
     fed_logger.info("start mode: " + str(options_ins.values()))
     run_offload(edge_server_ins, LR)
-
-

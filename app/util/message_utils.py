@@ -29,3 +29,5 @@ server_gradients_edge_to_client = 'MSG_SERVER_GRADIENTS_EDGE_TO_CLIENT_'
 local_iteration_flag_edge_to_server = 'MSG_LOCAL_ITERATION_FLAG_EDGE_TO_SERVER'
 local_iteration_flag_client_to_edge = 'MSG_LOCAL_ITERATION_FLAG_CLIENT_TO_EDGE'
 local_iteration_flag_client_to_server = 'MSG_LOCAL_ITERATION_FLAG_CLIENT_TO_SERVER'
+
+init_server_sockets_edge_to_server = 'MSG_INIT_SERVER_SOCKETS_EDGE_TO_SERVER'

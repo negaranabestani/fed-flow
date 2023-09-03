@@ -6,7 +6,7 @@ from torch import multiprocessing
 from app.config import config
 from app.config.logger import fed_logger
 from app.entity.Communicator import Communicator
-from app.util import data_utils, model_utils
+from app.util import data_utils, model_utils, message_utils
 
 
 class FedEdgeServerInterface(ABC, Communicator):
@@ -26,11 +26,21 @@ class FedEdgeServerInterface(ABC, Communicator):
         self.dataset = dataset
         self.threads = None
         self.net_threads = None
+        self.central_server_socks = {}
         self.central_server_communicator = Communicator()
 
         fed_logger.info('Connecting to Server.')
         self.central_server_communicator.sock.connect((server_addr, server_port))
         fed_logger.info('Connected to Server.')
+        fed_logger.info('Client socks Connecting to Server.')
+        for ip in config.EDGE_MAP[ip_address]:
+            self.central_server_socks[ip] = Communicator()
+            self.central_server_socks[ip].sock.connect((server_addr, server_port))
+        fed_logger.info('Client socks Connected to Server.')
+        fed_logger.info('Initialize server sockets of clients')
+        for client_ip in config.EDGE_MAP[ip_address]:
+            msg = [message_utils.init_server_sockets_edge_to_server, client_ip]
+            self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, msg)
 
         self.sock.bind((ip_address, self.port))
         while len(self.socks) < len(config.EDGE_MAP[ip_address]):

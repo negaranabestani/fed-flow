@@ -111,9 +111,9 @@ def run(options_ins):
     offload = options_ins.get('offload')
     if offload:
         server_ins = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
-                               options_ins.get('dataset'))
+                               options_ins.get('dataset'), offload)
         run_offload(server_ins, LR, options_ins)
     else:
         server_ins = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
-                               options_ins.get('dataset'))
+                               options_ins.get('dataset'), offload)
         run_no_offload(server_ins, options_ins)

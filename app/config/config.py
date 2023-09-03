@@ -72,6 +72,7 @@ EDGESERVER_PORT = {'edge1': 5001}
 
 K = 1  # Number of devices
 G = 1  # Number of groups
+S = 1
 
 # Unique clients order
 HOST2IP = {}

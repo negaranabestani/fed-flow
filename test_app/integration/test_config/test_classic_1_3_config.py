@@ -72,6 +72,7 @@ EDGESERVER_PORT = {'127.0.0.1': 51001}
 
 K = 3  # Number of devices
 G = 1  # Number of groups
+S = 3
 
 # Unique clients order
 HOST2IP = {}

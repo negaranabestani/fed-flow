@@ -49,9 +49,8 @@ class FedServer(FedServerInterface):
     def offloading_train(self, client_ips):
         self.threads = {}
         for i in range(len(client_ips)):
-            fed_logger.info(str(client_ips[i]))
             self.threads[client_ips[i]] = threading.Thread(target=self._thread_training_offloading,
-                                                           args=(client_ips[i],))
+                                                           args=(client_ips[i],), name=client_ips[i])
             fed_logger.info(str(client_ips[i]) + ' offloading training start')
             self.threads[client_ips[i]].start()
             self.tt_start[client_ips[i]] = time.time()
@@ -63,7 +62,7 @@ class FedServer(FedServerInterface):
         self.threads = {}
         for i in range(len(client_ips)):
             self.threads[client_ips[i]] = threading.Thread(target=self._thread_training_no_offloading,
-                                                           args=(client_ips[i],))
+                                                           args=(client_ips[i],), name=client_ips[i])
             fed_logger.info(str(client_ips[i]) + ' no offloading training start')
             self.threads[client_ips[i]].start()
         for i in range(len(client_ips)):
@@ -74,16 +73,16 @@ class FedServer(FedServerInterface):
 
     def _thread_training_offloading(self, client_ip):
         # iteration = int((test_config.N / (test_config.K * test_config.B)))
-        flag = self.recv_msg(self.socks[socket.gethostbyname(config.CLIENT_MAP[client_ip])],
-                             message_utils.local_iteration_flag_edge_to_server)[1]
+        flag = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
+                             message_utils.local_iteration_flag_edge_to_server+"_"+client_ip)[1]
         while flag:
-            flag = self.recv_msg(self.socks[socket.gethostbyname(config.CLIENT_MAP[client_ip])],
-                                 message_utils.local_iteration_flag_edge_to_server)[1]
+            flag = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
+                                 message_utils.local_iteration_flag_edge_to_server+"_"+client_ip)[1]
             if not flag:
                 break
             # fed_logger.info(client_ip + " receiving local activations")
-            msg = self.recv_msg(self.socks[socket.gethostbyname(config.CLIENT_MAP[client_ip])],
-                                message_utils.local_activations_edge_to_server)
+            msg = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
+                                message_utils.local_activations_edge_to_server+"_"+client_ip)
             smashed_layers = msg[1]
             labels = msg[2]
             # fed_logger.info(client_ip + " training model")
@@ -96,9 +95,8 @@ class FedServer(FedServerInterface):
 
             # Send gradients to edge
             # fed_logger.info(client_ip + " sending gradients")
-            msg = [message_utils.server_gradients_server_to_edge + str(config.CLIENT_MAP[client_ip]), inputs.grad]
-            self.send_msg(self.socks[socket.gethostbyname(config.CLIENT_MAP[client_ip])], msg)
-
+            msg = [message_utils.server_gradients_server_to_edge + str(client_ip), inputs.grad]
+            self.send_msg(self.socks[socket.gethostbyname(client_ip)], msg)
 
         fed_logger.info(str(client_ip) + ' offloading training end')
         return 'Finish'
@@ -121,27 +119,27 @@ class FedServer(FedServerInterface):
         self.uninet.load_state_dict(aggregated_model)
         return aggregated_model
 
-    def test_network(self, edge_ips):
+    def test_network(self, connection_ips):
         """
         send message to test network speed
         """
         # Network test_app
         self.net_threads = {}
-        for i in range(len(edge_ips)):
-            self.net_threads[edge_ips[i]] = threading.Thread(target=self._thread_network_testing,
-                                                             args=(edge_ips[i],))
-            self.net_threads[edge_ips[i]].start()
+        for i in range(len(connection_ips)):
+            self.net_threads[connection_ips[i]] = threading.Thread(target=self._thread_network_testing,
+                                                             args=(connection_ips[i],),name=connection_ips[i])
+            self.net_threads[connection_ips[i]].start()
 
-        for i in range(len(edge_ips)):
-            self.net_threads[edge_ips[i]].join()
+        for i in range(len(connection_ips)):
+            self.net_threads[connection_ips[i]].join()
 
-    def _thread_network_testing(self, edge_ip):
+    def _thread_network_testing(self, connection_ip):
         network_time_start = time.time()
         msg = [message_utils.test_server_network, self.uninet.cpu().state_dict()]
-        self.send_msg(self.socks[socket.gethostbyname(edge_ip)], msg)
-        msg = self.recv_msg(self.socks[socket.gethostbyname(edge_ip)], message_utils.test_server_network)
+        self.send_msg(self.edge_socks[socket.gethostbyname(connection_ip)], msg)
+        msg = self.recv_msg(self.edge_socks[socket.gethostbyname(connection_ip)], message_utils.test_server_network)
         network_time_end = time.time()
-        self.edge_bandwidth[edge_ip] = network_time_end - network_time_start
+        self.edge_bandwidth[connection_ip] = network_time_end - network_time_start
 
     def client_network(self, edge_ips):
         """
@@ -149,7 +147,7 @@ class FedServer(FedServerInterface):
         """
 
         for i in edge_ips:
-            msg = self.recv_msg(self.socks[socket.gethostbyname(str(i))], message_utils.client_network)
+            msg = self.recv_msg(self.edge_socks[socket.gethostbyname(str(i))], message_utils.client_network)
             for k in msg[1].keys():
                 self.client_bandwidth[k] = msg[1][k]
 
@@ -166,8 +164,8 @@ class FedServer(FedServerInterface):
         """
         eweights = []
         for i in range(len(client_ips)):
-            msg = self.recv_msg(self.socks[socket.gethostbyname(config.CLIENT_MAP[client_ips[i]])],
-                                message_utils.local_weights_edge_to_server)
+            msg = self.recv_msg(self.socks[socket.gethostbyname(client_ips[i])],
+                                message_utils.local_weights_edge_to_server+"_"+client_ips[i])
             self.tt_end[client_ips[i]] = time.time()
             eweights.append(msg[1])
         return eweights
@@ -175,7 +173,7 @@ class FedServer(FedServerInterface):
     def c_local_weights(self, client_ips):
         cweights = []
         for i in range(len(client_ips)):
-            msg = self.recv_msg(self.socks[socket.gethostbyname(client_ips[i])],
+            msg = self.recv_msg(self.edge_socks[socket.gethostbyname(client_ips[i])],
                                 message_utils.local_weights_client_to_server)
             self.tt_end[client_ips[i]] = time.time()
             cweights.append(msg[1])
