@@ -56,7 +56,9 @@ class FedEdgeServer(FedEdgeServerInterface):
             labels = msg[2]
             # fed_logger.info(client_ip + " training model forward")
             inputs, targets = smashed_layers.to(self.device), labels.to(self.device)
-            self.optimizers[client_ip].zero_grad()
+            if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < len(
+                    self.uninet.cfg) - 1:
+                self.optimizers[client_ip].zero_grad()
             outputs = self.nets[client_ip](inputs)
 
             # fed_logger.info(client_ip + " sending local activations")
@@ -68,7 +70,9 @@ class FedEdgeServer(FedEdgeServerInterface):
             gradients = msg[1].to(self.device)
             # fed_logger.info(client_ip + " training model backward")
             outputs.backward(gradients)
-            self.optimizers[client_ip].step()
+            if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < len(
+                    self.uninet.cfg) - 1:
+                self.optimizers[client_ip].step()
             # fed_logger.info(client_ip + " sending gradients")
             msg = [message_utils.server_gradients_edge_to_client + client_ip, inputs.grad]
             self.send_msg(self.socks[socket.gethostbyname(client_ip)], msg)

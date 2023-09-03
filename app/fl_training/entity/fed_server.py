@@ -74,24 +74,28 @@ class FedServer(FedServerInterface):
     def _thread_training_offloading(self, client_ip):
         # iteration = int((test_config.N / (test_config.K * test_config.B)))
         flag = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
-                             message_utils.local_iteration_flag_edge_to_server+"_"+client_ip)[1]
+                             message_utils.local_iteration_flag_edge_to_server + "_" + client_ip)[1]
         while flag:
             flag = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
-                                 message_utils.local_iteration_flag_edge_to_server+"_"+client_ip)[1]
+                                 message_utils.local_iteration_flag_edge_to_server + "_" + client_ip)[1]
             if not flag:
                 break
             # fed_logger.info(client_ip + " receiving local activations")
             msg = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
-                                message_utils.local_activations_edge_to_server+"_"+client_ip)
+                                message_utils.local_activations_edge_to_server + "_" + client_ip)
             smashed_layers = msg[1]
             labels = msg[2]
             # fed_logger.info(client_ip + " training model")
             inputs, targets = smashed_layers.to(self.device), labels.to(self.device)
-            self.optimizers[client_ip].zero_grad()
+            if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < len(
+                    self.uninet.cfg) - 1:
+                self.optimizers[client_ip].zero_grad()
             outputs = self.nets[client_ip](inputs)
             loss = self.criterion(outputs, targets)
             loss.backward()
-            self.optimizers[client_ip].step()
+            if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < len(
+                    self.uninet.cfg) - 1:
+                self.optimizers[client_ip].step()
 
             # Send gradients to edge
             # fed_logger.info(client_ip + " sending gradients")
@@ -127,7 +131,7 @@ class FedServer(FedServerInterface):
         self.net_threads = {}
         for i in range(len(connection_ips)):
             self.net_threads[connection_ips[i]] = threading.Thread(target=self._thread_network_testing,
-                                                             args=(connection_ips[i],),name=connection_ips[i])
+                                                                   args=(connection_ips[i],), name=connection_ips[i])
             self.net_threads[connection_ips[i]].start()
 
         for i in range(len(connection_ips)):
@@ -165,7 +169,7 @@ class FedServer(FedServerInterface):
         eweights = []
         for i in range(len(client_ips)):
             msg = self.recv_msg(self.socks[socket.gethostbyname(client_ips[i])],
-                                message_utils.local_weights_edge_to_server+"_"+client_ips[i])
+                                message_utils.local_weights_edge_to_server + "_" + client_ips[i])
             self.tt_end[client_ips[i]] = time.time()
             eweights.append(msg[1])
         return eweights

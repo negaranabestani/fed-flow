@@ -83,3 +83,17 @@ class TestFed(unittest.TestCase):
         fed_logger.info(str(test.stdout))
         if test.returncode != 0:
             self.fail(str(test.stderr))
+
+    def test_no_offloading_1_1_3(self):
+        with open("test_config/test_no_offloading_1_1_3_config.py", "r") as f:
+            data = f.read()
+
+        with open("../../app/config/config.py", "w") as f:
+            f.write(data)
+        test = subprocess.run(
+            ['docker-compose', '-f', 'docker_compose/test_no_offloading_1_1_3.yaml', 'up', '--build',
+             '--remove-orphans'])
+        fed_logger.info(str(test.stdout))
+        if test.returncode != 0:
+            self.fail(str(test.stderr))
+

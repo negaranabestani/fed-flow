@@ -32,3 +32,25 @@ services:
       - edge1
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s no_splitting"
 
+  client2:
+    build:
+      context: ../../../
+      dockerfile: client.Dockerfile
+      args:
+        - INDEX=1
+    hostname: client2
+    depends_on:
+      - edge1
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 1 -o True -s no_splitting"
+
+  client3:
+    build:
+      context: ../../../
+      dockerfile: client.Dockerfile
+      args:
+        - INDEX=2
+    hostname: client2
+    depends_on:
+      - edge1
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 2 -o True -s no_splitting"
+

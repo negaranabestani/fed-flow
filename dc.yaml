@@ -7,7 +7,7 @@ services:
     ports:
       - "5002:5002"
     hostname: server
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py -o True -s fake_splitting"
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py -o True -s no_splitting"
 
   edge1:
     build:
@@ -20,7 +20,7 @@ services:
     hostname: edge1
     depends_on:
       - server
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -i 0 -o True -s fake_splitting"
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -i 0 -o True -s no_splitting"
   client1:
     build:
       context: .
@@ -30,27 +30,27 @@ services:
     hostname: client1
     depends_on:
       - edge1
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s fake_splitting"
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s no_splitting"
 
-  client2:
-    build:
-      context: .
-      dockerfile: client.Dockerfile
-      args:
-        - INDEX=1
-    hostname: client2
-    depends_on:
-      - edge1
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 1 -o True -s fake_splitting"
-
-  client3:
-    build:
-      context: .
-      dockerfile: client.Dockerfile
-      args:
-        - INDEX=2
-    hostname: client3
-    depends_on:
-      - edge1
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 2 -o True -s fake_splitting"
+#  client2:
+#    build:
+#      context: .
+#      dockerfile: client.Dockerfile
+#      args:
+#        - INDEX=1
+#    hostname: client2
+#    depends_on:
+#      - edge1
+#    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 1 -o True -s no_splitting"
+#
+#  client3:
+#    build:
+#      context: .
+#      dockerfile: client.Dockerfile
+#      args:
+#        - INDEX=2
+#    hostname: client3
+#    depends_on:
+#      - edge1
+#    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 2 -o True -s no_splitting"
 
