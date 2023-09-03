@@ -9,7 +9,7 @@ K = 1  # Number of devices
 G = 1  # Number of groups
 
 # Unique clients order
-HOST2IP = {'the-great-green': '127.0.0.1'}
+HOST2IP = {'soleimani': '127.0.0.1'}
 CLIENTS_CONFIG = {'127.0.0.1': 0}
 EDGE_SERVER_LIST = ['127.0.0.1']
 CLIENTS_LIST = ['127.0.0.1']
@@ -32,7 +32,7 @@ model_cfg = {
              ('D', 8 * 8 * 64, 128, 1, 64, 128 * 8 * 8 * 64),
              ('D', 128, 10, 1, 10, 128 * 10)]
 }
-model_name = ''
+model_name = 'VGG5'
 model_size = 1.28
 model_flops = 32.902
 total_flops = 8488192
