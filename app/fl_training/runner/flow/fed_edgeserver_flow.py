@@ -2,6 +2,8 @@ import socket
 import sys
 import threading
 
+from app.util import message_utils
+
 sys.path.append('../../../../')
 from app.config import config
 from app.config.logger import fed_logger
@@ -53,3 +55,5 @@ def run(options_ins):
                                     options_ins.get('dataset'))
     fed_logger.info("start mode: " + str(options_ins.values()))
     run_offload(edge_server_ins, LR)
+    msg = edge_server_ins.recv_msg(edge_server_ins.central_server_communicator.sock, message_utils.finish)
+    edge_server_ins.scatter(msg)

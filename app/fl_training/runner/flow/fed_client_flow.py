@@ -6,7 +6,7 @@ sys.path.append('../../../../')
 from app.fl_training.entity.fed_client import Client
 from app.config import config
 from app.config.config import *
-from app.util import data_utils
+from app.util import data_utils, message_utils
 from app.config.logger import fed_logger
 from app.fl_training.interface.fed_client_interface import FedClientInterface
 
@@ -74,6 +74,8 @@ def run(options_ins):
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR)
         run_no_offload(client_ins, LR)
+
+    msg = client_ins.recv_msg(client_ins.sock, message_utils.finish)
 
 # parser = argparse.ArgumentParser()
 # options = input_utils.parse_argument(parser)

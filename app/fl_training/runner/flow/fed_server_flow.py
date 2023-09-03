@@ -5,7 +5,7 @@ import time
 
 sys.path.append('../../../../')
 from app.config import config
-from app.util import model_utils
+from app.util import model_utils, message_utils
 from app.fl_training.entity.fed_server import FedServer
 from app.config.logger import fed_logger
 from app.fl_training.interface.fed_server_interface import FedServerInterface
@@ -117,3 +117,5 @@ def run(options_ins):
         server_ins = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
                                options_ins.get('dataset'), offload)
         run_no_offload(server_ins, options_ins)
+    msg = [message_utils.finish, True]
+    server_ins.scatter(msg)

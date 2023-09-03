@@ -2,7 +2,7 @@ version: '3'
 services:
   server:
     build:
-      context: .
+      context: ../../../
       dockerfile: server.Dockerfile
     ports:
       - "5004:5004"
@@ -11,7 +11,7 @@ services:
 
   edge1:
     build:
-      context: .
+      context: ../../../
       dockerfile: edge.Dockerfile
       args:
         - INDEX=0
@@ -24,7 +24,7 @@ services:
 
   client1:
     build:
-      context: .
+      context: ../../../
       dockerfile: client.Dockerfile
       args:
         - INDEX=0
@@ -35,7 +35,7 @@ services:
 
   client2:
     build:
-      context: .
+      context: ../../../
       dockerfile: client.Dockerfile
       args:
         - INDEX=1
@@ -46,7 +46,7 @@ services:
 
   edge2:
     build:
-      context: .
+      context: ../../../
       dockerfile: edge.Dockerfile
       args:
         - INDEX=0
@@ -59,7 +59,7 @@ services:
 
   client3:
     build:
-      context: .
+      context: ../../../
       dockerfile: client.Dockerfile
       args:
         - INDEX=2
@@ -70,7 +70,7 @@ services:
 
   client4:
     build:
-      context: .
+      context: ../../../
       dockerfile: client.Dockerfile
       args:
         - INDEX=3

@@ -36,6 +36,7 @@ class FedServerInterface(ABC, Communicator):
         self.tt_end = {}
         i = 0
 
+        fed_logger.info("Server Connection devices")
         while len(self.edge_socks) < config.S:
             self.sock.listen(5)
             fed_logger.info("Waiting For Incoming Connections.")
@@ -45,6 +46,9 @@ class FedServerInterface(ABC, Communicator):
             self.edge_socks[str(ip)] = edge_sock
 
         if offload:
+            msg = [message_utils.start_server_client_connection_sockets_edge_to_server,True]
+            self.scatter(msg)
+            fed_logger.info("Edge server clients connection")
             while len(self.socks) < config.K:
                 self.sock.listen(5)
                 fed_logger.info("Waiting For Incoming Connections.")

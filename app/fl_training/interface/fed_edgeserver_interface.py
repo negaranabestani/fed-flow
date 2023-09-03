@@ -32,6 +32,8 @@ class FedEdgeServerInterface(ABC, Communicator):
         fed_logger.info('Connecting to Server.')
         self.central_server_communicator.sock.connect((server_addr, server_port))
         fed_logger.info('Connected to Server.')
+        start_client_connection = self.recv_msg(self.central_server_communicator.sock,
+                                                message_utils.start_server_client_connection_sockets_edge_to_server)[1]
         fed_logger.info('Client socks Connecting to Server.')
         for ip in config.EDGE_MAP[ip_address]:
             self.central_server_socks[ip] = Communicator()
