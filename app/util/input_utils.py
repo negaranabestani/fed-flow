@@ -4,6 +4,7 @@ from app.util import model_utils
 
 options = {
     '-a': ['--aggregation', 'fed_avg', 'help description'],
+    '-e': ['--edgebased', False, 'help description'],
     '-c': ['--clustering', 'none_clustering', 'help description'],
     '-s': ['--splitting', 'none_splitting', 'help description'],
     '-m': ['--model', 'vgg', 'help description'],

@@ -54,7 +54,7 @@ class FedEdgeServerInterface(ABC, Communicator):
             fed_logger.info(client_sock)
             self.socks[str(ip)] = client_sock
         model_len = model_utils.get_unit_model_len()
-        self.uninet = model_utils.get_model('Unit', [model_len - 1, model_len - 1], self.device)
+        self.uninet = model_utils.get_model('Unit', [model_len - 1, model_len - 1], self.device,True)
 
         self.testset = data_utils.get_testset()
         self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())

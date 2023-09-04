@@ -50,8 +50,8 @@ random_seed = 0
 # Network configration
 SERVER_ADDR = 'server'
 
-SERVER_PORT = 5002
-EDGESERVER_PORT = {'edge1': 5001}
+SERVER_PORT = 51002
+EDGESERVER_PORT = {'edge1': 51001}
 
 K = 3  # Number of devices
 G = 1  # Number of groups

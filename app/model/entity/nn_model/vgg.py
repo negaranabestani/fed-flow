@@ -5,18 +5,25 @@ from app.model.interface.nn_model_interface import NNModel
 
 # Build the VGG nn_model according to location and split_layer
 class vgg(NNModel):
-    def _make_layers(self):
+    def _make_layers(self, edge_based):
         features = []
         denses = []
         cfg = self.get_config()
-        if self.location == 'Server':
-            cfg = cfg[self.split_layer[1] + 1:]
+        if edge_based:
+            if self.location == 'Server':
+                cfg = cfg[self.split_layer[1] + 1:]
 
-        if self.location == 'Client':
-            cfg = cfg[:self.split_layer[0] + 1]
+            if self.location == 'Client':
+                cfg = cfg[:self.split_layer[0] + 1]
 
-        if self.location == 'Edge':
-            cfg = cfg[self.split_layer[0] + 1:self.split_layer[1] + 1]
+            if self.location == 'Edge':
+                cfg = cfg[self.split_layer[0] + 1:self.split_layer[1] + 1]
+        else:
+            if self.location == 'Server':
+                cfg = cfg[self.split_layer + 1:]
+
+            if self.location == 'Client':
+                cfg = cfg[:self.split_layer + 1]
 
         if self.location == 'Unit':  # Get the holistic nn_model
             pass

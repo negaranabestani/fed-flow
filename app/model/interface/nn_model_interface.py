@@ -14,11 +14,14 @@ class NNModel(ABC, nn.Module):
         self.cfg = self.get_config()
         self.features, self.denses = None, None
 
-    def initialize(self, location, split_layer):
-        assert split_layer[0] < len(self.cfg)
+    def initialize(self, location, split_layer, edge_based):
+        split_point = split_layer
+        if edge_based:
+            split_point = split_layer[0]
+        assert split_point < len(self.cfg)
         self.split_layer = split_layer
         self.location = location
-        self.features, self.denses = self._make_layers()
+        self.features, self.denses = self._make_layers(edge_based)
         self._initialize_weights()
         return self
 
@@ -34,7 +37,7 @@ class NNModel(ABC, nn.Module):
         return out
 
     @abstractmethod
-    def _make_layers(self):
+    def _make_layers(self, edge_based):
         """
         notice that you can change any part of the method if the input and output still matches the requirements
         :param cfg: the configuration of each layer in a list

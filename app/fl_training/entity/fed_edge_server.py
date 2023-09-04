@@ -19,10 +19,10 @@ class FedEdgeServer(FedEdgeServerInterface):
                 client_ip = config.CLIENTS_LIST[i]
                 if split_layers[i][0] < len(
                         self.uninet.cfg) - 1:  # Only offloading client need initialize optimizer in server
-                    self.nets[client_ip] = model_utils.get_model('Edge', split_layers[i], self.device)
+                    self.nets[client_ip] = model_utils.get_model('Edge', split_layers[i], self.device,True)
 
                     # offloading weight in server also need to be initialized from the same global weight
-                    cweights = model_utils.get_model('Client', split_layers[i], self.device).state_dict()
+                    cweights = model_utils.get_model('Client', split_layers[i], self.device,True).state_dict()
 
                     pweights = model_utils.split_weights_edgeserver(self.uninet.state_dict(), cweights,
                                                                     self.nets[client_ip].state_dict())
@@ -31,7 +31,7 @@ class FedEdgeServer(FedEdgeServerInterface):
                     self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
                                                            momentum=0.9)
                 else:
-                    self.nets[client_ip] = model_utils.get_model('Edge', split_layers[i], self.device)
+                    self.nets[client_ip] = model_utils.get_model('Edge', split_layers[i], self.device,True)
         self.criterion = nn.CrossEntropyLoss()
 
     def aggregate(self, client_ips, aggregate_method):
@@ -98,16 +98,16 @@ class FedEdgeServer(FedEdgeServerInterface):
 
     def _thread_client_network_testing(self, client_ip):
         network_time_start = time.time()
-        msg = [message_utils.test_client_network, self.uninet.cpu().state_dict()]
+        msg = [message_utils.test_network, self.uninet.cpu().state_dict()]
         self.send_msg(self.socks[socket.gethostbyname(client_ip)], msg)
-        msg = self.recv_msg(self.socks[socket.gethostbyname(client_ip)], message_utils.test_client_network)
+        msg = self.recv_msg(self.socks[socket.gethostbyname(client_ip)], message_utils.test_network)
         network_time_end = time.time()
         self.client_bandwidth[client_ip] = network_time_end - network_time_start
 
     def test_server_network(self):
         msg = self.central_server_communicator.recv_msg(self.central_server_communicator.sock,
-                                                        message_utils.test_server_network)
-        msg = [message_utils.test_server_network, self.uninet.cpu().state_dict()]
+                                                        message_utils.test_network)
+        msg = [message_utils.test_network, self.uninet.cpu().state_dict()]
         self.central_server_communicator.send_msg(self.central_server_communicator.sock, msg)
 
     def client_network(self):
@@ -122,13 +122,15 @@ class FedEdgeServer(FedEdgeServerInterface):
         receive send splitting data to clients
         """
         msg = self.central_server_communicator.recv_msg(self.central_server_communicator.sock,
-                                                        message_utils.split_layers_server_to_edge)
+                                                        message_utils.split_layers)
         self.split_layers = msg[1]
-        for i in range(len(self.split_layers)):
-            if client_ips.__contains__(config.CLIENTS_LIST[i]):
-                client_ip = config.CLIENTS_LIST[i]
-                msg = [message_utils.split_layers_edge_to_client, self.split_layers[i]]
-                self.send_msg(self.socks[socket.gethostbyname(client_ip)], msg)
+        msg = [message_utils.split_layers, self.split_layers]
+        self.scatter(msg)
+        # for i in range(len(self.split_layers)):
+        #     if client_ips.__contains__(config.CLIENTS_LIST[i]):
+        #         client_ip = config.CLIENTS_LIST[i]
+        #         msg = [message_utils.split_layers, self.split_layers[i]]
+        #         self.send_msg(self.socks[socket.gethostbyname(client_ip)], msg)
 
     def local_weights(self, client_ip):
         """
@@ -149,7 +151,7 @@ class FedEdgeServer(FedEdgeServerInterface):
                                                       message_utils.initial_global_weights_server_to_edge)[1]
         for i in range(len(self.split_layers)):
             if client_ips.__contains__(config.CLIENTS_LIST[i]):
-                cweights = model_utils.get_model('Client', self.split_layers[i], self.device).state_dict()
+                cweights = model_utils.get_model('Client', self.split_layers[i], self.device,True).state_dict()
                 pweights = model_utils.split_weights_edgeserver(weights, cweights,
                                                                 self.nets[config.CLIENTS_LIST[i]].state_dict())
                 self.nets[config.CLIENTS_LIST[i]].load_state_dict(pweights)

@@ -14,10 +14,12 @@ from app.util import data_utils, model_utils, message_utils
 
 
 class FedServerInterface(ABC, Communicator):
-    def __init__(self, ip_address, port, model_name, dataset, offload):
+    def __init__(self, ip_address, port, model_name, dataset, offload, edge_based):
         super(FedServerInterface, self).__init__()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.port = port
+        self.offload = offload
+        self.edge_based = edge_based
         self.model_name = model_name
         self.sock.bind((ip_address, self.port))
         self.socks = {}
@@ -45,8 +47,8 @@ class FedServerInterface(ABC, Communicator):
             fed_logger.info(edge_sock)
             self.edge_socks[str(ip)] = edge_sock
 
-        if offload:
-            msg = [message_utils.start_server_client_connection_sockets_edge_to_server,True]
+        if edge_based:
+            msg = [message_utils.start_server_client_connection_sockets_edge_to_server, True]
             self.scatter(msg)
             fed_logger.info("Edge server clients connection")
             while len(self.socks) < config.K:
@@ -66,14 +68,18 @@ class FedServerInterface(ABC, Communicator):
             self.socks = temp_socks
 
         model_len = model_utils.get_unit_model_len()
-        self.uninet = model_utils.get_model('Unit', [model_len - 1, model_len - 1], self.device)
+        self.uninet = model_utils.get_model('Unit', config.split_layer[0], self.device, self.edge_based)
 
         self.testset = data_utils.get_testset()
         self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
         self.criterion = nn.CrossEntropyLoss()
 
     @abstractmethod
-    def offloading_train(self, client_ips):
+    def edge_offloading_train(self, client_ips):
+        pass
+
+    @abstractmethod
+    def no_edge_offloading_train(self, client_ips):
         pass
 
     @abstractmethod
@@ -116,7 +122,7 @@ class FedServerInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def offloading_global_weights(self):
+    def edge_offloading_global_weights(self):
         """
         send global weights
         """
@@ -178,7 +184,10 @@ class FedServerInterface(ABC, Communicator):
         assert len(split_layer) == len(config.CLIENTS_LIST)
         for i in range(len(config.CLIENTS_LIST)):
             for l in range(model_utils.get_unit_model_len()):
-                if l <= split_layer[i][0]:
+                split_point = split_layer[i]
+                if self.edge_based:
+                    split_point = split_layer[i][0]
+                if l <= split_point:
                     workload += model_utils.get_class()().cfg[l][5]
             offloading[config.CLIENTS_LIST[i]] = workload / config.total_flops
             workload = 0

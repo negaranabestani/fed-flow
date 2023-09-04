@@ -18,9 +18,9 @@ torch.manual_seed(0)
 MODEL_BASE_DIR = 'app.model.entity.nn_model.'
 
 
-def get_model(location, layer, device):
+def get_model(location, layer, device, edge_based):
     net = get_class()()
-    net = net.initialize(location, layer)
+    net = net.initialize(location, layer, edge_based)
     net = net.to(device)
     fed_logger.debug(str(net))
     return net
