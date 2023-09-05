@@ -162,3 +162,7 @@ def check_link_integrity():
 
 def get_unit_model_len():
     return len(get_class()().get_config())
+
+
+def get_unit_model() -> NNModel:
+    return get_class()()

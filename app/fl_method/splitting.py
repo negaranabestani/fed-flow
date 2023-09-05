@@ -5,10 +5,11 @@ import torch
 
 from app.config import config
 from app.model.entity.rl_model import PPO
+from app.util import model_utils
 
 
 def rl_splitting(state, labels):
-    state_dim = 6 * config.G
+    state_dim = 2 * config.G
     action_dim = config.G
     agent = None
     if agent is None:
@@ -38,7 +39,7 @@ def action_to_layer(action):  # Expanding group actions to each device
     model_state_flops = []
     cumulated_flops = 0
 
-    for l in config.model_cfg[config.model_name]:
+    for l in model_utils.get_unit_model().cfg:
         cumulated_flops += l[5]
         model_state_flops.append(cumulated_flops)
 
@@ -58,7 +59,7 @@ def action_to_layer(action):  # Expanding group actions to each device
 def none(state, labels):
     split_layer = []
     for c in config.CLIENTS_LIST:
-        split_layer.append(config.model_len - 1)
+        split_layer.append(model_utils.get_unit_model_len() - 1)
 
     config.split_layer = split_layer
     return config.split_layer

@@ -50,14 +50,14 @@ class TestFed(unittest.TestCase):
         if test.returncode != 0:
             self.fail(str(test.stderr))
 
-    def test_RL_offloading_1_1(self):
-        with open("test_config/test_RL_offloading_1_1_config.py", "r") as f:
+    def test_RL_offloading_1_3(self):
+        with open("test_config/test_RL_offloading_1_3_config.py", "r") as f:
             data = f.read()
 
         with open("../../app/config/config.py", "w") as f:
             f.write(data)
         test = subprocess.run(
-            ['docker', 'compose', '-f', 'docker_compose/test_RL_offloading_1_1.yaml', 'up', '--build',
+            ['docker', 'compose', '-f', 'docker_compose/test_RL_offloading_1_3.yaml', 'up', '--build',
              '--remove-orphans'])
         subprocess.run(['docker', 'system', 'prune', '-f'])
 
