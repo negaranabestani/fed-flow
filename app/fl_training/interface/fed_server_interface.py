@@ -203,3 +203,7 @@ class FedServerInterface(ABC, Communicator):
 
     def bandwith(self):
         return self.edge_bandwidth
+
+    @abstractmethod
+    def edge_based_state(self, tt, offloading):
+        pass
