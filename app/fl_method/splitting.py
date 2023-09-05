@@ -1,8 +1,11 @@
+import subprocess
+
 import numpy as np
 import torch
 
 from app.config import config
 from app.model.entity.rl_model import PPO
+from app.util import model_utils
 
 
 def rl_splitting(state, labels):
@@ -13,7 +16,7 @@ def rl_splitting(state, labels):
         # Initialize trained RL agent
         agent = PPO.PPO(state_dim, action_dim, config.action_std, config.rl_lr, config.rl_betas, config.rl_gamma,
                         config.K_epochs, config.eps_clip)
-        agent.policy.load_state_dict(torch.load('./PPO_FedAdapt.pth'))
+        agent.policy.load_state_dict(torch.load('/fed-flow/app/agent/PPO_FedAdapt.pth'))
     action = agent.exploit(state)
     action = expand_actions(action, config.CLIENTS_LIST, labels)
 
@@ -36,7 +39,7 @@ def action_to_layer(action):  # Expanding group actions to each device
     model_state_flops = []
     cumulated_flops = 0
 
-    for l in config.model_cfg[config.model_name]:
+    for l in model_utils.get_unit_model().cfg:
         cumulated_flops += l[5]
         model_state_flops.append(cumulated_flops)
 
@@ -56,7 +59,7 @@ def action_to_layer(action):  # Expanding group actions to each device
 def none(state, labels):
     split_layer = []
     for c in config.CLIENTS_LIST:
-        split_layer.append(config.model_len - 1)
+        split_layer.append(model_utils.get_unit_model_len() - 1)
 
     config.split_layer = split_layer
     return config.split_layer

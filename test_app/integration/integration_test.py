@@ -17,7 +17,7 @@ class TestFed(unittest.TestCase):
 
         test = subprocess.run(
             ['docker', 'compose', '-f', 'docker_compose/test_classic_1_1.yaml', 'up', '--build', '--remove-orphans'])
-        subprocess.run(['docker', 'system', 'prune'])
+        subprocess.run(['docker', 'system', 'prune', '-f'])
         if test.returncode != 0:
             self.fail(str(test.stderr))
 
@@ -29,7 +29,7 @@ class TestFed(unittest.TestCase):
             f.write(data)
         test = subprocess.run(
             ['docker', 'compose', '-f', 'docker_compose/test_classic_1_3.yaml', 'up', '--build', '--remove-orphans'])
-        subprocess.run(['docker', 'system', 'prune'])
+        subprocess.run(['docker', 'system', 'prune', '-f'])
 
         fed_logger.info(str(test.stdout))
         if test.returncode != 0:
@@ -44,7 +44,22 @@ class TestFed(unittest.TestCase):
         test = subprocess.run(
             ['docker', 'compose', '-f', 'docker_compose/test_fake_offloading_1_1.yaml', 'up', '--build',
              '--remove-orphans'])
-        subprocess.run(['docker', 'system', 'prune'])
+        subprocess.run(['docker', 'system', 'prune', '-f'])
+
+        fed_logger.info(str(test.stdout))
+        if test.returncode != 0:
+            self.fail(str(test.stderr))
+
+    def test_RL_offloading_1_3(self):
+        with open("test_config/test_RL_offloading_1_3_config.py", "r") as f:
+            data = f.read()
+
+        with open("../../app/config/config.py", "w") as f:
+            f.write(data)
+        test = subprocess.run(
+            ['docker', 'compose', '-f', 'docker_compose/test_RL_offloading_1_3.yaml', 'up', '--build',
+             '--remove-orphans'])
+        subprocess.run(['docker', 'system', 'prune', '-f'])
 
         fed_logger.info(str(test.stdout))
         if test.returncode != 0:
@@ -59,7 +74,7 @@ class TestFed(unittest.TestCase):
         test = subprocess.run(
             ['docker', 'compose', '-f', 'docker_compose/test_fake_offloading_1_3.yaml', 'up', '--build',
              '--remove-orphans'])
-        subprocess.run(['docker', 'system', 'prune'])
+        subprocess.run(['docker', 'system', 'prune', '-f'])
 
         fed_logger.info(str(test.stdout))
         if test.returncode != 0:
@@ -74,7 +89,7 @@ class TestFed(unittest.TestCase):
         test = subprocess.run(
             ['docker', 'compose', '-f', 'docker_compose/test_fake_offloading_1_1_1.yaml', 'up', '--build',
              '--remove-orphans'])
-        subprocess.run(['docker', 'system', 'prune'])
+        subprocess.run(['docker', 'system', 'prune', '-f'])
 
         fed_logger.info(str(test.stdout))
         if test.returncode != 0:
@@ -89,7 +104,7 @@ class TestFed(unittest.TestCase):
         test = subprocess.run(
             ['docker', 'compose', '-f', 'docker_compose/test_fake_offloading_1_1_3.yaml', 'up', '--build',
              '--remove-orphans'])
-        subprocess.run(['docker', 'system', 'prune'])
+        subprocess.run(['docker', 'system', 'prune', '-f'])
 
         fed_logger.info(str(test.stdout))
         if test.returncode != 0:
@@ -104,7 +119,7 @@ class TestFed(unittest.TestCase):
         test = subprocess.run(
             ['docker', 'compose', '-f', 'docker_compose/test_fake_offloading_1_2_4.yaml', 'up', '--build',
              '--remove-orphans'])
-        subprocess.run(['docker', 'system', 'prune'])
+        subprocess.run(['docker', 'system', 'prune', '-f'])
 
         fed_logger.info(str(test.stdout))
         if test.returncode != 0:
@@ -119,7 +134,7 @@ class TestFed(unittest.TestCase):
         test = subprocess.run(
             ['docker', 'compose', '-f', 'docker_compose/test_no_offloading_1_1_1.yaml', 'up', '--build',
              '--remove-orphans'])
-        subprocess.run(['docker', 'system', 'prune'])
+        subprocess.run(['docker', 'system', 'prune', '-f'])
 
         fed_logger.info(str(test.stdout))
         if test.returncode != 0:
@@ -134,7 +149,7 @@ class TestFed(unittest.TestCase):
         test = subprocess.run(
             ['docker', 'compose', '-f', 'docker_compose/test_no_offloading_1_1_3.yaml', 'up', '--build',
              '--remove-orphans'])
-        subprocess.run(['docker', 'system', 'prune'])
+        subprocess.run(['docker', 'system', 'prune', '-f'])
 
         fed_logger.info(str(test.stdout))
         if test.returncode != 0:
@@ -149,7 +164,7 @@ class TestFed(unittest.TestCase):
         test = subprocess.run(
             ['docker', 'compose', '-f', 'docker_compose/test_no_offloading_1_2_4.yaml', 'up', '--build',
              '--remove-orphans'])
-        subprocess.run(['docker', 'system', 'prune'])
+        subprocess.run(['docker', 'system', 'prune', '-f'])
 
         fed_logger.info(str(test.stdout))
         if test.returncode != 0:
