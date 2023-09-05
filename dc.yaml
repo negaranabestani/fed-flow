@@ -5,22 +5,9 @@ services:
       context: .
       dockerfile: server.Dockerfile
     ports:
-      - "51002:51002"
+      - "51008:51008"
     hostname: server
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py -o True -s no_splitting -e True"
-
-  edge1:
-    build:
-      context: .
-      dockerfile: edge.Dockerfile
-      args:
-        - INDEX=0
-    ports:
-      - "51001:51001"
-    hostname: edge1
-    depends_on:
-      - server
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -i 0 -o True -s no_splitting -e True"
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py -o True -s no_edge_rl_splitting"
   client1:
     build:
       context: .
@@ -28,9 +15,7 @@ services:
       args:
         - INDEX=0
     hostname: client1
-    depends_on:
-      - edge1
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s no_splitting -e True"
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s no_edge_rl_splitting"
 
   client2:
     build:
@@ -39,9 +24,7 @@ services:
       args:
         - INDEX=1
     hostname: client2
-    depends_on:
-      - edge1
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 1 -o True -s no_splitting -e True"
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 1 -o True -s no_edge_rl_splitting"
 
   client3:
     build:
@@ -50,7 +33,22 @@ services:
       args:
         - INDEX=2
     hostname: client3
-    depends_on:
-      - edge1
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 2 -o True -s no_splitting -e True"
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 2 -o True -s no_edge_rl_splitting"
 
+  client4:
+    build:
+      context: .
+      dockerfile: client.Dockerfile
+      args:
+        - INDEX=3
+    hostname: client4
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 3 -o True -s no_edge_rl_splitting"
+
+  client5:
+    build:
+      context: .
+      dockerfile: client.Dockerfile
+      args:
+        - INDEX=4
+    hostname: client5
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 4 -o True -s no_edge_rl_splitting"

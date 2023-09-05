@@ -5,7 +5,7 @@ RUN mkdir -p /fed-flow/app
 
 
 ADD requirements.txt /fed-flow/
-COPY lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY fedflow-env/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 WORKDIR /fed-flow/
 #RUN pip install --default-timeout=1200 -r requirements.txt
 COPY app /fed-flow/app

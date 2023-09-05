@@ -1,3 +1,5 @@
+import subprocess
+
 import numpy as np
 import torch
 
@@ -6,14 +8,14 @@ from app.model.entity.rl_model import PPO
 
 
 def rl_splitting(state, labels):
-    state_dim = 2 * config.G
+    state_dim = 6 * config.G
     action_dim = config.G
     agent = None
     if agent is None:
         # Initialize trained RL agent
         agent = PPO.PPO(state_dim, action_dim, config.action_std, config.rl_lr, config.rl_betas, config.rl_gamma,
                         config.K_epochs, config.eps_clip)
-        agent.policy.load_state_dict(torch.load('./PPO_FedAdapt.pth'))
+        agent.policy.load_state_dict(torch.load('/fed-flow/app/agent/PPO_FedAdapt.pth'))
     action = agent.exploit(state)
     action = expand_actions(action, config.CLIENTS_LIST, labels)
 
