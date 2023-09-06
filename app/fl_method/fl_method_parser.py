@@ -9,5 +9,7 @@ fl_methods = {
     "fake_splitting": splitting.fake,
     "no_splitting": splitting.no_splitting,
     "no_edge_fake_splitting": splitting.no_edge_fake,
-    "no_edge_rl_splitting": splitting.rl_splitting
+    "no_edge_rl_splitting": splitting.rl_splitting,
+    "random_splitting": splitting.randomSplitting,
+    "fedmec_splitting": splitting.FedMec
 }

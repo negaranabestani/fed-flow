@@ -2,6 +2,7 @@ import subprocess
 
 import numpy as np
 import torch
+import random
 
 from app.config import config
 from app.model.entity.rl_model import PPO
@@ -87,3 +88,27 @@ def no_splitting(state, labels):
     for i in range(config.K):
         split_list.append([6, 6])
     return split_list
+
+
+# HFLP used random partitioning for splitting
+def randomSplitting(state, labels):
+    """ Randomly split the model between clients edge devices and cloud server """
+
+    splittingArray = []
+    for i in range(config.K):
+        op1 = random.randint(1, config.model_len - 1)
+        op2 = random.randint(op1, config.model_len - 1)
+        splittingArray.append([op1, op2])
+    return splittingArray
+
+
+# FedMec: which empirically deploys the convolutional layers of a DNN on the device-side while
+# assigning the remaining part to the edge server
+def FedMec(state, labels):
+    for i in config.model_cfg["VGG5"]:
+        """ C means convolutional layer """
+        if i[0] == 'C':
+            lastConvolutionalLayerIndex = config.model_cfg["VGG5"].index(i)
+
+    splittingArray = [[lastConvolutionalLayerIndex, config.model_len - 1] for _ in range(config.K)]
+    return splittingArray
