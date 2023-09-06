@@ -34,11 +34,13 @@ class FedServer(FedServerInterface):
             if split_point < len(
                     self.uninet.cfg) - 1:  # Only offloading client need initialize optimizer in server
                 if self.edge_based:
-                    self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device, self.edge_based)
+                    self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device,
+                                                                 self.edge_based)
 
                     # offloading weight in server also need to be initialized from the same global weight
                     eweights = model_utils.get_model('Edge', split_layers[i], self.device, self.edge_based).state_dict()
-                    cweights = model_utils.get_model('Client', split_layers[i], self.device, self.edge_based).state_dict()
+                    cweights = model_utils.get_model('Client', split_layers[i], self.device,
+                                                     self.edge_based).state_dict()
 
                     pweights = model_utils.split_weights_server(self.uninet.state_dict(), cweights,
                                                                 self.nets[client_ip].state_dict(), eweights)
@@ -47,10 +49,12 @@ class FedServer(FedServerInterface):
                     self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
                                                            momentum=0.9)
                 else:
-                    self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device, self.edge_based)
+                    self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device,
+                                                                 self.edge_based)
 
                     # offloading weight in server also need to be initialized from the same global weight
-                    cweights = model_utils.get_model('Client', split_layers[i], self.device, self.edge_based).state_dict()
+                    cweights = model_utils.get_model('Client', split_layers[i], self.device,
+                                                     self.edge_based).state_dict()
                     pweights = model_utils.split_weights_server(self.uninet.state_dict(), cweights,
                                                                 self.nets[client_ip].state_dict(), [])
                     self.nets[client_ip].load_state_dict(pweights)
@@ -262,3 +266,13 @@ class FedServer(FedServerInterface):
     def split(self, options: dict):
         self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(self.state, self.group_labels)
         fed_logger.info('Next Round OPs: ' + str(self.split_layer))
+
+    def edge_based_state(self, tt, offloading):
+        state = []
+        for i in range(config.K):
+            state.append("energy" + str(i))
+        for i in range(config.S):
+            state.append("utilization" + str(i))
+        state = state + offloading
+        state.append(tt)
+        return state

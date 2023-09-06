@@ -117,3 +117,4 @@ class FedEdgeServerInterface(ABC, Communicator):
     @abstractmethod
     def thread_training(self, client_ip):
         pass
+

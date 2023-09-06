@@ -13,8 +13,9 @@ from app.fl_training.interface.fed_server_interface import FedServerInterface
 
 def run_edge_based(server: FedServerInterface, LR, options):
     server.initialize(config.split_layer, LR)
+    training_time = 0
     res = {}
-    res['trianing_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
+    res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
 
     for r in range(config.R):
         fed_logger.info('====================================>')
@@ -35,8 +36,8 @@ def run_edge_based(server: FedServerInterface, LR, options):
         fed_logger.info("clustering")
         server.cluster(options)
         fed_logger.info("getting state")
-        ttpi = server.ttpi(config.CLIENTS_LIST)
-        server.state = server.concat_norm(ttpi, server.offloading)
+        offloading = server.split_layers
+        server.state = server.edge_based_state(training_time, offloading)
 
         fed_logger.info("splitting")
         server.split(options)
@@ -59,8 +60,8 @@ def run_edge_based(server: FedServerInterface, LR, options):
         e_time = time.time()
 
         # Recording each round training time, bandwidth and test_app accuracy
-        trianing_time = e_time - s_time
-        res['trianing_time'].append(trianing_time)
+        training_time = e_time - s_time
+        res['training_time'].append(training_time)
         res['bandwidth_record'].append(server.bandwith())
         with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
             pickle.dump(res, f)
@@ -70,17 +71,17 @@ def run_edge_based(server: FedServerInterface, LR, options):
         res['test_acc_record'].append(test_acc)
 
         fed_logger.info('Round Finish')
-        fed_logger.info('==> Round Training Time: {:}'.format(trianing_time))
+        fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
 
 def run_no_edge_offload(server: FedServerInterface, LR, options):
     server.initialize(config.split_layer, LR)
     res = {}
-    res['trianing_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
+    res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
 
     for r in range(config.R):
         res = {}
-        res['trianing_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
+        res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
 
         for r in range(config.R):
             fed_logger.info('====================================>')
@@ -116,8 +117,8 @@ def run_no_edge_offload(server: FedServerInterface, LR, options):
             e_time = time.time()
 
             # Recording each round training time, bandwidth and test accuracy
-            trianing_time = e_time - s_time
-            res['trianing_time'].append(trianing_time)
+            training_time = e_time - s_time
+            res['training_time'].append(training_time)
             res['bandwidth_record'].append(server.bandwith())
             with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
                 pickle.dump(res, f)
@@ -125,12 +126,12 @@ def run_no_edge_offload(server: FedServerInterface, LR, options):
             res['test_acc_record'].append(test_acc)
 
             fed_logger.info('Round Finish')
-            fed_logger.info('==> Round Training Time: {:}'.format(trianing_time))
+            fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
 
 def run_no_edge(server: FedServerInterface, options):
     res = {}
-    res['trianing_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
+    res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
 
     for r in range(config.R):
         fed_logger.info('====================================>')
@@ -149,8 +150,8 @@ def run_no_edge(server: FedServerInterface, options):
         e_time = time.time()
 
         # Recording each round training time, bandwidth and test accuracy
-        trianing_time = e_time - s_time
-        res['trianing_time'].append(trianing_time)
+        training_time = e_time - s_time
+        res['training_time'].append(training_time)
         res['bandwidth_record'].append(server.bandwith())
         with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
             pickle.dump(res, f)
@@ -158,7 +159,7 @@ def run_no_edge(server: FedServerInterface, options):
         res['test_acc_record'].append(test_acc)
 
         fed_logger.info('Round Finish')
-        fed_logger.info('==> Round Training Time: {:}'.format(trianing_time))
+        fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
 
 def run(options_ins):

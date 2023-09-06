@@ -8,6 +8,13 @@ from app.model.entity.rl_model import PPO
 from app.util import model_utils
 
 
+def edge_based_rl_splitting(state, labels):
+    split_list = []
+    for i in range(config.K):
+        split_list.append([3, 4])
+    return split_list
+
+
 def rl_splitting(state, labels):
     state_dim = 2 * config.G
     action_dim = config.G
