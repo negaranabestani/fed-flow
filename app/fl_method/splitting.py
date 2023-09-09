@@ -94,3 +94,10 @@ def no_splitting(state, labels):
     for i in range(config.K):
         split_list.append([6, 6])
     return split_list
+
+
+def only_edge_splitting(state, labels):
+    split_list = []
+    for i in range(config.K):
+        split_list.append([0, 6])
+    return split_list

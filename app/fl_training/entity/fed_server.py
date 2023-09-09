@@ -30,7 +30,7 @@ class FedServer(FedServerInterface):
             client_ip = config.CLIENTS_LIST[i]
             split_point = split_layers[i]
             if self.edge_based:
-                split_point = split_layers[i][0]
+                split_point = split_layers[i][1]
             if split_point < len(
                     self.uninet.cfg) - 1:  # Only offloading client need initialize optimizer in server
                 if self.edge_based:
@@ -150,13 +150,13 @@ class FedServer(FedServerInterface):
             labels = msg[2]
             # fed_logger.info(client_ip + " training model")
             inputs, targets = smashed_layers.to(self.device), labels.to(self.device)
-            if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < len(
+            if self.split_layers[config.CLIENTS_CONFIG[client_ip]][1] < len(
                     self.uninet.cfg) - 1:
                 self.optimizers[client_ip].zero_grad()
             outputs = self.nets[client_ip](inputs)
             loss = self.criterion(outputs, targets)
             loss.backward()
-            if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < len(
+            if self.split_layers[config.CLIENTS_CONFIG[client_ip]][1] < len(
                     self.uninet.cfg) - 1:
                 self.optimizers[client_ip].step()
 
