@@ -10,5 +10,6 @@ fl_methods = {
     "no_splitting": splitting.no_splitting,
     "no_edge_fake_splitting": splitting.no_edge_fake,
     "no_edge_rl_splitting": splitting.rl_splitting,
-    "only_edge_splitting": splitting.only_edge_splitting
+    "only_edge_splitting": splitting.only_edge_splitting,
+    "only_server_splitting": splitting.only_server_splitting
 }

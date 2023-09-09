@@ -101,3 +101,10 @@ def only_edge_splitting(state, labels):
     for i in range(config.K):
         split_list.append([0, 6])
     return split_list
+
+
+def only_server_splitting(state, labels):
+    split_list = []
+    for i in range(config.K):
+        split_list.append([0, 0])
+    return split_list
