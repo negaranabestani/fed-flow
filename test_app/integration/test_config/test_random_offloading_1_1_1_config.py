@@ -1,5 +1,22 @@
 import sys
 
+# # Network configration
+# SERVER_ADDR = 'server'
+#
+# SERVER_PORT = 51008
+# EDGESERVER_PORT = {'127.0.0.1': 51001}
+#
+# K = 1  # Number of devices
+# G = 1  # Number of groups
+#
+# # Unique clients order
+# HOST2IP = {}
+# CLIENTS_CONFIG = {}
+# EDGE_SERVER_LIST = ['127.0.0.1']
+# CLIENTS_LIST = []
+# EDGE_MAP = {'127.0.0.1': ['127.0.0.1']}
+# CLIENT_MAP = {'127.0.0.1': '127.0.0.1'}
+
 CLIENTS_BANDWIDTH = []
 index = ''
 
@@ -9,11 +26,20 @@ home = sys.path[0].split('fed-flow')[0] + 'fed-flow' + "/app"
 dataset_path = home + '/dataset/data/'
 N = 50000  # data length
 
+# Model configration
+model_cfg = {
+    # (Type, in_channels, out_channels, kernel_size, out_size(c_out*h*w), flops(c_out*h*w*k*k*c_in))
+    'VGG5': [('C', 3, 32, 3, 32 * 32 * 32, 32 * 32 * 32 * 3 * 3 * 3), ('M', 32, 32, 2, 32 * 16 * 16, 0),
+             ('C', 32, 64, 3, 64 * 16 * 16, 64 * 16 * 16 * 3 * 3 * 32), ('M', 64, 64, 2, 64 * 8 * 8, 0),
+             ('C', 64, 64, 3, 64 * 8 * 8, 64 * 8 * 8 * 3 * 3 * 64),
+             ('D', 8 * 8 * 64, 128, 1, 64, 128 * 8 * 8 * 64),
+             ('D', 128, 10, 1, 10, 128 * 10)]
+}
 model_name = ''
 model_size = 1.28
 model_flops = 32.902
 total_flops = 8488192
-split_layer = [[6, 6], [6, 6], [6, 6], [6, 6]]  # Initial split layers
+split_layer = [[6, 6]]  # Initial split layers
 model_len = 7
 
 # FL training configration
@@ -41,17 +67,17 @@ random_seed = 0
 # Network configration
 SERVER_ADDR = 'server'
 
-SERVER_PORT = 5004
-EDGESERVER_PORT = {'edge1': 5001, 'edge2': 5005}
+SERVER_PORT = 5002
+EDGESERVER_PORT = {'edge1': 5001}
 
-K = 4  # Number of devices
+K = 1  # Number of devices
 G = 1  # Number of groups
-S = 2  # Number of server connecting devices
+S = 1
 
 # Unique clients order
 HOST2IP = {}
-CLIENTS_CONFIG = {'client1': 0, 'client2': 1, 'client3': 2, 'client4': 3}
-EDGE_SERVER_LIST = ['edge1', 'edge2']
-CLIENTS_LIST = ['client1', 'client2', 'client3', 'client4']
-EDGE_MAP = {'edge1': ['client1', 'client2'], 'edge2': ['client3', 'client4']}
-CLIENT_MAP = {'client1': 'edge1', 'client2': 'edge1', 'client3': 'edge2', 'client4': 'edge2'}
+CLIENTS_CONFIG = {'client1': 0}
+EDGE_SERVER_LIST = ['edge1']
+CLIENTS_LIST = ['client1']
+EDGE_MAP = {'edge1': ['client1']}
+CLIENT_MAP = {'client1': 'edge1'}
