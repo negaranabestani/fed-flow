@@ -17,8 +17,7 @@ class FedEdgeServer(FedEdgeServerInterface):
         for i in range(len(split_layers)):
             if client_ips.__contains__(config.CLIENTS_LIST[i]):
                 client_ip = config.CLIENTS_LIST[i]
-                if split_layers[i][0] < len(
-                        self.uninet.cfg) - 1:  # Only offloading client need initialize optimizer in server
+                if split_layers[i][0] < split_layers[i][1]:  # Only offloading client need initialize optimizer in server
                     self.nets[client_ip] = model_utils.get_model('Edge', split_layers[i], self.device,True)
 
                     # offloading weight in server also need to be initialized from the same global weight
@@ -56,8 +55,7 @@ class FedEdgeServer(FedEdgeServerInterface):
             labels = msg[2]
             # fed_logger.info(client_ip + " training model forward")
             inputs, targets = smashed_layers.to(self.device), labels.to(self.device)
-            if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < len(
-                    self.uninet.cfg) - 1:
+            if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < self.split_layers[config.CLIENTS_CONFIG[client_ip]][1]:
                 self.optimizers[client_ip].zero_grad()
             outputs = self.nets[client_ip](inputs)
 
@@ -70,8 +68,7 @@ class FedEdgeServer(FedEdgeServerInterface):
             gradients = msg[1].to(self.device)
             # fed_logger.info(client_ip + " training model backward")
             outputs.backward(gradients)
-            if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < len(
-                    self.uninet.cfg) - 1:
+            if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < self.split_layers[config.CLIENTS_CONFIG[client_ip]][1]:
                 self.optimizers[client_ip].step()
             # fed_logger.info(client_ip + " sending gradients")
             msg = [message_utils.server_gradients_edge_to_client + client_ip, inputs.grad]
