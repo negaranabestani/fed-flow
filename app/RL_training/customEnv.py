@@ -11,8 +11,7 @@ logger = logging.getLogger()
 
 class CustomEnvironment(Environment):
 
-    def __init__(self, rewardTuningParams, iotDeviceNum, edgeDeviceNum, cloud,
-                 fraction=0.8):
+    def __init__(self, rewardTuningParams, iotDeviceNum, edgeDeviceNum, fraction=0.8):
         super().__init__()
 
         self.iotDeviceNum = iotDeviceNum
@@ -27,7 +26,8 @@ class CustomEnvironment(Environment):
 
     def states(self):
         # State = [AvgEnergy, TrainingTime, edge capacity, cloud capacity, prevAction ]
-        return dict(type="float", shape=(1 + 1 + self.edgeDeviceNum + 1 + self.iotDeviceNum * 2))
+        # return dict(type="float", shape=(1 + 1 + self.edgeDeviceNum + 1 + self.iotDeviceNum * 2))
+        return dict(type="float", shape=(1 + 1 + self.iotDeviceNum * 2))
 
     def actions(self):
         return dict(type="float", shape=(self.iotDeviceNum * 2,), min_value=0.0, max_value=1.0)
@@ -79,13 +79,13 @@ class CustomEnvironment(Environment):
         logger.info(f"Reward of this action : {reward} \n")
         logger.info(f"Reward of energy : {self.fraction * rewardOfEnergy} \n")
         logger.info(f"Reward of training time : {(1 - self.fraction) * rewardOfTrainingTime} \n")
-        logger.info(f"IOTs Capacities : {iotDeviceCapacity} \n")
-        logger.info(f"Edges Capacities : {edgeCapacity} \n")
-        logger.info(f"Cloud Capacities : {cloudCapacity} \n")
+        # logger.info(f"IOTs Capacities : {iotDeviceCapacity} \n")
+        # logger.info(f"Edges Capacities : {edgeCapacity} \n")
+        # logger.info(f"Cloud Capacities : {cloudCapacity} \n")
 
         newState = [averageEnergyConsumption, maxTrainingTime]
-        newState.extend(edgeCapacity)
-        newState.append(cloudCapacity)
+        # newState.extend(edgeCapacity)
+        # newState.append(cloudCapacity)
         newState.extend(actions)
         return reward, newState
 

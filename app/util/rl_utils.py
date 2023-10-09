@@ -1,8 +1,11 @@
 import os
-
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
+
+from tensorforce import Environment
+from app.RL_training.customEnv import CustomEnvironment
+from app.model.entity.rl_model import NoSplitting, TRPO, AC, TensorforceAgent, RandomAgent
 
 
 def draw_graph(figSizeX, figSizeY, x, y, title, xlabel, ylabel, savePath, pictureName, saveFig=True):
@@ -136,3 +139,28 @@ def allPossibleSplitting(modelLen, deviceNumber):
         if isOk:
             result.append(item)
     return result
+
+
+def createEnv(timestepNum, iotDeviceNum, edgeDeviceNum, fraction, rewardTuningParams) -> Environment:
+    return Environment.create(
+        environment=CustomEnvironment(rewardTuningParams=rewardTuningParams, iotDeviceNum=iotDeviceNum,
+                                      edgeDeviceNum=edgeDeviceNum, fraction=fraction),
+        max_episode_timesteps=timestepNum)
+
+
+def createAgent(agentType, fraction, timestepNum, environment, saveSummariesPath):
+    if agentType == 'ac':
+        return AC.create(fraction=fraction, environment=environment, timestepNum=timestepNum,
+                         saveSummariesPath=saveSummariesPath)
+    elif agentType == 'tensorforce':
+        return TensorforceAgent.create(fraction=fraction, environment=environment,
+                                       timestepNum=timestepNum, saveSummariesPath=saveSummariesPath)
+    elif agentType == 'trpo':
+        return TRPO.create(fraction=fraction, environment=environment,
+                           timestepNum=timestepNum, saveSummariesPath=saveSummariesPath)
+    elif agentType == 'random':
+        return RandomAgent.RandomAgent(environment=environment)
+    elif agentType == 'noSplitting':
+        return NoSplitting.NoSplitting(environment=environment)
+    else:
+        raise Exception('Invalid config select from [ppo, ac, tensorforce, random]')

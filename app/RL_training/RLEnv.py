@@ -16,9 +16,8 @@ import operator
 import sys
 
 sys.path.append('../')
-
 import app.config.config as config
-import utils
+import app.util.model_utils as utils
 from app.entity.Communicator import *
 
 if config.random:

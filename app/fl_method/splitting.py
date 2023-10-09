@@ -1,12 +1,13 @@
 import subprocess
 
+from tensorforce import Agent, Environment
 import numpy as np
 import torch
 import random
 
 from app.config import config
 from app.model.entity.rl_model import PPO
-from app.util import model_utils
+from app.util import model_utils, rl_utils
 
 
 def edge_based_rl_splitting(state, labels):
@@ -17,51 +18,27 @@ def edge_based_rl_splitting(state, labels):
 
 
 def rl_splitting(state, labels):
-    state_dim = 2 * config.G
-    action_dim = config.G
-    agent = None
-    if agent is None:
-        # Initialize trained RL agent
-        agent = PPO.PPO(state_dim, action_dim, config.action_std, config.rl_lr, config.rl_betas, config.rl_gamma,
-                        config.K_epochs, config.eps_clip)
-        agent.policy.load_state_dict(torch.load('/fed-flow/app/agent/PPO_FedAdapt.pth'))
-    action = agent.exploit(state)
-    action = expand_actions(action, config.CLIENTS_LIST, labels)
-
-    config.split_layer = action_to_layer(action)
-
+    # state_dim = 2 * config.G
+    # action_dim = config.G
+    # agent = None
+    # if agent is None:
+    #     # Initialize trained RL agent
+    #     agent = PPO.PPO(state_dim, action_dim, config.action_std, config.rl_lr, config.rl_betas, config.rl_gamma,
+    #                     config.K_epochs, config.eps_clip)
+    #     agent.policy.load_state_dict(torch.load('/fed-flow/app/agent/PPO_FedAdapt.pth'))
+    # action = agent.exploit(state)
+    # action = expand_actions(action, config.CLIENTS_LIST, labels)
+    #
+    # config.split_layer = action_to_layer(action)
+    env = rl_utils.createEnv(timestepNum=config.max_timesteps, iotDeviceNum=config.K, edgeDeviceNum=config.S,
+                             fraction=0.8)
+    agent = Agent.load(directory=f"/fedflow/app/agent/", format='checkpoint', environment=env)
+    action = agent.act(state=state)
+    reformAction = []
+    for i in range(0, len(action), 2):
+        reformAction.append([action[i], action[i + 1]])
+    config.split_layer = reformAction
     return config.split_layer
-
-
-def expand_actions(actions, clients_list, group_labels):  # Expanding group actions to each device
-    full_actions = []
-
-    for i in range(len(clients_list)):
-        full_actions.append(actions[group_labels[i]])
-
-    return full_actions
-
-
-def action_to_layer(action):  # Expanding group actions to each device
-    # first caculate cumulated flops
-    model_state_flops = []
-    cumulated_flops = 0
-
-    for l in model_utils.get_unit_model().cfg:
-        cumulated_flops += l[5]
-        model_state_flops.append(cumulated_flops)
-
-    model_flops_list = np.array(model_state_flops)
-    model_flops_list = model_flops_list / cumulated_flops
-
-    split_layer = []
-    for v in action:
-        idx = np.where(np.abs(model_flops_list - v) == np.abs(model_flops_list - v).min())
-        idx = idx[0][-1]
-        if idx >= 5:  # all FC layers combine to one option
-            idx = 6
-        split_layer.append(idx)
-    return split_layer
 
 
 def none(state, labels):
@@ -134,3 +111,37 @@ def FedMec(state, labels):
 
     splittingArray = [[lastConvolutionalLayerIndex, config.model_len - 1] for _ in range(config.K)]
     return splittingArray
+
+
+def expand_actions(actions, clients_list, group_labels):  # Expanding group actions to each device
+    full_actions = []
+
+    for i in range(len(clients_list)):
+        full_actions.append(actions[group_labels[i]])
+
+    return full_actions
+
+
+def action_to_layer(action):  # Expanding group actions to each device
+    # first caculate cumulated flops
+    model_state_flops = []
+    cumulated_flops = 0
+
+    for l in model_utils.get_unit_model().cfg:
+        cumulated_flops += l[5]
+        model_state_flops.append(cumulated_flops)
+
+    model_flops_list = np.array(model_state_flops)
+    model_flops_list = model_flops_list / cumulated_flops
+
+    split_layer = []
+    for v in action:
+        idx = np.where(np.abs(model_flops_list - v) == np.abs(model_flops_list - v).min())
+        idx = idx[0][-1]
+        if idx >= 5:  # all FC layers combine to one option
+            idx = 6
+        split_layer.append(idx)
+    return split_layer
+
+
+action_to_layer([0.5, 0.2, 0.1])
