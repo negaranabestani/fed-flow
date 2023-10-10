@@ -8,37 +8,33 @@ import random
 from app.config import config
 from app.model.entity.rl_model import PPO
 from app.util import model_utils, rl_utils
+from app.util.rl_utils import actionToLayer
 
 
 def edge_based_rl_splitting(state, labels):
-    split_list = []
-    for i in range(config.K):
-        split_list.append([3, 4])
-    return split_list
-
-
-def rl_splitting(state, labels):
-    # state_dim = 2 * config.G
-    # action_dim = config.G
-    # agent = None
-    # if agent is None:
-    #     # Initialize trained RL agent
-    #     agent = PPO.PPO(state_dim, action_dim, config.action_std, config.rl_lr, config.rl_betas, config.rl_gamma,
-    #                     config.K_epochs, config.eps_clip)
-    #     agent.policy.load_state_dict(torch.load('/fed-flow/app/agent/PPO_FedAdapt.pth'))
-    # action = agent.exploit(state)
-    # action = expand_actions(action, config.CLIENTS_LIST, labels)
-    #
-    # config.split_layer = action_to_layer(action)
     env = rl_utils.createEnv(timestepNum=config.max_timesteps, iotDeviceNum=config.K, edgeDeviceNum=config.S,
                              fraction=0.8)
     agent = Agent.load(directory=f"/fedflow/app/agent/", format='checkpoint', environment=env)
-    action = agent.act(state=state)
+    action = actionToLayer(agent.act(state=state))
     reformAction = []
     for i in range(0, len(action), 2):
         reformAction.append([action[i], action[i + 1]])
     config.split_layer = reformAction
-    return config.split_layer
+
+
+def rl_splitting(state, labels):
+    state_dim = 2 * config.G
+    action_dim = config.G
+    agent = None
+    if agent is None:
+        # Initialize trained RL agent
+        agent = PPO.PPO(state_dim, action_dim, config.action_std, config.rl_lr, config.rl_betas, config.rl_gamma,
+                        config.K_epochs, config.eps_clip)
+        agent.policy.load_state_dict(torch.load('/fed-flow/app/agent/PPO_FedAdapt.pth'))
+    action = agent.exploit(state)
+    action = expand_actions(action, config.CLIENTS_LIST, labels)
+
+    config.split_layer = action_to_layer(action)
 
 
 def none(state, labels):
