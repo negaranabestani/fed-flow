@@ -12,7 +12,7 @@ from app.fl_method import fl_method_parser
 from app.fl_training.interface.fed_server_interface import FedServerInterface
 
 sys.path.append('../../../')
-from app.util import message_utils, model_utils
+from app.util import message_utils, model_utils, system_utils
 from app.config import config
 from app.config.logger import fed_logger
 
@@ -263,16 +263,18 @@ class FedServer(FedServerInterface):
     def cluster(self, options: dict):
         self.group_labels = fl_method_parser.fl_methods.get(options.get('clustering'))()
 
-    def split(self, options: dict):
-        self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(self.state, self.group_labels)
+    def split(self, state, options: dict):
+        self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(state, self.group_labels)
         fed_logger.info('Next Round OPs: ' + str(self.split_layer))
 
     def edge_based_state(self, tt, offloading):
         state = []
-        for i in range(config.K):
-            state.append("energy" + str(i))
-        for i in range(config.S):
-            state.append("utilization" + str(i))
-        state = state + offloading
+        state.append(system_utils.compute_energy())
         state.append(tt)
+        # for i in range(config.S):
+        #     state.append("utilization" + str(i))
+        for i in range(len(offloading)):
+            state.append(offloading[i][0])
+            state.append(offloading[i][1])
+
         return state

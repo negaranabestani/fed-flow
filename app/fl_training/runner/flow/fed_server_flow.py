@@ -37,10 +37,10 @@ def run_edge_based(server: FedServerInterface, LR, options):
         server.cluster(options)
         fed_logger.info("getting state")
         offloading = server.split_layers
-        server.state = server.edge_based_state(training_time, offloading)
+        state = server.edge_based_state(training_time, offloading)
 
         fed_logger.info("splitting")
-        server.split(options)
+        server.split(state, options)
         server.split_layer()
 
         if r > 49:
@@ -100,10 +100,10 @@ def run_no_edge_offload(server: FedServerInterface, LR, options):
             server.cluster(options)
             fed_logger.info("getting state")
             ttpi = server.ttpi(config.CLIENTS_LIST)
-            server.state = server.concat_norm(ttpi, server.offloading)
+            state = server.concat_norm(ttpi, server.offloading)
 
             fed_logger.info("splitting")
-            server.split(options)
+            server.split(state, options)
             server.split_layer()
             fed_logger.info("initializing server")
             server.initialize(server.split_layers, LR)
