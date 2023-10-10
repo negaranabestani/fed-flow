@@ -24,11 +24,11 @@ def run_edge_based(server: FedServerInterface, LR, options):
         s_time = time.time()
         fed_logger.info("sending global weights")
         server.edge_offloading_global_weights()
-        fed_logger.info("receiving client network info")
-        server.client_network(config.EDGE_SERVER_LIST)
-
-        fed_logger.info("test edge servers network")
-        server.test_network(config.EDGE_SERVER_LIST)
+        # fed_logger.info("receiving client network info")
+        # server.client_network(config.EDGE_SERVER_LIST)
+        #
+        # fed_logger.info("test edge servers network")
+        # server.test_network(config.EDGE_SERVER_LIST)
 
         fed_logger.info("preparing state...")
         server.offloading = server.get_offloading(server.split_layers)
