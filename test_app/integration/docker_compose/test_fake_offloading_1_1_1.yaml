@@ -1,0 +1,34 @@
+version: '3'
+services:
+  server:
+    build:
+      context: ../../../
+      dockerfile: server.Dockerfile
+    ports:
+      - "5002:5002"
+    hostname: server
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py -o True -s fake_splitting -e True"
+
+  edge1:
+    build:
+      context: ../../../
+      dockerfile: edge.Dockerfile
+      args:
+        - INDEX=0
+    ports:
+      - "5001:5001"
+    hostname: edge1
+    depends_on:
+      - server
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -i 0 -o True -s fake_splitting -e True"
+  client1:
+    build:
+      context: ../../../
+      dockerfile: client.Dockerfile
+      args:
+        - INDEX=0
+    hostname: client1
+    depends_on:
+      - edge1
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s fake_splitting -e True"
+
