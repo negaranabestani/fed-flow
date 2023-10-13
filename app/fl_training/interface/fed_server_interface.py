@@ -16,7 +16,7 @@ from app.util import data_utils, model_utils, message_utils
 class FedServerInterface(ABC, Communicator):
     def __init__(self, ip_address, port, model_name, dataset, offload, edge_based):
         super(FedServerInterface, self).__init__()
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = 'cpu'
         self.port = port
         self.offload = offload
         self.edge_based = edge_based

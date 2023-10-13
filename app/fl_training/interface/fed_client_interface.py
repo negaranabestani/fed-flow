@@ -14,7 +14,7 @@ class FedClientInterface(ABC, Communicator):
                  train_loader, LR, edge_based):
         super(FedClientInterface, self).__init__()
         self.datalen = datalen
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = 'cpu'
         self.model_name = model_name
         self.edge_based=edge_based
         self.dataset = dataset
