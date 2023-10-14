@@ -99,6 +99,13 @@ class FedEdgeServerInterface(ABC, Communicator):
         pass
 
     @abstractmethod
+    def energy(self, client_ip):
+        """
+        Returns: client energy consumption of the given client_ip
+        """
+        pass
+
+    @abstractmethod
     def initialize(self, split_layers, LR, client_ips):
         pass
 

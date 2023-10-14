@@ -35,3 +35,6 @@ local_iteration_flag_client_to_server = 'MSG_LOCAL_ITERATION_FLAG_CLIENT_TO_SERV
 init_server_sockets_edge_to_server = 'MSG_INIT_SERVER_SOCKETS_EDGE_TO_SERVER'
 start_server_client_connection_sockets_edge_to_server = 'MSG_START_SERVER_CLIENT_CONNECTION_SOCKETS_EDGE_TO_SERVER'
 finish = 'MSG_FINISH'
+
+energy_ege_to_server = 'MSG_ENERGY_EDGE_TO_SERVER_'
+energy_client_to_edge = 'MSG_ENERGY_CLIENT_TO_EDGE_'

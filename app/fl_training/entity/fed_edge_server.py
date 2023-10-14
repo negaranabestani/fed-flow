@@ -139,6 +139,13 @@ class FedEdgeServer(FedEdgeServerInterface):
         msg = [message_utils.local_weights_edge_to_server + "_" + client_ip, cweights]
         self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, msg)
 
+    def energy(self, client_ip):
+        energy = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
+                                 message_utils.local_weights_client_to_edge)[1]
+
+        msg = [message_utils.energy_ege_to_server + "_" + client_ip, energy]
+        self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, msg)
+
     def global_weights(self, client_ips: []):
         """
         receive and send global weights
