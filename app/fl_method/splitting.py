@@ -8,18 +8,23 @@ import random
 from app.config import config
 from app.model.entity.rl_model import PPO
 from app.util import model_utils, rl_utils
-from app.util.rl_utils import actionToLayer
 
 
 def edge_based_rl_splitting(state, labels):
-    env = rl_utils.createEnv(timestepNum=config.max_timesteps, iotDeviceNum=config.K, edgeDeviceNum=config.S,
-                             fraction=0.8)
-    agent = Agent.load(directory=f"/fedflow/app/agent/", format='checkpoint', environment=env)
-    action = actionToLayer(agent.act(state=state))
-    reformAction = []
-    for i in range(0, len(action), 2):
-        reformAction.append([action[i], action[i + 1]])
-    config.split_layer = reformAction
+    # env = rl_utils.createEnv(timestepNum=config.max_timesteps, iotDeviceNum=config.K, edgeDeviceNum=config.S,
+    #                          fraction=0.8)
+    # agent = rl_utils.createAgent(agentType='tensorforce', fraction=0.8, timestepNum=config.max_timesteps,
+    #                              environment=env)
+    # agent = Agent.load(directory=f"/fedflow/app/agent/", format='checkpoint', environment=env)
+    # floatAction = agent.act(state=state)
+    floatAction = [0.5, 0.1]
+    actions = []
+    for i in range(0, len(floatAction), 2):
+        actions.append([actionToLayerEdgeBase([floatAction[i], floatAction[i + 1]])[0],
+                        actionToLayerEdgeBase([floatAction[i], floatAction[i + 1]])[1]])
+
+    print(actions)
+    # config.split_layer = actions
 
 
 def rl_splitting(state, labels):
@@ -129,10 +134,12 @@ def action_to_layer(action):  # Expanding group actions to each device
 
     model_flops_list = np.array(model_state_flops)
     model_flops_list = model_flops_list / cumulated_flops
+    print(model_flops_list)
 
     split_layer = []
     for v in action:
         idx = np.where(np.abs(model_flops_list - v) == np.abs(model_flops_list - v).min())
+        print(idx)
         idx = idx[0][-1]
         if idx >= 5:  # all FC layers combine to one option
             idx = 6
@@ -140,4 +147,41 @@ def action_to_layer(action):  # Expanding group actions to each device
     return split_layer
 
 
-action_to_layer([0.5, 0.2, 0.1])
+def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[int, int]:
+    """ It returns the offloading points for the given action ( op1 , op2 )"""
+
+    workLoad = []
+    for l in model_utils.get_unit_model().cfg:
+        workLoad.append(l[5])
+    totalWorkLoad = sum(workLoad)
+    op1: int
+    op2: int  # Offloading points op1, op2
+
+    op1_workload = splitDecision[0] * totalWorkLoad
+    for i in range(0, model_utils.get_unit_model_len()):
+        difference = abs(sum(workLoad[:i + 1]) - op1_workload)
+        temp2 = abs(sum(workLoad[:i + 2]) - op1_workload)
+        if temp2 > difference:
+            op1 = i
+            break
+
+    remindedWorkLoad = sum(workLoad[op1 + 1:]) * splitDecision[1]
+    op2 = op1
+    for i in range(op1, model_utils.get_unit_model_len()):
+        difference = abs(sum(workLoad[op1 + 1:i + 1]) - remindedWorkLoad)
+        print(f"diffe : {difference}")
+        temp2 = abs(sum(workLoad[op1 + 1:i + 2]) - remindedWorkLoad)
+        print(f"temp2 : {temp2}")
+        if temp2 > difference:
+            op2 = i
+            break
+    if op2 == 0:
+        op2 = op2 + 1
+    if op1 == model_utils.get_unit_model_len() - 1:
+        op2 = model_utils.get_unit_model_len() - 1
+    print([op1, op2])
+    return op1, op2
+
+
+actionToLayerEdgeBase([0.5, 0.99999])
+#edge_based_rl_splitting(state=None, labels=None)

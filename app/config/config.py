@@ -23,11 +23,11 @@ model_cfg = {
              ('D', 8 * 8 * 64, 128, 1, 64, 128 * 8 * 8 * 64),
              ('D', 128, 10, 1, 10, 128 * 10)]
 }
-model_name = ''
+model_name = 'vgg'
 model_size = 1.28
 model_flops = 32.902
 total_flops = 8488192
-split_layer = [6]  # Initial split layers
+split_layer = [[6, 6]]  # Initial split layers
 model_len = 7
 
 # FL training configration
@@ -53,10 +53,10 @@ iteration = {'127.0.0.1': 5}  # infer times for each device
 random = True
 random_seed = 0
 # Network configration
-SERVER_ADDR = 'soleimani'
+SERVER_ADDR = 'lpds'
 
 SERVER_PORT = 51008
-EDGESERVER_PORT = {'soleimani': 51001}
+EDGESERVER_PORT = {'lpds': 51001}
 
 K = 1  # Number of devices
 G = 1  # Number of groups
@@ -64,8 +64,8 @@ S = 1
 
 # Unique clients order
 HOST2IP = {}
-CLIENTS_CONFIG = {'soleimani': 0}
-EDGE_SERVER_LIST = ['soleimani']
-CLIENTS_LIST = ['soleimani']
+CLIENTS_CONFIG = {'lpds': 0}
+EDGE_SERVER_LIST = ['lpds']
+CLIENTS_LIST = ['127.0.0.1']
 EDGE_MAP = {'127.0.0.1': ['127.0.0.1']}
-CLIENT_MAP = {'127.0.0.1': '127.0.0.1'}
+CLIENT_MAP = {'lpds': '127.0.0.1'}
