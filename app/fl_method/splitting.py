@@ -134,12 +134,11 @@ def action_to_layer(action):  # Expanding group actions to each device
 
     model_flops_list = np.array(model_state_flops)
     model_flops_list = model_flops_list / cumulated_flops
-    print(model_flops_list)
 
     split_layer = []
     for v in action:
         idx = np.where(np.abs(model_flops_list - v) == np.abs(model_flops_list - v).min())
-        print(idx)
+
         idx = idx[0][-1]
         if idx >= 5:  # all FC layers combine to one option
             idx = 6
@@ -149,13 +148,22 @@ def action_to_layer(action):  # Expanding group actions to each device
 
 def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[int, int]:
     """ It returns the offloading points for the given action ( op1 , op2 )"""
-
-    workLoad = []
-    for l in model_utils.get_unit_model().cfg:
-        workLoad.append(l[5])
-    totalWorkLoad = sum(workLoad)
     op1: int
     op2: int  # Offloading points op1, op2
+    workLoad = []
+    model_state_flops = []
+
+    for l in model_utils.get_unit_model().cfg:
+        workLoad.append(l[5])
+        model_state_flops.append(sum(workLoad))
+
+    totalWorkLoad = sum(workLoad)
+    model_flops_list = np.array(model_state_flops)
+    model_flops_list = model_flops_list / totalWorkLoad
+    idx = np.where(np.abs(model_flops_list - splitDecision[0]) == np.abs(model_flops_list - splitDecision[0]).min())
+    op1 = idx[0][-1]
+
+
 
     op1_workload = splitDecision[0] * totalWorkLoad
     for i in range(0, model_utils.get_unit_model_len()):
@@ -184,4 +192,4 @@ def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[int, int]:
 
 
 actionToLayerEdgeBase([0.5, 0.99999])
-#edge_based_rl_splitting(state=None, labels=None)
+# edge_based_rl_splitting(state=None, labels=None)
