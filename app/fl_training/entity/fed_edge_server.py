@@ -166,3 +166,4 @@ class FedEdgeServer(FedEdgeServerInterface):
     def thread_training(self, client_ip):
         self.forward_propagation(client_ip)
         self.local_weights(client_ip)
+        self.energy(client_ip)
