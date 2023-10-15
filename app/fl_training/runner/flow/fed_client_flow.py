@@ -1,6 +1,7 @@
 import multiprocessing
 import socket
 import sys
+import pyRAPL
 
 sys.path.append('../../../../')
 from app.fl_training.entity.fed_client import Client
@@ -12,9 +13,12 @@ from app.fl_training.interface.fed_client_interface import FedClientInterface
 
 
 def run_edge_based(client: FedClientInterface, LR):
+    pyRAPL.setup()
+    meter = pyRAPL.Measurement('bar')
     for r in range(config.R):
         fed_logger.info('====================================>')
         fed_logger.info('ROUND: {} START'.format(r))
+        meter.begin()
         fed_logger.info("receiving global weights")
         client.edge_global_weights()
         # fed_logger.info("test network")
@@ -29,6 +33,13 @@ def run_edge_based(client: FedClientInterface, LR):
         client.edge_upload()
         fed_logger.info('ROUND: {} END'.format(r))
         fed_logger.info('==> Waiting for aggregration')
+        meter.end()
+        enery = 0
+        if meter.result.pkg != None:
+            for en in meter.result.pkg:
+                enery += en
+        client.energy(enery)
+
         if r > 49:
             LR = config.LR * 0.1
 
@@ -59,8 +70,11 @@ def run_no_edge(client: FedClientInterface, LR):
     for r in range(config.R):
         fed_logger.info('====================================>')
         fed_logger.info('ROUND: {} START'.format(r))
+        fed_logger.info("receiving global weights")
         client.server_global_weights()
+        fed_logger.info("start training")
         client.no_offloading_train()
+        fed_logger.info("sending local weights")
         client.server_upload()
         fed_logger.info('ROUND: {} END'.format(r))
 

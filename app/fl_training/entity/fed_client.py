@@ -25,7 +25,7 @@ class Client(FedClientInterface):
         self.split_layers = split_layer
 
         fed_logger.debug('Building Model.')
-        self.net = model_utils.get_model('Client', self.split_layers[config.index], self.device,self.edge_based)
+        self.net = model_utils.get_model('Client', self.split_layers[config.index], self.device, self.edge_based)
         fed_logger.debug(self.net)
         self.criterion = nn.CrossEntropyLoss()
 
@@ -96,16 +96,17 @@ class Client(FedClientInterface):
         self.send_msg(self.sock, flag)
 
     def offloading_train(self):
-        flag = [message_utils.local_iteration_flag_client_to_server+'_'+socket.gethostname(), True]
+        flag = [message_utils.local_iteration_flag_client_to_server + '_' + socket.gethostname(), True]
         self.send_msg(self.sock, flag)
         for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(self.train_loader)):
-            flag = [message_utils.local_iteration_flag_client_to_server+'_'+socket.gethostname(), True]
+            flag = [message_utils.local_iteration_flag_client_to_server + '_' + socket.gethostname(), True]
             self.send_msg(self.sock, flag)
             inputs, targets = inputs.to(self.device), targets.to(self.device)
             self.optimizer.zero_grad()
             outputs = self.net(inputs)
             # fed_logger.info("sending local activations")
-            msg = [message_utils.local_activations_client_to_server+'_'+socket.gethostname(), outputs.cpu(), targets.cpu()]
+            msg = [message_utils.local_activations_client_to_server + '_' + socket.gethostname(), outputs.cpu(),
+                   targets.cpu()]
             self.send_msg(self.sock, msg)
 
             # Wait receiving edge server gradients
@@ -118,7 +119,7 @@ class Client(FedClientInterface):
             outputs.backward(gradients)
             self.optimizer.step()
 
-        flag = [message_utils.local_iteration_flag_client_to_server+'_'+socket.gethostname(), False]
+        flag = [message_utils.local_iteration_flag_client_to_server + '_' + socket.gethostname(), False]
         self.send_msg(self.sock, flag)
 
     def no_offloading_train(self):
@@ -131,3 +132,7 @@ class Client(FedClientInterface):
             loss = self.criterion(outputs, targets)
             loss.backward()
             self.optimizer.step()
+
+    def energy(self, energy):
+        msg = [message_utils.energy_client_to_edge + '_' + socket.gethostname(), energy]
+        self.send_msg(self.sock, msg)
