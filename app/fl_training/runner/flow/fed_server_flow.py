@@ -102,7 +102,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
         fed_logger.info("getting state")
         offloading = server.split_layers
         state = server.edge_based_state(training_time, offloading, energy)
-
+        fed_logger.info("state: "+str(state))
         fed_logger.info("splitting")
         server.split(state, options)
         server.split_layer()

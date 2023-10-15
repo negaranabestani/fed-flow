@@ -17,11 +17,12 @@ class FedEdgeServer(FedEdgeServerInterface):
         for i in range(len(split_layers)):
             if client_ips.__contains__(config.CLIENTS_LIST[i]):
                 client_ip = config.CLIENTS_LIST[i]
-                if split_layers[i][0] < split_layers[i][1]:  # Only offloading client need initialize optimizer in server
-                    self.nets[client_ip] = model_utils.get_model('Edge', split_layers[i], self.device,True)
+                if split_layers[i][0] < split_layers[i][
+                    1]:  # Only offloading client need initialize optimizer in server
+                    self.nets[client_ip] = model_utils.get_model('Edge', split_layers[i], self.device, True)
 
                     # offloading weight in server also need to be initialized from the same global weight
-                    cweights = model_utils.get_model('Client', split_layers[i], self.device,True).state_dict()
+                    cweights = model_utils.get_model('Client', split_layers[i], self.device, True).state_dict()
 
                     pweights = model_utils.split_weights_edgeserver(self.uninet.state_dict(), cweights,
                                                                     self.nets[client_ip].state_dict())
@@ -30,7 +31,7 @@ class FedEdgeServer(FedEdgeServerInterface):
                     self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
                                                            momentum=0.9)
                 else:
-                    self.nets[client_ip] = model_utils.get_model('Edge', split_layers[i], self.device,True)
+                    self.nets[client_ip] = model_utils.get_model('Edge', split_layers[i], self.device, True)
         self.criterion = nn.CrossEntropyLoss()
 
     def aggregate(self, client_ips, aggregate_method):
@@ -55,7 +56,8 @@ class FedEdgeServer(FedEdgeServerInterface):
             labels = msg[2]
             # fed_logger.info(client_ip + " training model forward")
             inputs, targets = smashed_layers.to(self.device), labels.to(self.device)
-            if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < self.split_layers[config.CLIENTS_CONFIG[client_ip]][1]:
+            if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < \
+                    self.split_layers[config.CLIENTS_CONFIG[client_ip]][1]:
                 self.optimizers[client_ip].zero_grad()
             outputs = self.nets[client_ip](inputs)
 
@@ -64,11 +66,12 @@ class FedEdgeServer(FedEdgeServerInterface):
             self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, msg)
             # fed_logger.info(client_ip + " receiving gradients")
             msg = self.central_server_socks[client_ip].recv_msg(self.central_server_socks[client_ip].sock,
-                                                            message_utils.server_gradients_server_to_edge + client_ip)
+                                                                message_utils.server_gradients_server_to_edge + client_ip)
             gradients = msg[1].to(self.device)
             # fed_logger.info(client_ip + " training model backward")
             outputs.backward(gradients)
-            if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < self.split_layers[config.CLIENTS_CONFIG[client_ip]][1]:
+            if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < \
+                    self.split_layers[config.CLIENTS_CONFIG[client_ip]][1]:
                 self.optimizers[client_ip].step()
             # fed_logger.info(client_ip + " sending gradients")
             msg = [message_utils.server_gradients_edge_to_client + client_ip, inputs.grad]
@@ -141,9 +144,9 @@ class FedEdgeServer(FedEdgeServerInterface):
 
     def energy(self, client_ip):
         energy = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
-                                 message_utils.local_weights_client_to_edge)[1]
+                               message_utils.energy_client_to_edge+ "_" + client_ip)[1]
 
-        msg = [message_utils.energy_ege_to_server + "_" + client_ip, energy]
+        msg = [message_utils.energy_edge_to_server + "_" + client_ip, energy]
         self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, msg)
 
     def global_weights(self, client_ips: []):
@@ -155,7 +158,7 @@ class FedEdgeServer(FedEdgeServerInterface):
                                                       message_utils.initial_global_weights_server_to_edge)[1]
         for i in range(len(self.split_layers)):
             if client_ips.__contains__(config.CLIENTS_LIST[i]):
-                cweights = model_utils.get_model('Client', self.split_layers[i], self.device,True).state_dict()
+                cweights = model_utils.get_model('Client', self.split_layers[i], self.device, True).state_dict()
                 pweights = model_utils.split_weights_edgeserver(weights, cweights,
                                                                 self.nets[config.CLIENTS_LIST[i]].state_dict())
                 self.nets[config.CLIENTS_LIST[i]].load_state_dict(pweights)

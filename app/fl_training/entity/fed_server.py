@@ -244,7 +244,7 @@ class FedServer(FedServerInterface):
         energy = 0
         for i in range(len(client_ips)):
             msg = self.recv_msg(self.socks[socket.gethostbyname(client_ips[i])],
-                                message_utils.energy_ege_to_server + "_" + client_ips[i])
+                                message_utils.energy_edge_to_server + "_" + client_ips[i])
             energy += msg[1]
         return energy/len(client_ips)
 

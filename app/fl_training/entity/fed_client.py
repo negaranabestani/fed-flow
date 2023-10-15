@@ -134,5 +134,5 @@ class Client(FedClientInterface):
             self.optimizer.step()
 
     def energy(self, energy):
-        msg = [message_utils.local_activations_client_to_server + '_' + socket.gethostname(), energy]
+        msg = [message_utils.energy_client_to_edge + '_' + socket.gethostname(), energy]
         self.send_msg(self.sock, msg)
