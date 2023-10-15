@@ -70,8 +70,11 @@ def run_no_edge(client: FedClientInterface, LR):
     for r in range(config.R):
         fed_logger.info('====================================>')
         fed_logger.info('ROUND: {} START'.format(r))
+        fed_logger.info("receiving global weights")
         client.server_global_weights()
+        fed_logger.info("start training")
         client.no_offloading_train()
+        fed_logger.info("sending local weights")
         client.server_upload()
         fed_logger.info('ROUND: {} END'.format(r))
 
