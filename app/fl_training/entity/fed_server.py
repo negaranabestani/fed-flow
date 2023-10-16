@@ -12,7 +12,7 @@ from app.fl_method import fl_method_parser
 from app.fl_training.interface.fed_server_interface import FedServerInterface
 
 sys.path.append('../../../')
-from app.util import message_utils, model_utils
+from app.util import message_utils, model_utils, system_utils
 from app.config import config
 from app.config.logger import fed_logger
 
@@ -237,6 +237,18 @@ class FedServer(FedServerInterface):
             eweights.append(msg[1])
         return eweights
 
+    def e_energy(self, client_ips):
+        """
+        Returns: average energy consumption of clients
+        """
+        energy = 0
+        for i in range(len(client_ips)):
+            msg = self.recv_msg(self.socks[socket.gethostbyname(client_ips[i])],
+                                message_utils.energy_edge_to_server + "_" + client_ips[i])
+            energy += msg[1]
+        return energy/len(client_ips)
+
+
     def c_local_weights(self, client_ips):
         cweights = []
         # msg = self.recv_msg(self.edge_socks[socket.gethostbyname(client_ips[0])],
@@ -249,6 +261,7 @@ class FedServer(FedServerInterface):
             cweights.append(msg[1])
         return cweights
 
+
     def edge_offloading_global_weights(self):
         """
         send global weights
@@ -256,23 +269,29 @@ class FedServer(FedServerInterface):
         msg = [message_utils.initial_global_weights_server_to_edge, self.uninet.state_dict()]
         self.scatter(msg)
 
+
     def no_offloading_global_weights(self):
         msg = [message_utils.initial_global_weights_server_to_client, self.uninet.state_dict()]
         self.scatter(msg)
 
+
     def cluster(self, options: dict):
         self.group_labels = fl_method_parser.fl_methods.get(options.get('clustering'))()
 
-    def split(self, options: dict):
-        self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(self.state, self.group_labels)
+
+    def split(self, state, options: dict):
+        self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(state, self.group_labels)
         fed_logger.info('Next Round OPs: ' + str(self.split_layer))
 
-    def edge_based_state(self, tt, offloading):
+
+    def edge_based_state(self, tt, offloading, energy):
         state = []
-        for i in range(config.K):
-            state.append("energy" + str(i))
-        for i in range(config.S):
-            state.append("utilization" + str(i))
-        state = state + offloading
+        state.append(energy)
         state.append(tt)
+        # for i in range(config.S):
+        #     state.append("utilization" + str(i))
+        for i in range(len(offloading)):
+            state.append(offloading[i][0])
+            state.append(offloading[i][1])
+
         return state

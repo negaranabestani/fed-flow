@@ -16,13 +16,13 @@ class FedClientInterface(ABC, Communicator):
         self.datalen = datalen
         self.device = 'cpu'
         self.model_name = model_name
-        self.edge_based=edge_based
+        self.edge_based = edge_based
         self.dataset = dataset
         self.train_loader = train_loader
         self.split_layers = None
         self.net = {}
         model_len = model_utils.get_unit_model_len()
-        self.uninet = model_utils.get_model('Unit', config.split_layer[config.index], self.device,edge_based)
+        self.uninet = model_utils.get_model('Unit', config.split_layer[config.index], self.device, edge_based)
         self.net = self.uninet
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
@@ -81,4 +81,8 @@ class FedClientInterface(ABC, Communicator):
 
     @abstractmethod
     def offloading_train(self):
+        pass
+
+    @abstractmethod
+    def energy(self, energy):
         pass

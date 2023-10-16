@@ -27,7 +27,7 @@ class FedServerInterface(ABC, Communicator):
         self.group_labels = None
         self.criterion = None
         self.split_layers = None
-        self.state = None
+        # self.state = None
         self.client_bandwidth = {}
         self.edge_bandwidth = {}
         self.dataset = dataset
@@ -151,7 +151,7 @@ class FedServerInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def split(self, options: dict):
+    def split(self, state, options: dict):
         pass
 
     def scatter(self, msg):
@@ -205,5 +205,9 @@ class FedServerInterface(ABC, Communicator):
         return self.edge_bandwidth
 
     @abstractmethod
-    def edge_based_state(self, tt, offloading):
+    def e_energy(self, client_ips):
+        pass
+
+    @abstractmethod
+    def edge_based_state(self, tt, offloading, energy):
         pass
