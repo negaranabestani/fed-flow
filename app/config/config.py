@@ -22,11 +22,11 @@ model_name = ''
 model_size = 1.28
 model_flops = 32.902
 total_flops = 8488192
-split_layer = [[6, 6], [6, 6], [6, 6]]  # Initial split layers
+split_layer = [[6, 6]]  # Initial split layers
 model_len = 7
 
 # FL training configration
-R = 3  # FL rounds
+R = 1  # FL rounds
 LR = 0.01  # Learning rate
 B = 100  # Batch size
 
@@ -48,19 +48,19 @@ iteration = {'127.0.0.1': 5}  # infer times for each device
 random = True
 random_seed = 0
 # Network configration
-SERVER_ADDR = 'server'
+SERVER_ADDR = '127.0.0.1'
 
 SERVER_PORT = 5002
-EDGESERVER_PORT = {'edge1': 5001}
+EDGESERVER_PORT = {'LPDS': 5001}
 
-K = 3  # Number of devices
+K = 1  # Number of devices
 G = 1  # Number of groups
 S = 1  # Number of server connecting devices
 
 # Unique clients order
 HOST2IP = {}
-CLIENTS_CONFIG = {'client1': 0, 'client2': 1, 'client3': 2}
-EDGE_SERVER_LIST = ['edge1']
-CLIENTS_LIST = ['client1', 'client2', 'client3']
-EDGE_MAP = {'edge1': ['client1', 'client2', 'client3']}
-CLIENT_MAP = {'client1': 'edge1', 'client2': 'edge1', 'client3': 'edge1'}
+CLIENTS_CONFIG = {'127.0.0.1': 0}
+EDGE_SERVER_LIST = ['LPDS']
+CLIENTS_LIST = ['127.0.0.1']
+EDGE_MAP = {'LPDS': ['127.0.0.1']}
+CLIENT_MAP = {'LPDS': 'LPDS'}

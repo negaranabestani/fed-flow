@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 from tensorforce import Environment
 from app.RL_training.customEnv import CustomEnvironment
 from app.model.entity.rl_model import NoSplitting, TRPO, AC, TensorforceAgent, RandomAgent
+import app.util.model_utils as model_utils
 
 
 def draw_graph(figSizeX, figSizeY, x, y, title, xlabel, ylabel, savePath, pictureName, saveFig=True):
@@ -133,3 +134,62 @@ def createAgent(agentType, fraction, timestepNum, environment, saveSummariesPath
         return NoSplitting.NoSplitting(environment=environment)
     else:
         raise Exception('Invalid config select from [ppo, ac, tensorforce, random]')
+
+
+def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[int, int]:
+    """ It returns the offloading points for the given action ( op1 , op2 )"""
+    op1: int
+    op2: int  # Offloading points op1, op2
+    workLoad = []
+    model_state_flops = []
+
+    for l in model_utils.get_unit_model().cfg:
+        workLoad.append(l[5])
+        model_state_flops.append(sum(workLoad))
+
+    totalWorkLoad = sum(workLoad)
+    model_flops_list = np.array(model_state_flops)
+    model_flops_list = model_flops_list / totalWorkLoad
+    idx = np.where(np.abs(model_flops_list - splitDecision[0]) == np.abs(model_flops_list - splitDecision[0]).min())
+    op1 = idx[0][-1]
+
+    op2_totalWorkload = sum(workLoad[op1:])
+    model_state_flops = []
+    for l in range(op1, model_utils.get_unit_model_len()):
+        model_state_flops.append(sum(workLoad[op1:l + 1]))
+    model_flops_list = np.array(model_state_flops)
+    model_flops_list = model_flops_list / op2_totalWorkload
+
+    idx = np.where(np.abs(model_flops_list - splitDecision[1]) == np.abs(model_flops_list - splitDecision[1]).min())
+    op2 = idx[0][-1] + op1
+
+    return op1, op2
+
+
+def rewardFun(self, energy, trainingTime):
+    rewardOfEnergy = tanhActivation(energy)
+    rewardOfTrainingTime = tanhActivation(trainingTime)
+    # rewardOfEnergy = utils.normalizeReward(maxAmount=self.maxEnergy, minAmount=self.minEnergy,
+    #                                        x=averageEnergyConsumption)
+    # rewardOfTrainingTime = utils.normalizeReward(maxAmount=self.maxTrainingTime, minAmount=self.minTrainingTime,
+    #                                              x=maxTrainingTime)
+
+    if self.fraction <= 1:
+        reward = (self.fraction * rewardOfEnergy) + ((1 - self.fraction) * rewardOfTrainingTime)
+
+    else:
+        raise Exception("Fraction must be less than 1")
+
+    # logger.info("-------------------------------------------")
+    # logger.info(f"Offloading layer : {offloadingPointsList} \n")
+    # logger.info(f"Avg Energy : {averageEnergyConsumption} \n")
+    # logger.info(f"Training time : {maxTrainingTime} \n")
+    # logger.info(f"Reward of this action : {reward} \n")
+    # logger.info(f"Reward of energy : {self.fraction * rewardOfEnergy} \n")
+    # logger.info(f"Reward of training time : {(1 - self.fraction) * rewardOfTrainingTime} \n")
+    # logger.info(f"IOTs Capacities : {iotDeviceCapacity} \n")
+    # logger.info(f"Edges Capacities : {edgeCapacity} \n")
+    # logger.info(f"Cloud Capacities : {cloudCapacity} \n")
+    # newState.extend(edgeCapacity)
+    # newState.append(cloudCapacity)
+    return reward

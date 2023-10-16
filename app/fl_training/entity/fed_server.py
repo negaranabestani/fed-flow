@@ -246,8 +246,7 @@ class FedServer(FedServerInterface):
             msg = self.recv_msg(self.socks[socket.gethostbyname(client_ips[i])],
                                 message_utils.energy_edge_to_server + "_" + client_ips[i])
             energy += msg[1]
-        return energy/len(client_ips)
-
+        return energy / len(client_ips)
 
     def c_local_weights(self, client_ips):
         cweights = []
@@ -261,7 +260,6 @@ class FedServer(FedServerInterface):
             cweights.append(msg[1])
         return cweights
 
-
     def edge_offloading_global_weights(self):
         """
         send global weights
@@ -269,20 +267,16 @@ class FedServer(FedServerInterface):
         msg = [message_utils.initial_global_weights_server_to_edge, self.uninet.state_dict()]
         self.scatter(msg)
 
-
     def no_offloading_global_weights(self):
         msg = [message_utils.initial_global_weights_server_to_client, self.uninet.state_dict()]
         self.scatter(msg)
 
-
     def cluster(self, options: dict):
         self.group_labels = fl_method_parser.fl_methods.get(options.get('clustering'))()
-
 
     def split(self, state, options: dict):
         self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(state, self.group_labels)
         fed_logger.info('Next Round OPs: ' + str(self.split_layer))
-
 
     def edge_based_state(self, tt, offloading, energy):
         state = []

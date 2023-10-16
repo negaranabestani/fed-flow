@@ -39,32 +39,26 @@ class CustomEnvironment(Environment):
         super().close()
 
     def reset(self):
-        randActions = np.random.uniform(low=0.0, high=1.0, size=(self.iotDeviceNum * 2))
-        reward, newState = self.rewardFun(randActions)
-        randEnergy = newState[0]
-        randTrainingTime = newState[1]
-        randEdgeCapacity = newState[2:len(newState) - len(randActions) - 1]
-        randCloudCapacity = newState[len(newState) - len(randActions) - 1]
-        state = [randEnergy, randTrainingTime]
-        state.extend(randEdgeCapacity)
-        state.append(randCloudCapacity)
-        state.extend(randActions)
+        # randActions = np.random.uniform(low=0.0, high=1.0, size=(self.iotDeviceNum * 2))
+        # reward, newState = self.rewardFun(randActions)
+        # randEnergy = newState[0]
+        # randTrainingTime = newState[1]
+        # randEdgeCapacity = newState[2:len(newState) - len(randActions) - 1]
+        # randCloudCapacity = newState[len(newState) - len(randActions) - 1]
+        # state = [randEnergy, randTrainingTime]
+        # state.extend(randEdgeCapacity)
+        # state.append(randCloudCapacity)
+        # state.extend(randActions)
+        state = [0, 0, ]
         return state
 
-    def rewardFun(self, actions):
-        totalEnergyConsumption = 0
-        maxTrainingTime = 0
-        offloadingPointsList = []
-
-        for i in range(0, len(actions), 2):
-            op1, op2 = utils.actionToLayer(actions[i:i + 2])
-
-        averageEnergyConsumption = totalEnergyConsumption / self.iotDeviceNum
-
-        rewardOfEnergy = utils.normalizeReward(maxAmount=self.maxEnergy, minAmount=self.minEnergy,
-                                               x=averageEnergyConsumption)
-        rewardOfTrainingTime = utils.normalizeReward(maxAmount=self.maxTrainingTime, minAmount=self.minTrainingTime,
-                                                     x=maxTrainingTime)
+    def rewardFun(self, actions, energy, trainingTime):
+        rewardOfEnergy = utils.tanhActivation(energy)
+        rewardOfTrainingTime = utils.tanhActivation(trainingTime)
+        # rewardOfEnergy = utils.normalizeReward(maxAmount=self.maxEnergy, minAmount=self.minEnergy,
+        #                                        x=averageEnergyConsumption)
+        # rewardOfTrainingTime = utils.normalizeReward(maxAmount=self.maxTrainingTime, minAmount=self.minTrainingTime,
+        #                                              x=maxTrainingTime)
 
         if self.fraction <= 1:
             reward = (self.fraction * rewardOfEnergy) + ((1 - self.fraction) * rewardOfTrainingTime)
@@ -72,18 +66,18 @@ class CustomEnvironment(Environment):
         else:
             raise Exception("Fraction must be less than 1")
 
-        logger.info("-------------------------------------------")
-        logger.info(f"Offloading layer : {offloadingPointsList} \n")
-        logger.info(f"Avg Energy : {averageEnergyConsumption} \n")
-        logger.info(f"Training time : {maxTrainingTime} \n")
-        logger.info(f"Reward of this action : {reward} \n")
-        logger.info(f"Reward of energy : {self.fraction * rewardOfEnergy} \n")
-        logger.info(f"Reward of training time : {(1 - self.fraction) * rewardOfTrainingTime} \n")
-        # logger.info(f"IOTs Capacities : {iotDeviceCapacity} \n")
-        # logger.info(f"Edges Capacities : {edgeCapacity} \n")
-        # logger.info(f"Cloud Capacities : {cloudCapacity} \n")
-
-        newState = [averageEnergyConsumption, maxTrainingTime]
+        # logger.info("-------------------------------------------")
+        # logger.info(f"Offloading layer : {offloadingPointsList} \n")
+        # logger.info(f"Avg Energy : {averageEnergyConsumption} \n")
+        # logger.info(f"Training time : {maxTrainingTime} \n")
+        # logger.info(f"Reward of this action : {reward} \n")
+        # logger.info(f"Reward of energy : {self.fraction * rewardOfEnergy} \n")
+        # logger.info(f"Reward of training time : {(1 - self.fraction) * rewardOfTrainingTime} \n")
+        # # logger.info(f"IOTs Capacities : {iotDeviceCapacity} \n")
+        # # logger.info(f"Edges Capacities : {edgeCapacity} \n")
+        # # logger.info(f"Cloud Capacities : {cloudCapacity} \n")
+        #
+        newState = [energy, trainingTime]
         # newState.extend(edgeCapacity)
         # newState.append(cloudCapacity)
         newState.extend(actions)
