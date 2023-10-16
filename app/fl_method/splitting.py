@@ -11,20 +11,18 @@ from app.util import model_utils, rl_utils
 
 
 def edge_based_rl_splitting(state, labels):
-    # env = rl_utils.createEnv(timestepNum=config.max_timesteps, iotDeviceNum=config.K, edgeDeviceNum=config.S,
-    #                          fraction=0.8)
-    # agent = rl_utils.createAgent(agentType='tensorforce', fraction=0.8, timestepNum=config.max_timesteps,
-    #                              environment=env)
+    env = rl_utils.createEnv(timestepNum=config.max_timesteps, iotDeviceNum=config.K, edgeDeviceNum=config.S,
+                             fraction=0.8)
+    agent = rl_utils.createAgent(agentType='tensorforce', fraction=0.8, timestepNum=config.max_timesteps,
+                                 environment=env)
     # agent = Agent.load(directory=f"/fedflow/app/agent/", format='checkpoint', environment=env)
-    # floatAction = agent.act(state=state)
-    floatAction = [0.5, 0.1]
+    floatAction = agent.act(state=state, evaluation=False)
     actions = []
     for i in range(0, len(floatAction), 2):
         actions.append([actionToLayerEdgeBase([floatAction[i], floatAction[i + 1]])[0],
                         actionToLayerEdgeBase([floatAction[i], floatAction[i + 1]])[1]])
 
-    print(actions)
-    # config.split_layer = actions
+    return actions
 
 
 def rl_splitting(state, labels):
@@ -163,33 +161,17 @@ def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[int, int]:
     idx = np.where(np.abs(model_flops_list - splitDecision[0]) == np.abs(model_flops_list - splitDecision[0]).min())
     op1 = idx[0][-1]
 
+    op2_totalWorkload = sum(workLoad[op1:])
+    model_state_flops = []
+    for l in range(op1, model_utils.get_unit_model_len()):
+        model_state_flops.append(sum(workLoad[op1:l + 1]))
+    model_flops_list = np.array(model_state_flops)
+    model_flops_list = model_flops_list / op2_totalWorkload
 
+    idx = np.where(np.abs(model_flops_list - splitDecision[1]) == np.abs(model_flops_list - splitDecision[1]).min())
+    op2 = idx[0][-1] + op1
 
-    op1_workload = splitDecision[0] * totalWorkLoad
-    for i in range(0, model_utils.get_unit_model_len()):
-        difference = abs(sum(workLoad[:i + 1]) - op1_workload)
-        temp2 = abs(sum(workLoad[:i + 2]) - op1_workload)
-        if temp2 > difference:
-            op1 = i
-            break
-
-    remindedWorkLoad = sum(workLoad[op1 + 1:]) * splitDecision[1]
-    op2 = op1
-    for i in range(op1, model_utils.get_unit_model_len()):
-        difference = abs(sum(workLoad[op1 + 1:i + 1]) - remindedWorkLoad)
-        print(f"diffe : {difference}")
-        temp2 = abs(sum(workLoad[op1 + 1:i + 2]) - remindedWorkLoad)
-        print(f"temp2 : {temp2}")
-        if temp2 > difference:
-            op2 = i
-            break
-    if op2 == 0:
-        op2 = op2 + 1
-    if op1 == model_utils.get_unit_model_len() - 1:
-        op2 = model_utils.get_unit_model_len() - 1
-    print([op1, op2])
     return op1, op2
 
 
-actionToLayerEdgeBase([0.5, 0.99999])
-# edge_based_rl_splitting(state=None, labels=None)
+edge_based_rl_splitting(state=None, labels=None)

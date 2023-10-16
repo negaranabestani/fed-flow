@@ -48,7 +48,7 @@ def create(fraction, environment, timestepNum, saveSummariesPath):
         l2_regularization=0.1, entropy_regularization=0.1,
         memory=200,
         # TensorFlow etc
-        saver=dict(directory='soleimani_lpds', filename='tensorforceModel'),
+        saver=dict(directory='/home/lpds_soleimani/Projects/fed-flow/app', filename='tensorforceModel'),
         # summarizer=dict(directory=f"{saveSummariesPath}/summaries/tensorforce_{fraction}",
         #                 frequency=50,
         #                 labels='all',
