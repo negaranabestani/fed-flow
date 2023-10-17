@@ -5,7 +5,7 @@ import time
 
 sys.path.append('../../../../')
 from app.config import config
-from app.util import model_utils, message_utils, rl_utils
+from app.util import model_utils, message_utils
 from app.fl_training.entity.fed_server import FedServer
 from app.config.logger import fed_logger
 from app.fl_training.interface.fed_server_interface import FedServerInterface
@@ -78,18 +78,15 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
     server.initialize(config.split_layer, LR)
     training_time = 0
     energy = 0
-    env = rl_utils.createEnv(timestepNum=config.max_timesteps, iotDeviceNum=config.K, edgeDeviceNum=config.S,
-                             fraction=0.8, rewardTuningParams=[0, 0, 0, 0])
-    agent = rl_utils.createAgent(agentType='tensorforce', fraction=0.8, timestepNum=config.max_timesteps,
-                                 environment=env, saveSummariesPath=None)
     res = {}
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
-    state = env.reset()
     for r in range(config.R):
+
         fed_logger.info('====================================>')
         fed_logger.info('==> Round {:} Start'.format(r))
 
         s_time = time.time()
+
         fed_logger.info("sending global weights")
         server.edge_offloading_global_weights()
         # fed_logger.info("receiving client network info")
@@ -103,21 +100,15 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
 
         fed_logger.info("clustering")
         server.cluster(options)
+
         fed_logger.info("getting state")
         offloading = server.split_layers
+
         state = server.edge_based_state(training_time, offloading, energy)
-
-        floatAction = agent.act(states=state, evaluation=False)
-        actions = []
-        for i in range(0, len(floatAction), 2):
-            actions.append([rl_utils.actionToLayerEdgeBase([floatAction[i], floatAction[i + 1]])[0],
-                            rl_utils.actionToLayerEdgeBase([floatAction[i], floatAction[i + 1]])[1]])
-        server.split_layers = actions
-
         fed_logger.info("state: " + str(state))
+
         fed_logger.info("splitting")
-        fed_logger.info(f"Action: {actions}")
-        # server.split(state, options)
+        server.split(state, options)
         server.split_layer()
 
         if r > 49:
@@ -130,18 +121,18 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
 
         fed_logger.info("start training")
         server.edge_offloading_train(config.CLIENTS_LIST)
+
         fed_logger.info("receiving local weights")
         local_weights = server.e_local_weights(config.CLIENTS_LIST)
+
         fed_logger.info("aggregating weights")
         server.call_aggregation(options, local_weights)
+
         energy = server.e_energy(config.CLIENTS_LIST)
         e_time = time.time()
 
         # Recording each round training time, bandwidth and test_app accuracy
         training_time = e_time - s_time
-
-        reward = rl_utils.rewardFun(energy=energy, trainingTime=training_time)
-        agent.observe(terminal=False, reward=reward)
 
         res['training_time'].append(training_time)
         res['bandwidth_record'].append(server.bandwith())

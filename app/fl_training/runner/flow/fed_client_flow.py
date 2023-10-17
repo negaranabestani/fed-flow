@@ -38,6 +38,7 @@ def run_edge_based(client: FedClientInterface, LR):
         if meter.result.pkg != None:
             for en in meter.result.pkg:
                 enery += en
+        fed_logger.info(f"Energy : {enery}")
         client.energy(enery)
 
         if r > 49:
