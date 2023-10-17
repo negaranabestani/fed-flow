@@ -4,6 +4,7 @@ services:
     build:
       context: .
       dockerfile: server.Dockerfile
+    restart: always
     ports:
       - "5002:5002"
     hostname: server
@@ -15,18 +16,21 @@ services:
       dockerfile: edge.Dockerfile
       args:
         - INDEX=0
+    restart: always
     ports:
       - "5001:5001"
     hostname: edge1
     depends_on:
       - server
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -i 0 -o True -s edge_based_rl_splitting -e True"
+
   client1:
     build:
       context: .
       dockerfile: client.Dockerfile
       args:
         - INDEX=0
+    restart: always
     hostname: client1
     depends_on:
       - edge1
@@ -38,6 +42,7 @@ services:
       dockerfile: client.Dockerfile
       args:
         - INDEX=1
+    restart: always
     hostname: client2
     depends_on:
       - edge1
@@ -49,6 +54,7 @@ services:
       dockerfile: client.Dockerfile
       args:
         - INDEX=2
+    restart: always
     hostname: client3
     depends_on:
       - edge1
