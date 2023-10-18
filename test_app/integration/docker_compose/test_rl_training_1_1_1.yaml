@@ -4,10 +4,11 @@ services:
     build:
       context: ../../../
       dockerfile: server.Dockerfile
+    restart: always
     ports:
       - "5002:5002"
     hostname: server
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py -o True -s fake_splitting -e True"
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/rl_runner/rl_training_runner.py -o True -s edge_based_rl_splitting -e True"
 
   edge1:
     build:
@@ -15,20 +16,22 @@ services:
       dockerfile: edge.Dockerfile
       args:
         - INDEX=0
+    restart: always
     ports:
       - "5001:5001"
     hostname: edge1
     depends_on:
       - server
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -i 0 -o True -s fake_splitting -e True"
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -i 0 -o True -s edge_based_rl_splitting -e True"
+
   client1:
     build:
       context: ../../../
       dockerfile: client.Dockerfile
       args:
         - INDEX=0
+    restart: always
     hostname: client1
     depends_on:
       - edge1
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s fake_splitting -e True"
-
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s edge_based_rl_splitting -e True"
