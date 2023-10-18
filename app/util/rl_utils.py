@@ -166,7 +166,7 @@ def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[int, int]:
     return op1, op2
 
 
-def rewardFun(self, energy, trainingTime):
+def rewardFun(fraction, energy, trainingTime):
     rewardOfEnergy = tanhActivation(energy)
     rewardOfTrainingTime = tanhActivation(trainingTime)
     # rewardOfEnergy = utils.normalizeReward(maxAmount=self.maxEnergy, minAmount=self.minEnergy,
@@ -174,8 +174,8 @@ def rewardFun(self, energy, trainingTime):
     # rewardOfTrainingTime = utils.normalizeReward(maxAmount=self.maxTrainingTime, minAmount=self.minTrainingTime,
     #                                              x=maxTrainingTime)
 
-    if self.fraction <= 1:
-        reward = (self.fraction * rewardOfEnergy) + ((1 - self.fraction) * rewardOfTrainingTime)
+    if fraction <= 1:
+        reward = (fraction * rewardOfEnergy) + ((1 - fraction) * rewardOfTrainingTime)
 
     else:
         raise Exception("Fraction must be less than 1")

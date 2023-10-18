@@ -5,8 +5,17 @@ import numpy as np
 from tensorforce import Environment
 
 import app.util.rl_utils as utils
+import pickle
+import socket
+import sys
+import time
 
-logger = logging.getLogger()
+sys.path.append('../../../../')
+from app.config import config
+from app.util import model_utils, message_utils, rl_utils
+from app.fl_training.entity.fed_server import FedServer
+from app.config.logger import fed_logger
+import numpy as np
 
 
 class CustomEnvironment(Environment):
@@ -49,8 +58,9 @@ class CustomEnvironment(Environment):
         # state.extend(randEdgeCapacity)
         # state.append(randCloudCapacity)
         # state.extend(randActions)
-        state = [0, 0, ]
-        return state
+        # state = [0, 0, ]
+        # return state
+        pass
 
     def rewardFun(self, actions, energy, trainingTime):
         rewardOfEnergy = utils.tanhActivation(energy)

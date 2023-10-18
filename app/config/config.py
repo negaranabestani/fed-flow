@@ -22,7 +22,7 @@ model_name = ''
 model_size = 1.28
 model_flops = 32.902
 total_flops = 8488192
-split_layer = [[6, 6], [6, 6], [6, 6]]  # Initial split layers
+split_layer = [[6, 6]]  # Initial split layers
 model_len = 7
 
 # FL training configration
@@ -43,24 +43,24 @@ rl_gamma = 0.9  # discount factor
 rl_b = 100  # Batchsize
 rl_lr = 0.0003  # parameters for Adam optimizer
 rl_betas = (0.9, 0.999)
-iteration = {'127.0.0.1': 5}  # infer times for each device
+iteration = {'soleimani': 5}  # infer times for each device
 
 random = True
 random_seed = 0
 # Network configration
-SERVER_ADDR = 'server'
+SERVER_ADDR = 'soleimani'
 
 SERVER_PORT = 5002
-EDGESERVER_PORT = {'edge1': 5001}
+EDGESERVER_PORT = {'soleimani': 5001}
 
-K = 3  # Number of devices
+K = 1  # Number of devices
 G = 1  # Number of groups
 S = 1  # Number of server connecting devices
 
 # Unique clients order
 HOST2IP = {}
-CLIENTS_CONFIG = {'client1': 0, 'client2': 1, 'client3': 2}
-EDGE_SERVER_LIST = ['edge1']
-CLIENTS_LIST = ['client1', 'client2', 'client3']
-EDGE_MAP = {'edge1': ['client1', 'client2', 'client3']}
-CLIENT_MAP = {'client1': 'edge1', 'client2': 'edge1', 'client3': 'edge1'}
+CLIENTS_CONFIG = {'soleimani': 0}
+EDGE_SERVER_LIST = ['soleimani']
+CLIENTS_LIST = ['soleimani']
+EDGE_MAP = {'soleimani': ['soleimani']}
+CLIENT_MAP = {'soleimani': '127.0.0.1'}
