@@ -22,11 +22,8 @@ def run(options):
         server = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options.get('model'),
                            options.get('dataset'), offload, edge_based)
 
-        env = rl_utils.createEnv(timestepNum=config.max_timesteps, fraction=0.8, edgeDeviceNum=config.S,
-                                 iotDeviceNum=config.K, rewardTuningParams=[0, 0, 0, 0])
-
-        agent = rl_utils.createAgent(agentType='tensorforce', fraction=0.8, environment=env,
-                                     timestepNum=config.max_timesteps, saveSummariesPath=None)
+        agent = rl_utils.createAgent(agentType='tensorforce', fraction=0.8, timestepNum=config.max_timesteps,
+                                     saveSummariesPath=None)
         server.initialize(config.split_layer, LR)
         training_time = 0
         energy = 0
@@ -38,13 +35,6 @@ def run(options):
             episode_trainingTime = list()
             episode_reward = list()
 
-            randActions = np.random.uniform(low=0.0, high=1.0, size=(config.K * 2))
-            actions = []
-            for i in range(0, len(randActions), 2):
-                actions.append([rl_utils.actionToLayerEdgeBase([randActions[i], randActions[i + 1]])[0],
-                                rl_utils.actionToLayerEdgeBase([randActions[i], randActions[i + 1]])[1]])
-
-            server.split_layers = actions
             fed_logger.info('====================================>')
             fed_logger.info(f'==> Episode {r} Start')
 
@@ -66,6 +56,16 @@ def run(options):
 
             fed_logger.info("getting state")
             offloading = server.split_layers
+
+            fed_logger.info("splitting")
+            randActions = np.random.uniform(low=0.0, high=1.0, size=(config.K * 2))
+            actions = []
+            for i in range(0, len(randActions), 2):
+                actions.append([rl_utils.actionToLayerEdgeBase([randActions[i], randActions[i + 1]])[0],
+                                rl_utils.actionToLayerEdgeBase([randActions[i], randActions[i + 1]])[1]])
+
+            server.split_layers = actions
+            server.split_layer()
 
             fed_logger.info("initializing server")
             server.initialize(server.split_layers, LR)
@@ -101,8 +101,6 @@ def run(options):
             fed_logger.info('Round Finish')
             fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
-            # internals = agent.initial_internals()
-            terminal = False
             for timestep in range(config.max_timesteps):
                 floatAction = agent.act(states=state, evaluation=False)
                 actions = []
@@ -113,7 +111,7 @@ def run(options):
                 server.split_layers = actions
 
                 fed_logger.info('====================================>')
-                fed_logger.info('==> Round {:} Start'.format(r))
+                fed_logger.info(f'==> Timestep {timestep} Start')
 
                 s_time = time.time()
 
@@ -160,12 +158,13 @@ def run(options):
 
                 # Recording each round training time, bandwidth and test_app accuracy
                 training_time = e_time - s_time
-                state = server.edge_based_state(training_time, offloading, energy)
 
-                fed_logger.info("state: " + str(state))
-
+                fed_logger.info('Updating Agent')
                 reward = rl_utils.rewardFun(fraction=0.8, energy=energy, trainingTime=training_time)
                 agent.observe(terminal=False, reward=reward)
+
+                state = server.edge_based_state(training_time, offloading, energy)
+                fed_logger.info("state: " + str(state))
 
                 res['training_time'].append(training_time)
                 res['bandwidth_record'].append(server.bandwith())
@@ -179,5 +178,6 @@ def run(options):
                 fed_logger.info('Round Finish')
                 fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
+    agent.close()
     msg = [message_utils.finish, True]
     server.scatter(msg)

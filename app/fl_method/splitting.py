@@ -10,12 +10,10 @@ from app.model.entity.rl_model import PPO
 from app.util import model_utils, rl_utils
 
 
-def edge_based_rl_splitting(state, labels, agent, env):
+def edge_based_rl_splitting(state, labels):
 
-    # agent = Agent.load(directory=f"/fedflow/app/agent/", format='checkpoint', environment=env)
-    floatAction = agent.act(state=state, evaluation=False)
-    states, terminal, reward = env.execute(actions=floatAction)
-    agent.observe(terminal=terminal, reward=reward)
+    agent = Agent.load(directory=f"/fedflow/app/agent/", format='checkpoint')
+    floatAction = agent.act(state=state, evaluation=True)
     actions = []
     for i in range(0, len(floatAction), 2):
         actions.append([actionToLayerEdgeBase([floatAction[i], floatAction[i + 1]])[0],

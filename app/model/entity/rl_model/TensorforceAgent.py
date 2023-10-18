@@ -1,10 +1,16 @@
+import sys
+
+sys.path.append('../../../../')
+
 from tensorforce import Agent
+import app.config.config as config
 
 
-def create(fraction, environment, timestepNum, saveSummariesPath):
+def create(fraction, timestepNum, saveSummariesPath):
     return Agent.create(
         agent='tensorforce',
-        environment=environment,
+        states=dict(type="float", shape=(1 + 1 + config.K * 2)),
+        actions=dict(type="float", shape=(config.K * 2,), min_value=0.0, max_value=1.0),
         max_episode_timesteps=timestepNum,
 
         # Reward estimation
@@ -48,7 +54,10 @@ def create(fraction, environment, timestepNum, saveSummariesPath):
         l2_regularization=0.1, entropy_regularization=0.1,
         memory=200,
         # TensorFlow etc
-        saver=dict(directory='/home/lpds_soleimani/Projects/fed-flow/app/agent/Tensorforce', filename='tensorforceModel'),
+        saver=dict(directory='/fed-flow/app/agent/Tensorforce',
+                   filename='tensorforceModel',
+                   frequency=50  # save checkpoint every 600 seconds (10 minutes)
+                   ),
         # summarizer=dict(directory=f"{saveSummariesPath}/summaries/tensorforce_{fraction}",
         #                 frequency=50,
         #                 labels='all',

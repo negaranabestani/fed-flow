@@ -48,8 +48,8 @@ LR = 0.01  # Learning rate
 B = 100  # Batch size
 
 # RL training configration
-max_episodes = 100  # max training episodes
-max_timesteps = 100  # max timesteps in one episode
+max_episodes = 4  # max training episodes
+max_timesteps = 4  # max timesteps in one episode
 exploration_times = 20  # exploration times without std decay
 n_latent_var = 64  # number of variables in hidden layer
 action_std = 0.5  # constant std for action distribution (Multivariate Normal)
@@ -67,8 +67,8 @@ random_seed = 0
 # Network configration
 SERVER_ADDR = 'server'
 
-SERVER_PORT = 51002
-EDGESERVER_PORT = {'edge1': 51001}
+SERVER_PORT = 5002
+EDGESERVER_PORT = {'edge1': 5001}
 
 K = 1  # Number of devices
 G = 1  # Number of groups
@@ -76,7 +76,7 @@ S = 1
 
 # Unique clients order
 HOST2IP = {}
-CLIENTS_CONFIG = {'client1':0}
+CLIENTS_CONFIG = {'client1': 0}
 EDGE_SERVER_LIST = ['edge1']
 CLIENTS_LIST = ['client1']
 EDGE_MAP = {'edge1': ['client1']}

@@ -8,7 +8,7 @@ services:
     ports:
       - "5002:5002"
     hostname: server
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/rl_runner/rl_training_runner.py -o True -s edge_based_rl_splitting -e True"
+    entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_training_server_runner.py -o True -s edge_based_rl_splitting -e True"
 
   edge1:
     build:
@@ -22,7 +22,7 @@ services:
     hostname: edge1
     depends_on:
       - server
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -i 0 -o True -s edge_based_rl_splitting -e True"
+    entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_training_edgeserver_runner.py -i 0 -o True -s edge_based_rl_splitting -e True"
 
   client1:
     build:
@@ -34,4 +34,4 @@ services:
     hostname: client1
     depends_on:
       - edge1
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s edge_based_rl_splitting -e True"
+    entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_training_client_runner.py -i 0 -o True -s edge_based_rl_splitting -e True"

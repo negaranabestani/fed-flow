@@ -4,7 +4,6 @@ import numpy as np
 import plotly.graph_objects as go
 
 from tensorforce import Environment
-from app.RL_training.customEnv import CustomEnvironment
 from app.model.entity.rl_model import NoSplitting, TRPO, AC, TensorforceAgent, RandomAgent
 import app.util.model_utils as model_utils
 
@@ -111,20 +110,12 @@ def allPossibleSplitting(modelLen, deviceNumber):
     return result
 
 
-def createEnv(timestepNum, iotDeviceNum, edgeDeviceNum, fraction, rewardTuningParams) -> Environment:
-    return Environment.create(
-        environment=CustomEnvironment(rewardTuningParams=rewardTuningParams, iotDeviceNum=iotDeviceNum,
-                                      edgeDeviceNum=edgeDeviceNum, fraction=fraction),
-        max_episode_timesteps=timestepNum)
-
-
-def createAgent(agentType, fraction, timestepNum, environment, saveSummariesPath):
+def createAgent(agentType, fraction, timestepNum, saveSummariesPath, environment=None):
     if agentType == 'ac':
         return AC.create(fraction=fraction, environment=environment, timestepNum=timestepNum,
                          saveSummariesPath=saveSummariesPath)
     elif agentType == 'tensorforce':
-        return TensorforceAgent.create(fraction=fraction, environment=environment,
-                                       timestepNum=timestepNum, saveSummariesPath=saveSummariesPath)
+        return TensorforceAgent.create(fraction=fraction, timestepNum=timestepNum, saveSummariesPath=saveSummariesPath)
     elif agentType == 'trpo':
         return TRPO.create(fraction=fraction, environment=environment,
                            timestepNum=timestepNum, saveSummariesPath=saveSummariesPath)
@@ -167,8 +158,8 @@ def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[int, int]:
 
 
 def rewardFun(fraction, energy, trainingTime):
-    rewardOfEnergy = tanhActivation(energy)
-    rewardOfTrainingTime = tanhActivation(trainingTime)
+    rewardOfEnergy = -5 * tanhActivation(energy / 500) + 1
+    rewardOfTrainingTime = -5 * tanhActivation(trainingTime / 5) + 1
     # rewardOfEnergy = utils.normalizeReward(maxAmount=self.maxEnergy, minAmount=self.minEnergy,
     #                                        x=averageEnergyConsumption)
     # rewardOfTrainingTime = utils.normalizeReward(maxAmount=self.maxTrainingTime, minAmount=self.minTrainingTime,
