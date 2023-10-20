@@ -16,12 +16,12 @@ def draw_graph(figSizeX, figSizeY, x, y, title, xlabel, ylabel, savePath, pictur
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
 
-    if saveFig:
-        if not os.path.exists(savePath):
-            os.makedirs(savePath)
-        plt.savefig(os.path.join(savePath, pictureName))
+    # if saveFig:
+    #     if not os.path.exists(savePath):
+    #         os.makedirs(savePath)
+    #     plt.savefig(os.path.join(savePath, pictureName))
+    plt.show()
     plt.close()
-    # plt.show()
 
 
 def draw_hist(x, title, xlabel, savePath, pictureName, saveFig=True):
@@ -157,13 +157,11 @@ def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[int, int]:
     return op1, op2
 
 
-def rewardFun(fraction, energy, trainingTime):
-    rewardOfEnergy = -5 * tanhActivation(energy / 500) + 1
-    rewardOfTrainingTime = -5 * tanhActivation(trainingTime / 5) + 1
-    # rewardOfEnergy = utils.normalizeReward(maxAmount=self.maxEnergy, minAmount=self.minEnergy,
-    #                                        x=averageEnergyConsumption)
-    # rewardOfTrainingTime = utils.normalizeReward(maxAmount=self.maxTrainingTime, minAmount=self.minTrainingTime,
-    #                                              x=maxTrainingTime)
+def rewardFun(fraction, energy, trainingTime, rewardTuningParam):
+    rewardOfEnergy = normalizeReward(maxAmount=rewardTuningParam[1], minAmount=rewardTuningParam[0],
+                                     x=energy)
+    rewardOfTrainingTime = normalizeReward(maxAmount=rewardTuningParam[2], minAmount=rewardTuningParam[3],
+                                           x=trainingTime)
 
     if fraction <= 1:
         reward = (fraction * rewardOfEnergy) + ((1 - fraction) * rewardOfTrainingTime)

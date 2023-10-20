@@ -12,7 +12,7 @@ from app.util import model_utils, rl_utils
 
 def edge_based_rl_splitting(state, labels):
 
-    agent = Agent.load(directory=f"/fedflow/app/agent/", format='checkpoint')
+    agent = Agent.load(directory=f"/fedflow/app/agent/Tensorforce", format='checkpoint')
     floatAction = agent.act(state=state, evaluation=True)
     actions = []
     for i in range(0, len(floatAction), 2):

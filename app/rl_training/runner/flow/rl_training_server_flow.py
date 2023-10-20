@@ -30,11 +30,14 @@ def run(options):
         res = {}
         res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
 
-        for r in range(config.max_episodes):
-            episode_energy = list()
-            episode_trainingTime = list()
-            episode_reward = list()
+        episode_energy = list()
+        episode_trainingTime = list()
+        episode_reward = list()
+        x = list()
+        rewardTuningParam = preTrain(server, options)
 
+        for r in range(config.max_episodes):
+            x.append(r)
             fed_logger.info('====================================>')
             fed_logger.info(f'==> Episode {r} Start')
 
@@ -83,20 +86,19 @@ def run(options):
 
             energy = server.e_energy(config.CLIENTS_LIST)
             e_time = time.time()
-
             # Recording each round training time, bandwidth and test_app accuracy
             training_time = e_time - s_time
             state = server.edge_based_state(training_time, offloading, energy)
             fed_logger.info("state: " + str(state))
 
-            res['training_time'].append(training_time)
-            res['bandwidth_record'].append(server.bandwith())
-            with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
-                pickle.dump(res, f)
-
-            fed_logger.info("testing accuracy")
-            test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
-            res['test_acc_record'].append(test_acc)
+            # res['training_time'].append(training_time)
+            # res['bandwidth_record'].append(server.bandwith())
+            # with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
+            #     pickle.dump(res, f)
+            #
+            # fed_logger.info("testing accuracy")
+            # test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
+            # res['test_acc_record'].append(test_acc)
 
             fed_logger.info('Round Finish')
             fed_logger.info('==> Round Training Time: {:}'.format(training_time))
@@ -160,8 +162,13 @@ def run(options):
                 training_time = e_time - s_time
 
                 fed_logger.info('Updating Agent')
-                reward = rl_utils.rewardFun(fraction=0.8, energy=energy, trainingTime=training_time)
+                reward = rl_utils.rewardFun(fraction=0.8, energy=energy, trainingTime=training_time,
+                                            rewardTuningParam=rewardTuningParam)
                 agent.observe(terminal=False, reward=reward)
+
+                episode_energy.append(energy)
+                episode_trainingTime.append(training_time)
+                episode_reward.append(reward)
 
                 state = server.edge_based_state(training_time, offloading, energy)
                 fed_logger.info("state: " + str(state))
@@ -178,6 +185,136 @@ def run(options):
                 fed_logger.info('Round Finish')
                 fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
+    rl_utils.draw_graph(title="Reward vs Episode",
+                        xlabel="Episode",
+                        ylabel="Reward",
+                        figSizeX=10,
+                        figSizeY=5,
+                        x=x,
+                        y=episode_reward,
+                        savePath=None,
+                        pictureName=f"Reward_episode{i}")
+
+    rl_utils.draw_graph(title="Avg Energy vs Episode",
+                        xlabel="Episode",
+                        ylabel="Average Energy",
+                        figSizeX=10,
+                        figSizeY=5,
+                        x=x,
+                        y=episode_energy,
+                        savePath=None,
+                        pictureName=f"Energy_episode{i}")
+
+    rl_utils.draw_graph(title="Avg TrainingTime vs Episode",
+                        xlabel="Episode",
+                        ylabel="TrainingTime",
+                        figSizeX=10,
+                        figSizeY=5,
+                        x=x,
+                        y=episode_trainingTime,
+                        savePath=None,
+                        pictureName=f"TrainingTime_episode{i}")
     agent.close()
     msg = [message_utils.finish, True]
     server.scatter(msg)
+
+
+def preTrain(server, options):
+    rewardTuningParams = [0, 0, 0, 0]
+    min_Energy = 1.0e20
+    max_Energy = 0
+
+    min_trainingTime = 1.0e20
+    max_trainingTime = 0
+
+    splittingLayer = rl_utils.allPossibleSplitting(modelLen=config.model_len, deviceNumber=config.K)
+    fed_logger.info('====================================>')
+    fed_logger.info(f'==> Pre Training Started')
+
+    for splitting in splittingLayer:
+        splittingArray = list()
+        for i in range(0, len(splitting) - 1, 2):
+            op1 = int(splitting[i])
+            op2 = int(splitting[i + 1])
+            splittingArray.append([op1, op2])
+
+        server.split_layers = splittingArray
+        config.split_layer = splittingArray
+        fed_logger.info('====================================>')
+        fed_logger.info(f'==> Action : {splittingArray}')
+
+        s_time = time.time()
+
+        fed_logger.info("sending global weights")
+        server.edge_offloading_global_weights()
+        # fed_logger.info("receiving client network info")
+        # server.client_network(config.EDGE_SERVER_LIST)
+        #
+        # fed_logger.info("test edge servers network")
+        # server.test_network(config.EDGE_SERVER_LIST)
+
+        fed_logger.info("preparing state...")
+        server.offloading = server.get_offloading(server.split_layers)
+
+        fed_logger.info("clustering")
+        server.cluster(options)
+
+        fed_logger.info("getting state")
+        offloading = server.split_layers
+
+        # fed_logger.info("splitting")
+        # server.split(state, options)
+        server.split_layer()
+
+        fed_logger.info("initializing server")
+        server.initialize(server.split_layers, 0.1)
+
+        # fed_logger.info('==> Reinitialization Finish')
+
+        fed_logger.info("start training")
+        server.edge_offloading_train(config.CLIENTS_LIST)
+
+        fed_logger.info("receiving local weights")
+        local_weights = server.e_local_weights(config.CLIENTS_LIST)
+
+        fed_logger.info("aggregating weights")
+        server.call_aggregation(options, local_weights)
+
+        energy = server.e_energy(config.CLIENTS_LIST)
+        e_time = time.time()
+
+        # Recording each round training time, bandwidth and test_app accuracy
+        training_time = e_time - s_time
+
+        state = server.edge_based_state(training_time, offloading, energy)
+        fed_logger.info("state: " + str(state))
+
+        if energy < min_Energy:
+            min_Energy = energy
+            rewardTuningParams[0] = min_Energy
+            min_energy_splitting = splittingArray
+            min_Energy_TrainingTime = training_time
+        if energy > max_Energy:
+            max_Energy = energy
+            rewardTuningParams[1] = max_Energy
+            max_Energy_splitting = splittingArray
+            max_Energy_TrainingTime = training_time
+
+        if training_time < min_trainingTime:
+            min_trainingTime = training_time
+            rewardTuningParams[2] = min_trainingTime
+            min_trainingtime_splitting = splittingArray
+            min_trainingTime_energy = energy
+        if training_time > max_trainingTime:
+            max_trainingTime = training_time
+            rewardTuningParams[3] = max_trainingTime
+            max_trainingtime_splitting = splittingArray
+            max_trainingTime_energy = energy
+
+    fed_logger.info("==> Pre Training Ends")
+    fed_logger.info(f"==> Min Energy : {min_Energy}")
+    fed_logger.info(f"==> Max Energy : {max_Energy}")
+    fed_logger.info(f"==> Min Training Time : {min_trainingTime}")
+    fed_logger.info(f"==> Max Training Time : {max_trainingTime}")
+
+    return rewardTuningParams

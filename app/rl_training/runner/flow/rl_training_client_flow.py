@@ -7,7 +7,7 @@ sys.path.append('../../../../')
 from app.fl_training.entity.fed_client import Client
 from app.config import config
 from app.config.config import *
-from app.util import data_utils, message_utils
+from app.util import data_utils, message_utils, rl_utils
 from app.config.logger import fed_logger
 from app.fl_training.interface.fed_client_interface import FedClientInterface
 
@@ -35,10 +35,13 @@ def run(options_ins):
                     dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based)
 
     pyRAPL.setup()
+
+    preTrain(client)
     meter = pyRAPL.Measurement('bar')
+
     for r in range(config.max_episodes):
         fed_logger.info('====================================>')
-        fed_logger.info('ROUND: {} START'.format(r))
+        fed_logger.info('Episode: {} START'.format(r))
         meter.begin()
         fed_logger.info("receiving global weights")
         client.edge_global_weights()
@@ -63,7 +66,7 @@ def run(options_ins):
         client.energy(enery)
         for i in range(config.max_timesteps):
             fed_logger.info('====================================>')
-            fed_logger.info('ROUND: {} START'.format(r))
+            fed_logger.info('TimeStep: {} START'.format(r))
             meter.begin()
             fed_logger.info("receiving global weights")
             client.edge_global_weights()
@@ -91,6 +94,35 @@ def run(options_ins):
                 LR = config.LR * 0.1
     msg = client.recv_msg(client.sock, message_utils.finish)
 
+
 # parser = argparse.ArgumentParser()
 # options = input_utils.parse_argument(parser)
 # run(options)
+def preTrain(client):
+    splittingLayer = rl_utils.allPossibleSplitting(modelLen=config.model_len, deviceNumber=config.K)
+
+    meter = pyRAPL.Measurement('bar')
+
+    for splitting in splittingLayer:
+        splittingArray = list()
+        for char in splitting:
+            splittingArray.append(int(char))
+
+        meter.begin()
+        client.edge_global_weights()
+        # fed_logger.info("test network")
+        # client.test_network()
+        client.split_layer()
+        client.initialize(client.split_layers, 0.1)
+        client.edge_offloading_train()
+        client.edge_upload()
+
+        meter.end()
+
+        enery = 0
+
+        if meter.result.pkg != None:
+            for en in meter.result.pkg:
+                enery += en
+        fed_logger.info(f"Energy : {enery}")
+        client.energy(enery)
