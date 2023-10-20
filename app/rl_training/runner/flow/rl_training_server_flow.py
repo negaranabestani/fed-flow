@@ -37,7 +37,6 @@ def run(options):
         rewardTuningParam = preTrain(server, options)
 
         for r in range(config.max_episodes):
-            x.append(r)
             fed_logger.info('====================================>')
             fed_logger.info(f'==> Episode {r} Start')
 
@@ -104,6 +103,7 @@ def run(options):
             fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
             for timestep in range(config.max_timesteps):
+                x.append(timestep + r * 200)
                 floatAction = agent.act(states=state, evaluation=False)
                 actions = []
                 for i in range(0, len(floatAction), 2):
@@ -173,18 +173,20 @@ def run(options):
                 state = server.edge_based_state(training_time, offloading, energy)
                 fed_logger.info("state: " + str(state))
 
-                res['training_time'].append(training_time)
-                res['bandwidth_record'].append(server.bandwith())
-                with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
-                    pickle.dump(res, f)
-
-                fed_logger.info("testing accuracy")
-                test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
-                res['test_acc_record'].append(test_acc)
+                # res['training_time'].append(training_time)
+                # res['bandwidth_record'].append(server.bandwith())
+                # with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
+                #     pickle.dump(res, f)
+                #
+                # fed_logger.info("testing accuracy")
+                # test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
+                # res['test_acc_record'].append(test_acc)
 
                 fed_logger.info('Round Finish')
                 fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
+    fed_logger.info('===========================================')
+    fed_logger.info('Saving Graphs')
     rl_utils.draw_graph(title="Reward vs Episode",
                         xlabel="Episode",
                         ylabel="Reward",
@@ -192,7 +194,7 @@ def run(options):
                         figSizeY=5,
                         x=x,
                         y=episode_reward,
-                        savePath=None,
+                        savePath='/Graphs',
                         pictureName=f"Reward_episode{i}")
 
     rl_utils.draw_graph(title="Avg Energy vs Episode",
@@ -202,7 +204,7 @@ def run(options):
                         figSizeY=5,
                         x=x,
                         y=episode_energy,
-                        savePath=None,
+                        savePath='/Graphs',
                         pictureName=f"Energy_episode{i}")
 
     rl_utils.draw_graph(title="Avg TrainingTime vs Episode",
@@ -212,7 +214,7 @@ def run(options):
                         figSizeY=5,
                         x=x,
                         y=episode_trainingTime,
-                        savePath=None,
+                        savePath='/Graphs',
                         pictureName=f"TrainingTime_episode{i}")
     agent.close()
     msg = [message_utils.finish, True]
@@ -236,6 +238,11 @@ def preTrain(server, options):
         for i in range(0, len(splitting) - 1, 2):
             op1 = int(splitting[i])
             op2 = int(splitting[i + 1])
+            if op1 == 0 or op1 == 2:
+                op1 += 1
+                if op2 < config.model_len - 1:
+                    op2 += 1
+
             splittingArray.append([op1, op2])
 
         server.split_layers = splittingArray
