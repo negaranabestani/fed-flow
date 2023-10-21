@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 from tensorforce import Environment
 from app.model.entity.rl_model import NoSplitting, TRPO, AC, TensorforceAgent, RandomAgent
 import app.util.model_utils as model_utils
+from app.config.logger import fed_logger
 
 
 def draw_graph(figSizeX, figSizeY, x, y, title, xlabel, ylabel, savePath, pictureName, saveFig=True):
@@ -16,11 +17,12 @@ def draw_graph(figSizeX, figSizeY, x, y, title, xlabel, ylabel, savePath, pictur
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
 
-    # if saveFig:
-    #     if not os.path.exists(savePath):
-    #         os.makedirs(savePath)
-    #     plt.savefig(os.path.join(savePath, pictureName))
-    plt.show()
+    if saveFig:
+        if not os.path.exists(savePath):
+            os.makedirs(savePath)
+        plt.savefig(os.path.join(savePath, pictureName))
+    # plt.show()
+    fed_logger.info(f"graph saved in {os.path.join(savePath, pictureName)}")
     plt.close()
 
 
