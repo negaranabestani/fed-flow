@@ -7,6 +7,7 @@ services:
     ports:
       - "5002:5002"
     hostname: server
+    restart: always
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py -o True -s fake_splitting -e True"
 
   edge1:
@@ -18,6 +19,7 @@ services:
     ports:
       - "5001:5001"
     hostname: edge1
+    restart: always
     depends_on:
       - server
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -i 0 -o True -s fake_splitting -e True"
@@ -28,6 +30,7 @@ services:
       args:
         - INDEX=0
     hostname: client1
+    restart: always
     depends_on:
       - edge1
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s fake_splitting -e True"
