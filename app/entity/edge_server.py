@@ -6,7 +6,7 @@ from torch import optim, nn
 
 from app.config import config
 from app.config.logger import fed_logger
-from app.fl_training.interface.fed_edgeserver_interface import FedEdgeServerInterface
+from app.entity.interface.fed_edgeserver_interface import FedEdgeServerInterface
 from app.util import message_utils, model_utils
 
 

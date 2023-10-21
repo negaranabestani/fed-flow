@@ -3,13 +3,13 @@ import socket
 import sys
 import pyRAPL
 
-sys.path.append('../../../../')
-from app.fl_training.entity.fed_client import Client
+sys.path.append('../../../')
+from app.entity.client import Client
 from app.config import config
 from app.config.config import *
 from app.util import data_utils, message_utils
 from app.config.logger import fed_logger
-from app.fl_training.interface.fed_client_interface import FedClientInterface
+from app.entity.interface.fed_client_interface import FedClientInterface
 
 
 def run_edge_based(client: FedClientInterface, LR):

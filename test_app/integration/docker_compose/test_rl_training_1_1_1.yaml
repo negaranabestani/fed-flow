@@ -1,37 +1,30 @@
 version: '3'
 services:
   server:
-    build:
-      context: ../../../
-      dockerfile: server.Dockerfile
+    image: fed-flow:test
     restart: always
     ports:
       - "5002:5002"
     hostname: server
-    entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_training_server_runner.py -o True -s edge_based_rl_splitting -e True"
+    working_dir: /fed-flow/app/rl_training/runner
+    entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_server_runner.py -o True -s edge_based_rl_splitting -e True"
 
   edge1:
-    build:
-      context: ../../../
-      dockerfile: edge.Dockerfile
-      args:
-        - INDEX=0
+    image: fed-flow:test
     restart: always
     ports:
       - "5001:5001"
     hostname: edge1
+    working_dir: /fed-flow/app/rl_training/runner
     depends_on:
       - server
-    entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_training_edgeserver_runner.py -i 0 -o True -s edge_based_rl_splitting -e True"
+    entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_edgeserver_runner.py -i 0 -o True -s edge_based_rl_splitting -e True"
 
   client1:
-    build:
-      context: ../../../
-      dockerfile: client.Dockerfile
-      args:
-        - INDEX=0
+    image: fed-flow:test
     restart: always
     hostname: client1
+    working_dir: /fed-flow/app/rl_training/runner
     depends_on:
       - edge1
-    entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_training_client_runner.py -i 0 -o True -s edge_based_rl_splitting -e True"
+    entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_client_runner.py -i 0 -o True -s edge_based_rl_splitting -e True"

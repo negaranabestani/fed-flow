@@ -4,11 +4,11 @@ import threading
 
 from app.util import message_utils
 
-sys.path.append('../../../../')
+sys.path.append('../../../')
 from app.config import config
 from app.config.logger import fed_logger
-from app.fl_training.entity.fed_edge_server import FedEdgeServer
-from app.fl_training.interface.fed_edgeserver_interface import FedEdgeServerInterface
+from app.entity.edge_server import FedEdgeServer
+from app.entity.interface.fed_edgeserver_interface import FedEdgeServerInterface
 
 
 def run_offload(server: FedEdgeServerInterface, LR):

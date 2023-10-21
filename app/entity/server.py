@@ -9,10 +9,10 @@ import torch.nn as nn
 import torch.optim as optim
 
 from app.fl_method import fl_method_parser
-from app.fl_training.interface.fed_server_interface import FedServerInterface
+from app.entity.interface.fed_server_interface import FedServerInterface
 
-sys.path.append('../../../')
-from app.util import message_utils, model_utils, system_utils
+sys.path.append('../../')
+from app.util import message_utils, model_utils
 from app.config import config
 from app.config.logger import fed_logger
 

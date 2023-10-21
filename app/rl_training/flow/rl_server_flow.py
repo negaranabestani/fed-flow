@@ -1,12 +1,11 @@
 import pickle
-import socket
 import sys
 import time
 
-sys.path.append('../../../../')
+sys.path.append('../../../')
 from app.config import config
 from app.util import model_utils, message_utils, rl_utils
-from app.fl_training.entity.fed_server import FedServer
+from app.entity.server import FedServer
 from app.config.logger import fed_logger
 import numpy as np
 

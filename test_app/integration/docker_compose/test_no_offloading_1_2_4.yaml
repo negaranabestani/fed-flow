@@ -1,79 +1,67 @@
 version: '3'
 services:
   server:
-    build:
-      context: ../../../
-      dockerfile: server.Dockerfile
+    image: fed-flow:test
     ports:
       - "5004:5004"
+    restart: always
+    working_dir: /fed-flow/app/fl_training/runner
     hostname: server
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py -o True -s no_splitting -e True"
 
   edge1:
-    build:
-      context: ../../../
-      dockerfile: edge.Dockerfile
-      args:
-        - INDEX=0
+    image: fed-flow:test
     ports:
       - "5001:5001"
+    restart: always
+    working_dir: /fed-flow/app/fl_training/runner
     hostname: edge1
     depends_on:
       - server
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -i 0 -o True -s no_splitting -e True"
 
   client1:
-    build:
-      context: ../../../
-      dockerfile: client.Dockerfile
-      args:
-        - INDEX=0
+    image: fed-flow:test
+    restart: always
+    working_dir: /fed-flow/app/fl_training/runner
     hostname: client1
     depends_on:
       - edge1
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s no_splitting -e True"
 
   client2:
-    build:
-      context: ../../../
-      dockerfile: client.Dockerfile
-      args:
-        - INDEX=1
+    image: fed-flow:test
+    restart: always
+    working_dir: /fed-flow/app/fl_training/runner
     hostname: client2
     depends_on:
       - edge1
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 1 -o True -s no_splitting -e True"
 
   edge2:
-    build:
-      context: ../../../
-      dockerfile: edge.Dockerfile
-      args:
-        - INDEX=0
+    image: fed-flow:test
     ports:
       - "5005:5005"
+    restart: always
+    working_dir: /fed-flow/app/fl_training/runner
     hostname: edge2
     depends_on:
       - server
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -i 1 -o True -s no_splitting -e True"
 
   client3:
-    build:
-      context: ../../../
-      dockerfile: client.Dockerfile
-      args:
-        - INDEX=2
+    image: fed-flow:test
+    restart: always
+    working_dir: /fed-flow/app/fl_training/runner
     hostname: client3
     depends_on:
       - edge2
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 2 -o True -s no_splitting -e True"
 
   client4:
-    build:
-      context: ../../../
-      dockerfile: client.Dockerfile
-      args:
-        - INDEX=3
+    image: fed-flow:test
+    restart: always
+    working_dir: /fed-flow/app/fl_training/runner
     hostname: client4
     depends_on:
       - edge2

@@ -1,14 +1,13 @@
 import pickle
-import socket
 import sys
 import time
 
-sys.path.append('../../../../')
+sys.path.append('../../../')
 from app.config import config
 from app.util import model_utils, message_utils
-from app.fl_training.entity.fed_server import FedServer
+from app.entity.server import FedServer
 from app.config.logger import fed_logger
-from app.fl_training.interface.fed_server_interface import FedServerInterface
+from app.entity.interface.fed_server_interface import FedServerInterface
 
 
 def run_edge_based_no_offload(server: FedServerInterface, LR, options):

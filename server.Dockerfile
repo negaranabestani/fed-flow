@@ -10,5 +10,5 @@ WORKDIR /fed-flow/
 #RUN pip install --default-timeout=1200 -r requirements.txt
 COPY app /fed-flow/app
 
-WORKDIR /fed-flow/app/rl_training/runner
-ENTRYPOINT ["python3", "fed_server_run.py"]
+#WORKDIR /fed-flow/app/rl_training/runner
+#ENTRYPOINT ["python3", "fed_server_run.py"]

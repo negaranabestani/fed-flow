@@ -9,9 +9,9 @@ import tqdm
 
 from app.config import config
 
-sys.path.append('../../../')
+sys.path.append('../../')
 from app.util import message_utils, model_utils
-from app.fl_training.interface.fed_client_interface import FedClientInterface
+from app.entity.interface.fed_client_interface import FedClientInterface
 from app.config.logger import fed_logger
 
 np.random.seed(0)
