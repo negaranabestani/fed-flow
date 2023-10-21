@@ -1,11 +1,12 @@
 # Communicator Object
 
 import pickle
+import random
 import struct
 import socket
+import time
+
 from app.config.logger import fed_logger
-
-
 
 
 class Communicator(object):
@@ -13,7 +14,11 @@ class Communicator(object):
         self.sock = socket.socket()
         self.ip = socket.gethostbyname(socket.gethostname())
 
+    def network_simulator(self, msg_len):
+        return random.uniform(0, 0.7)*msg_len/100
+
     def send_msg(self, sock, msg):
+        time.sleep(self.network_simulator(len(msg)))
         msg_pickle = pickle.dumps(msg)
         sock.sendall(struct.pack(">I", len(msg_pickle)))
         sock.sendall(msg_pickle)
