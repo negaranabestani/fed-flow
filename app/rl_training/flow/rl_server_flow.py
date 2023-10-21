@@ -32,7 +32,7 @@ def run(options):
         episode_energy, episode_trainingTime, episode_reward = [], [], []
         timestep_energy, timestep_trainingTime, timestep_reward = [], [], []
         x = []
-
+        actionList = []
         rewardTuningParam = preTrain(server, options)
 
         for r in range(config.max_episodes):
@@ -108,6 +108,7 @@ def run(options):
                     actions.append([rl_utils.actionToLayerEdgeBase([floatAction[i], floatAction[i + 1]])[0],
                                     rl_utils.actionToLayerEdgeBase([floatAction[i], floatAction[i + 1]])[1]])
 
+                actionList.append(actions)
                 server.split_layers = actions
 
                 fed_logger.info('====================================>')
@@ -199,7 +200,7 @@ def run(options):
                         x=x,
                         y=episode_reward,
                         savePath='/Graphs',
-                        pictureName=f"Reward_episode{i}")
+                        pictureName=f"Reward_episode_3")
 
     rl_utils.draw_graph(title="Avg Energy vs Episode",
                         xlabel="Episode",
@@ -209,7 +210,7 @@ def run(options):
                         x=x,
                         y=episode_energy,
                         savePath='/Graphs',
-                        pictureName=f"Energy_episode{i}")
+                        pictureName=f"Energy_episode_3")
 
     rl_utils.draw_graph(title="Avg TrainingTime vs Episode",
                         xlabel="Episode",
@@ -219,7 +220,22 @@ def run(options):
                         x=x,
                         y=episode_trainingTime,
                         savePath='/Graphs',
-                        pictureName=f"TrainingTime_episode{i}")
+                        pictureName=f"TrainingTime_episode_3")
+
+    rl_utils.draw_scatter(title="Energy vs TrainingTime",
+                          xlabel="Energy",
+                          ylabel="TrainingTime",
+                          x=episode_energy,
+                          y=episode_trainingTime,
+                          savePath='/Graphs',
+                          pictureName=f"Scatter_3")
+
+    rl_utils.draw_hist(title='Actions',
+                       x=actionList,
+                       xlabel="Actions",
+                       savePath='/Graphs',
+                       pictureName='Action_hist_3')
+
     agent.close()
     msg = [message_utils.finish, True]
     server.scatter(msg)

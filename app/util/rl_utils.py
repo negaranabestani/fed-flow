@@ -22,7 +22,6 @@ def draw_graph(figSizeX, figSizeY, x, y, title, xlabel, ylabel, savePath, pictur
             os.makedirs(savePath)
         plt.savefig(os.path.join(savePath, pictureName))
     # plt.show()
-    fed_logger.info(f"graph saved in {os.path.join(savePath, pictureName)}")
     plt.close()
 
 
