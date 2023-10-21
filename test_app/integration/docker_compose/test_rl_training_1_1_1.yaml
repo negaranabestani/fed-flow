@@ -8,6 +8,8 @@ services:
     hostname: server
     working_dir: /fed-flow/app/rl_training/runner
     entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_server_runner.py -o True -s edge_based_rl_splitting -e True"
+    volumes:
+      - /home/alireza_soleymani/UniversityWorks/Thesis/Graphs:/Graphs
 
   edge1:
     image: fed-flow:test

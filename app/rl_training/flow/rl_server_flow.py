@@ -26,13 +26,13 @@ def run(options):
         server.initialize(config.split_layer, LR)
         training_time = 0
         energy = 0
+
         res = {}
         res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
+        episode_energy, episode_trainingTime, episode_reward = [], [], []
+        timestep_energy, timestep_trainingTime, timestep_reward = [], [], []
+        x = []
 
-        episode_energy = list()
-        episode_trainingTime = list()
-        episode_reward = list()
-        x = list()
         rewardTuningParam = preTrain(server, options)
 
         for r in range(config.max_episodes):
@@ -102,7 +102,6 @@ def run(options):
             fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
             for timestep in range(config.max_timesteps):
-                x.append(timestep + r * 200)
                 floatAction = agent.act(states=state, evaluation=False)
                 actions = []
                 for i in range(0, len(floatAction), 2):
@@ -165,9 +164,9 @@ def run(options):
                                             rewardTuningParam=rewardTuningParam)
                 agent.observe(terminal=False, reward=reward)
 
-                episode_energy.append(energy)
-                episode_trainingTime.append(training_time)
-                episode_reward.append(reward)
+                timestep_energy.append(energy)
+                timestep_trainingTime.append(training_time)
+                timestep_reward.append(reward)
 
                 state = server.edge_based_state(training_time, offloading, energy)
                 fed_logger.info("state: " + str(state))
@@ -183,6 +182,12 @@ def run(options):
 
                 fed_logger.info('Round Finish')
                 fed_logger.info('==> Round Training Time: {:}'.format(training_time))
+
+            x.append(r)
+            episode_energy.append(sum(timestep_energy) / config.max_timesteps)
+            episode_trainingTime.append(sum(timestep_trainingTime) / config.max_timesteps)
+            episode_reward.append(sum(timestep_reward) / config.max_timesteps)
+            timestep_energy, timestep_trainingTime, timestep_reward = [], [], []
 
     fed_logger.info('===========================================')
     fed_logger.info('Saving Graphs')

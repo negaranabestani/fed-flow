@@ -7,4 +7,4 @@ from app.rl_training.flow import rl_edgeserver_flow
 
 parser = argparse.ArgumentParser()
 options = input_utils.parse_argument(parser)
-rl_training_edgeserver_flow.run(options)
+rl_edgeserver_flow.run(options)

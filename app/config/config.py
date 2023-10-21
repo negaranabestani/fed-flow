@@ -1,9 +1,21 @@
 import sys
 
-# Network configration
-SERVER_ADDR = '127.0.0.1'
-SERVER_PORT = 51000
-EDGESERVER_PORT = {'127.0.0.1': 51001}
+# # Network configration
+# SERVER_ADDR = 'server'
+#
+# SERVER_PORT = 51008
+# EDGESERVER_PORT = {'127.0.0.1': 51001}
+#
+# K = 1  # Number of devices
+# G = 1  # Number of groups
+#
+# # Unique clients order
+# HOST2IP = {}
+# CLIENTS_CONFIG = {}
+# EDGE_SERVER_LIST = ['127.0.0.1']
+# CLIENTS_LIST = []
+# EDGE_MAP = {'127.0.0.1': ['127.0.0.1']}
+# CLIENT_MAP = {'127.0.0.1': '127.0.0.1'}
 
 CLIENTS_BANDWIDTH = []
 index = ''
@@ -12,7 +24,8 @@ index = ''
 dataset_name = ''
 home = sys.path[0].split('fed-flow')[0] + 'fed-flow' + "/app"
 dataset_path = home + '/dataset/data/'
-N = 50000  # data length
+# N = 50000  # data length
+N = 100
 
 # Model configration
 model_cfg = {
@@ -27,7 +40,7 @@ model_name = ''
 model_size = 1.28
 model_flops = 32.902
 total_flops = 8488192
-split_layer = [6]  # Initial split layers
+split_layer = [[6, 6]]  # Initial split layers
 model_len = 7
 
 # FL training configration
@@ -36,8 +49,8 @@ LR = 0.01  # Learning rate
 B = 100  # Batch size
 
 # RL training configration
-max_episodes = 100  # max training episodes
-max_timesteps = 100  # max timesteps in one episode
+max_episodes = 1000  # max training episodes
+max_timesteps = 1  # max timesteps in one episode
 exploration_times = 20  # exploration times without std decay
 n_latent_var = 64  # number of variables in hidden layer
 action_std = 0.5  # constant std for action distribution (Multivariate Normal)
@@ -55,8 +68,8 @@ random_seed = 0
 # Network configration
 SERVER_ADDR = 'server'
 
-SERVER_PORT = 51008
-EDGESERVER_PORT = {'127.0.0.1': 51001}
+SERVER_PORT = 5002
+EDGESERVER_PORT = {'edge1': 5001}
 
 K = 1  # Number of devices
 G = 1  # Number of groups
@@ -65,7 +78,7 @@ S = 1
 # Unique clients order
 HOST2IP = {}
 CLIENTS_CONFIG = {'client1': 0}
-EDGE_SERVER_LIST = ['127.0.0.1']
+EDGE_SERVER_LIST = ['edge1']
 CLIENTS_LIST = ['client1']
-EDGE_MAP = {'127.0.0.1': ['127.0.0.1']}
-CLIENT_MAP = {'127.0.0.1': '127.0.0.1'}
+EDGE_MAP = {'edge1': ['client1']}
+CLIENT_MAP = {'client1': 'edge1'}
