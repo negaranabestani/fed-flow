@@ -13,6 +13,10 @@ from app.entity.interface.fed_client_interface import FedClientInterface
 
 
 def run_edge_based(client: FedClientInterface, LR):
+    mx: int = int((N / K) * (index + 1))
+    mn: int = int((N / K) * index)
+    data_size = mx - mn
+    batch_num = data_size / config.B
     pyRAPL.setup()
     meter = pyRAPL.Measurement('bar')
     for r in range(config.R):
@@ -38,6 +42,7 @@ def run_edge_based(client: FedClientInterface, LR):
         if meter.result.pkg != None:
             for en in meter.result.pkg:
                 enery += en
+        enery /= batch_num
         fed_logger.info(f"Energy : {enery}")
         client.energy(enery)
 
