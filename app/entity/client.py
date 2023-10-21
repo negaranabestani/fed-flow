@@ -28,9 +28,9 @@ class Client(FedClientInterface):
         self.net = model_utils.get_model('Client', self.split_layers[config.index], self.device, self.edge_based)
         fed_logger.debug(self.net)
         self.criterion = nn.CrossEntropyLoss()
-
-        self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
-                                   momentum=0.9)
+        if len(list(self.net.parameters())) != 0:
+            self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
+                                       momentum=0.9)
 
     def edge_upload(self):
         msg = [message_utils.local_weights_client_to_edge, self.net.cpu().state_dict()]
@@ -77,7 +77,8 @@ class Client(FedClientInterface):
             flag = [message_utils.local_iteration_flag_client_to_edge, True]
             self.send_msg(self.sock, flag)
             inputs, targets = inputs.to(self.device), targets.to(self.device)
-            self.optimizer.zero_grad()
+            if self.optimizer is not None:
+                self.optimizer.zero_grad()
             outputs = self.net(inputs)
             # fed_logger.info("sending local activations")
             msg = [message_utils.local_activations_client_to_edge, outputs.cpu(), targets.cpu()]
@@ -90,7 +91,8 @@ class Client(FedClientInterface):
                 self.device)
 
             outputs.backward(gradients)
-            self.optimizer.step()
+            if self.optimizer is not None:
+                self.optimizer.step()
 
         flag = [message_utils.local_iteration_flag_client_to_edge, False]
         self.send_msg(self.sock, flag)
@@ -102,7 +104,8 @@ class Client(FedClientInterface):
             flag = [message_utils.local_iteration_flag_client_to_server + '_' + socket.gethostname(), True]
             self.send_msg(self.sock, flag)
             inputs, targets = inputs.to(self.device), targets.to(self.device)
-            self.optimizer.zero_grad()
+            if self.optimizer is not None:
+                self.optimizer.zero_grad()
             outputs = self.net(inputs)
             # fed_logger.info("sending local activations")
             msg = [message_utils.local_activations_client_to_server + '_' + socket.gethostname(), outputs.cpu(),
@@ -117,7 +120,8 @@ class Client(FedClientInterface):
                     self.device)
 
             outputs.backward(gradients)
-            self.optimizer.step()
+            if self.optimizer is not None:
+                self.optimizer.step()
 
         flag = [message_utils.local_iteration_flag_client_to_server + '_' + socket.gethostname(), False]
         self.send_msg(self.sock, flag)

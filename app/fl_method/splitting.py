@@ -59,7 +59,7 @@ def fake(state, labels):
     """
     split_list = []
     for i in range(config.K):
-        split_list.append([3, 4])
+        split_list.append([2, 3])
     return split_list
 
 

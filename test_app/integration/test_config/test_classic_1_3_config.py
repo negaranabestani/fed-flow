@@ -18,7 +18,7 @@ import sys
 # CLIENT_MAP = {'127.0.0.1': '127.0.0.1'}
 
 CLIENTS_BANDWIDTH = []
-index = ''
+index = 0
 
 # Dataset configration
 dataset_name = ''

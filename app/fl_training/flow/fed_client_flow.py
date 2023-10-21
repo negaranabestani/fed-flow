@@ -13,7 +13,9 @@ from app.entity.interface.fed_client_interface import FedClientInterface
 
 
 def run_edge_based(client: FedClientInterface, LR):
-    data_size = int((N / K) * (index + 1)) - int((N / K) * index)
+    mx: int = int((N / K) * (index + 1))
+    mn: int = int((N / K) * index)
+    data_size = mx - mn
     batch_num = data_size / config.B
     pyRAPL.setup()
     meter = pyRAPL.Measurement('bar')
