@@ -6,7 +6,7 @@ SERVER_PORT = 51000
 EDGESERVER_PORT = {'127.0.0.1': 51001}
 
 CLIENTS_BANDWIDTH = []
-index = ''
+index = 0
 
 # Dataset configration
 dataset_name = ''

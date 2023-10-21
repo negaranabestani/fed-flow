@@ -46,8 +46,9 @@ class FedServer(FedServerInterface):
                                                                 self.nets[client_ip].state_dict(), eweights)
                     self.nets[client_ip].load_state_dict(pweights)
 
-                    self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
-                                                           momentum=0.9)
+                    if len(list(self.nets[client_ip].parameters())) != 0:
+                        self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
+                                                               momentum=0.9)
                 else:
                     self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device,
                                                                  self.edge_based)
@@ -59,8 +60,9 @@ class FedServer(FedServerInterface):
                                                                 self.nets[client_ip].state_dict(), [])
                     self.nets[client_ip].load_state_dict(pweights)
 
-                    self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
-                                                           momentum=0.9)
+                    if len(list(self.nets[client_ip].parameters())) != 0:
+                        self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
+                                                               momentum=0.9)
             else:
                 self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device, self.edge_based)
         self.criterion = nn.CrossEntropyLoss()
@@ -118,13 +120,15 @@ class FedServer(FedServerInterface):
             inputs, targets = smashed_layers.to(self.device), labels.to(self.device)
             if self.split_layers[config.CLIENTS_CONFIG[client_ip]] < len(
                     self.uninet.cfg) - 1:
-                self.optimizers[client_ip].zero_grad()
+                if self.optimizers.keys().__contains__(client_ip):
+                    self.optimizers[client_ip].zero_grad()
             outputs = self.nets[client_ip](inputs)
             loss = self.criterion(outputs, targets)
             loss.backward()
             if self.split_layers[config.CLIENTS_CONFIG[client_ip]] < len(
                     self.uninet.cfg) - 1:
-                self.optimizers[client_ip].step()
+                if self.optimizers.keys().__contains__(client_ip):
+                    self.optimizers[client_ip].step()
 
             # Send gradients to edge
             # fed_logger.info(client_ip + " sending gradients")
@@ -152,13 +156,15 @@ class FedServer(FedServerInterface):
             inputs, targets = smashed_layers.to(self.device), labels.to(self.device)
             if self.split_layers[config.CLIENTS_CONFIG[client_ip]][1] < len(
                     self.uninet.cfg) - 1:
-                self.optimizers[client_ip].zero_grad()
+                if self.optimizers.keys().__contains__(client_ip):
+                    self.optimizers[client_ip].zero_grad()
             outputs = self.nets[client_ip](inputs)
             loss = self.criterion(outputs, targets)
             loss.backward()
             if self.split_layers[config.CLIENTS_CONFIG[client_ip]][1] < len(
                     self.uninet.cfg) - 1:
-                self.optimizers[client_ip].step()
+                if self.optimizers.keys().__contains__(client_ip):
+                    self.optimizers[client_ip].step()
 
             # Send gradients to edge
             # fed_logger.info(client_ip + " sending gradients")
