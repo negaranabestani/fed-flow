@@ -230,11 +230,11 @@ def run(options):
                           savePath='/Graphs',
                           pictureName=f"Scatter_3")
 
-    rl_utils.draw_hist(title='Actions',
-                       x=actionList,
-                       xlabel="Actions",
-                       savePath='/Graphs',
-                       pictureName='Action_hist_3')
+    # rl_utils.draw_hist(title='Actions',
+    #                    x=actionList,
+    #                    xlabel="Actions",
+    #                    savePath='/Graphs',
+    #                    pictureName='Action_hist_3')
 
     agent.close()
     msg = [message_utils.finish, True]
@@ -245,7 +245,8 @@ def preTrain(server, options):
     rewardTuningParams = [0, 0, 0, 0]
     min_Energy = 1.0e20
     max_Energy = 0
-
+    energyArray = []
+    trainingTimeArray = []
     min_trainingTime = 1.0e20
     max_trainingTime = 0
 
@@ -316,6 +317,16 @@ def preTrain(server, options):
         state = server.edge_based_state(training_time, offloading, energy)
         fed_logger.info("state: " + str(state))
 
+        if splittingArray == [[6, 6]]:
+            fed_logger.info("=============================")
+            fed_logger.info("Classic FL Energy ")
+            fed_logger.info(f"Energy : {energy}")
+            fed_logger.info("Classic FL Training Time ")
+            fed_logger.info(f"TrainingTime : {training_time}")
+
+        energyArray.append(energy)
+        trainingTimeArray.append(training_time)
+
         if energy < min_Energy:
             min_Energy = energy
             rewardTuningParams[0] = min_Energy
@@ -337,6 +348,17 @@ def preTrain(server, options):
             rewardTuningParams[3] = max_trainingTime
             max_trainingtime_splitting = splittingArray
             max_trainingTime_energy = energy
+
+    rl_utils.draw_hist(title='Energy',
+                       x=energyArray,
+                       xlabel="Energy",
+                       savePath='/Graphs',
+                       pictureName='energy_hist_3')
+    rl_utils.draw_hist(title='trainingTime',
+                       x=trainingTimeArray,
+                       xlabel="TrainingTime",
+                       savePath='/Graphs',
+                       pictureName='trainingTime_hist_3')
 
     fed_logger.info("==> Pre Training Ends")
     fed_logger.info(f"==> Min Energy : {min_Energy}")
