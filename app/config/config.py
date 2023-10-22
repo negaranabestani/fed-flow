@@ -24,8 +24,7 @@ index = 0
 dataset_name = ''
 home = sys.path[0].split('fed-flow')[0] + 'fed-flow' + "/app"
 dataset_path = home + '/dataset/data/'
-# N = 50000  # data length
-N = 100
+N = 100  # data length
 
 # Model configration
 model_cfg = {
@@ -44,12 +43,12 @@ split_layer = [[6, 6]]  # Initial split layers
 model_len = 7
 
 # FL training configration
-R = 4  # FL rounds
+R = 1  # FL rounds
 LR = 0.01  # Learning rate
 B = 100  # Batch size
 
 # RL training configration
-max_episodes = 500  # max training episodes
+max_episodes = 100  # max training episodes
 max_timesteps = 10  # max timesteps in one episode
 exploration_times = 20  # exploration times without std decay
 n_latent_var = 64  # number of variables in hidden layer
