@@ -122,15 +122,11 @@ def run(options_ins):
 # options = input_utils.parse_argument(parser)
 # run(options)
 def preTrain(client):
-    splittingLayer = rl_utils.allPossibleSplitting(modelLen=config.model_len, deviceNumber=config.K)
+    splittingLayer = rl_utils.allPossibleSplitting(modelLen=config.model_len, deviceNumber=1)
 
     meter = pyRAPL.Measurement('bar')
 
     for splitting in splittingLayer:
-        splittingArray = list()
-        for char in splitting:
-            splittingArray.append(int(char))
-
         meter.begin()
         client.edge_global_weights()
         # fed_logger.info("test network")
@@ -148,3 +144,21 @@ def preTrain(client):
             for en in meter.result.pkg:
                 enery += en
         client.energy(enery)
+
+    meter.begin()
+    client.edge_global_weights()
+    # fed_logger.info("test network")
+    # client.test_network()
+    client.split_layer()
+    client.initialize(client.split_layers, 0.1)
+    client.edge_offloading_train()
+    client.edge_upload()
+
+    meter.end()
+
+    enery = 0
+
+    if meter.result.pkg != None:
+        for en in meter.result.pkg:
+            enery += en
+    client.energy(enery)

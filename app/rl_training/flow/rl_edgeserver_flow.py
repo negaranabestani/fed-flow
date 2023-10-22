@@ -99,7 +99,7 @@ def run(options_ins):
 
 
 def preTrain(edge_server, options, client_ips):
-    splittingLayer = rl_utils.allPossibleSplitting(modelLen=config.model_len, deviceNumber=config.K)
+    splittingLayer = rl_utils.allPossibleSplitting(modelLen=config.model_len, deviceNumber=1)
 
     for splitting in splittingLayer:
 
@@ -122,3 +122,23 @@ def preTrain(edge_server, options, client_ips):
 
         for i in range(len(client_ips)):
             threads[client_ips[i]].join()
+
+    edge_server.global_weights(client_ips)
+    # fed_logger.info("test clients network")
+    # server.test_client_network(client_ips)
+    # fed_logger.info("sending clients network")
+    # server.client_network()
+    # fed_logger.info("test server network")
+    # server.test_server_network()
+    edge_server.split_layer(client_ips)
+
+    edge_server.initialize(edge_server.split_layers, 0.1, client_ips)
+    threads = {}
+
+    for i in range(len(client_ips)):
+        threads[client_ips[i]] = threading.Thread(target=edge_server.thread_training,
+                                                  args=(client_ips[i],), name=client_ips[i])
+        threads[client_ips[i]].start()
+
+    for i in range(len(client_ips)):
+        threads[client_ips[i]].join()

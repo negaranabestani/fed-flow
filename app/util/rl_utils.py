@@ -158,11 +158,9 @@ def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[int, int]:
     return op1, op2
 
 
-def rewardFun(fraction, energy, trainingTime, rewardTuningParam):
-    rewardOfEnergy = normalizeReward(maxAmount=rewardTuningParam[1], minAmount=rewardTuningParam[0],
-                                     x=energy)
-    rewardOfTrainingTime = normalizeReward(maxAmount=rewardTuningParam[2], minAmount=rewardTuningParam[3],
-                                           x=trainingTime)
+def rewardFun(fraction, energy, trainingTime, classicFlTrainingTime, maxEnergy):
+    rewardOfEnergy = 1 - (energy / maxEnergy)
+    rewardOfTrainingTime = (classicFlTrainingTime - trainingTime) / max(classicFlTrainingTime, trainingTime)
 
     if fraction <= 1:
         reward = (fraction * rewardOfEnergy) + ((1 - fraction) * rewardOfTrainingTime)
