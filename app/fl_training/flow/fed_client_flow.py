@@ -12,6 +12,7 @@ from app.config.config import *
 from app.util import data_utils, message_utils, energy_estimation
 from app.config.logger import fed_logger
 from app.entity.interface.fed_client_interface import FedClientInterface
+
 warnings.filterwarnings('ignore')
 logging.getLogger("requests").setLevel(logging.WARNING)
 
@@ -39,11 +40,11 @@ def run_edge_based(client: FedClientInterface, LR):
         client.edge_offloading_train()
         fed_logger.info("sending local weights")
         energy_estimation.start_transmission()
-        client.edge_upload()
-        energy_estimation.end_transmission()
+        msg = client.edge_upload()
+        energy_estimation.end_transmission(sys.getsizeof(msg) * 8)
         fed_logger.info('ROUND: {} END'.format(r))
         fed_logger.info('==> Waiting for aggregration')
-        energy=float(energy_estimation.energy())
+        energy = float(energy_estimation.energy())
         energy /= batch_num
         fed_logger.info(f"Energy : {energy}")
         client.energy(energy)

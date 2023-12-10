@@ -1,5 +1,6 @@
 import logging
 import warnings
+from app.config import config
 
 import requests
 
@@ -7,10 +8,11 @@ URL = "http://127.0.0.1:8023"
 warnings.filterwarnings('ignore')
 logging.getLogger("requests").setLevel(logging.WARNING)
 
+
 def init(pid):
     session = requests.session()
     session.trust_env = False
-    session.get(url=URL + "/init/" + str(pid) + "/")
+    session.get(url=URL + "/init/" + str(pid) + "/" + str(config.simnet))
 
 
 def computation_start():
@@ -31,10 +33,10 @@ def start_transmission():
     session.get(url=URL + "/start-transmission/")
 
 
-def end_transmission():
+def end_transmission(bits):
     session = requests.session()
     session.trust_env = False
-    session.get(url=URL + "/end-transmission/")
+    session.get(url=URL + "/end-transmission/" + str(bits))
 
 
 def energy():

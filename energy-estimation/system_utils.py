@@ -1,11 +1,13 @@
 import logging
+import random
 import subprocess
 import time
 import config
 
 
-def init_p(process, pid):
+def init_p(process, pid, simulate_network):
     process.pid = pid
+    config.simulate_network = simulate_network
 
 
 def estimate_computation_energy(process):
@@ -25,19 +27,25 @@ def start_transmission(process):
     process.start_tr_time = time.time()
 
 
-def end_transmission(process):
+def end_transmission(process, bits):
     process.end_tr_time = time.time()
-    process.transmission_time += process.end_tr_time - process.start_tr_time
+
+    if config.simulate_network:
+        b = bits / process.end_tr_time - process.start_tr_time
+        b += random.uniform(-0.7 * b, 0.7 * b)
+        process.transmission_time += b * bits
+    else:
+        process.transmission_time += process.end_tr_time - process.start_tr_time
 
 
 def get_cpu_u(pid):
     # print("pid" + str(pid))
-    data = subprocess.run("top -n 1 -b -p "+str(pid), capture_output=True, shell=True, text=True)
+    data = subprocess.run("top -n 1 -b -p " + str(pid), capture_output=True, shell=True, text=True)
     # print("result"+str(data.stdout))
     result = data.stdout.split("\n")
     target = result[7].split(" ")
     # print(target[len(target)-8])
-    return float(target[len(target)-8])
+    return float(target[len(target) - 8])
 
 
 def get_power_now():

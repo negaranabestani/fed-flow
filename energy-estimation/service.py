@@ -1,6 +1,3 @@
-import asyncio
-import os
-import subprocess
 import threading
 from fastapi import FastAPI
 import config, system_utils
@@ -13,9 +10,9 @@ app = FastAPI()
 config.process = Process(0)
 
 
-@app.get("/init/{pid}")
-async def init(pid):
-    system_utils.init_p(config.process, pid)
+@app.get("/init/{pid}/{simnet}")
+async def init(pid, simnet):
+    system_utils.init_p(config.process, pid, simnet)
 
 
 @app.get("/")
@@ -40,9 +37,9 @@ async def start_transmission():
     system_utils.start_transmission(config.process)
 
 
-@app.get("/end-transmission/")
-async def end_transmission():
-    system_utils.end_transmission(config.process)
+@app.get("/end-transmission/{bits}")
+async def end_transmission(bits):
+    system_utils.end_transmission(config.process, bits)
 
 
 @app.get("/energy/")

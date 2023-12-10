@@ -38,6 +38,7 @@ class Client(FedClientInterface):
     def edge_upload(self):
         msg = [message_utils.local_weights_client_to_edge, self.net.cpu().state_dict()]
         self.send_msg(self.sock, msg)
+        return msg
 
     def server_upload(self):
         msg = [message_utils.local_weights_client_to_server, self.net.cpu().state_dict()]
@@ -78,12 +79,12 @@ class Client(FedClientInterface):
         flag = [message_utils.local_iteration_flag_client_to_edge, True]
         start_transmission()
         self.send_msg(self.sock, flag)
-        end_transmission()
+        end_transmission(sys.getsizeof(flag)*8)
         for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(self.train_loader)):
             flag = [message_utils.local_iteration_flag_client_to_edge, True]
             start_transmission()
             self.send_msg(self.sock, flag)
-            end_transmission()
+            end_transmission(sys.getsizeof(flag)*8)
             computation_start()
             inputs, targets = inputs.to(self.device), targets.to(self.device)
             if self.optimizer is not None:
@@ -94,7 +95,7 @@ class Client(FedClientInterface):
             msg = [message_utils.local_activations_client_to_edge, outputs.cpu(), targets.cpu()]
             start_transmission()
             self.send_msg(self.sock, msg)
-            end_transmission()
+            end_transmission(sys.getsizeof(msg)*8)
 
             # Wait receiving edge server gradients
             # fed_logger.info("receiving gradients")
@@ -110,7 +111,7 @@ class Client(FedClientInterface):
         flag = [message_utils.local_iteration_flag_client_to_edge, False]
         start_transmission()
         self.send_msg(self.sock, flag)
-        end_transmission()
+        end_transmission(sys.getsizeof(flag)*8)
 
     def offloading_train(self):
         flag = [message_utils.local_iteration_flag_client_to_server + '_' + socket.gethostname(), True]
