@@ -11,7 +11,6 @@ from app.util import model_utils, rl_utils
 
 
 def edge_based_rl_splitting(state, labels):
-
     agent = Agent.load(directory=f"/fedflow/app/agent/Tensorforce", format='checkpoint')
     floatAction = agent.act(state=state, evaluation=True)
     actions = []
@@ -34,7 +33,9 @@ def rl_splitting(state, labels):
     action = agent.exploit(state)
     action = expand_actions(action, config.CLIENTS_LIST, labels)
 
-    config.split_layer = action_to_layer(action)
+    result = action_to_layer(action)
+    config.split_layer = result
+    return result
 
 
 def none(state, labels):

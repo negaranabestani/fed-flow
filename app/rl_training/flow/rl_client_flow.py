@@ -1,4 +1,5 @@
 import multiprocessing
+import os
 import socket
 import sys
 import pyRAPL
@@ -9,6 +10,7 @@ from app.config import config
 from app.config.config import *
 from app.util import data_utils, message_utils, rl_utils
 from app.config.logger import fed_logger
+from app.util.energy_estimation import *
 
 
 def run(options_ins):
@@ -18,6 +20,10 @@ def run(options_ins):
     index = config.index
     datalen = config.N / config.K
     LR = config.LR
+    mx: int = int((N / K) * (index + 1))
+    mn: int = int((N / K) * index)
+    data_size = mx - mn
+    batch_num = data_size / config.B
 
     # fed_logger.info('Preparing Client')
     # fed_logger.info('Preparing Data.')
@@ -34,16 +40,11 @@ def run(options_ins):
                     datalen=datalen, model_name=options_ins.get('model'),
                     dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based)
 
-    pyRAPL.setup()
-
     preTrain(client)
-    meter = pyRAPL.Measurement('bar')
 
     for r in range(config.max_episodes):
         # fed_logger.info('====================================>')
         # fed_logger.info('Episode: {} START'.format(r))
-
-        meter.begin()
 
         # fed_logger.info("receiving global weights")
         client.edge_global_weights()
@@ -55,32 +56,28 @@ def run(options_ins):
         client.split_layer()
 
         # fed_logger.info("initializing client")
+        computation_start(os.getpid())
         client.initialize(client.split_layers, LR)
+        computation_end()
 
         # fed_logger.info("start training")
         client.edge_offloading_train()
 
         # fed_logger.info("sending local weights")
+        start_transmission()
         client.edge_upload()
+        end_transmission()
 
         # fed_logger.info('ROUND: {} END'.format(r))
         # fed_logger.info('==> Waiting for aggregration')
 
-        meter.end()
-        enery = 0
-        if meter.result.pkg != None:
-            for en in meter.result.pkg:
-                enery += en
-
         # fed_logger.info(f"Energy : {enery}")
 
-        client.energy(enery)
+        client.energy(float(energy())/batch_num)
 
         for i in range(config.max_timesteps):
             # fed_logger.info('====================================>')
             # fed_logger.info('TimeStep: {} START'.format(r))
-
-            meter.begin()
 
             # fed_logger.info("receiving global weights")
             client.edge_global_weights()
@@ -92,26 +89,23 @@ def run(options_ins):
             client.split_layer()
 
             # fed_logger.info("initializing client")
+            computation_start(os.getpid())
             client.initialize(client.split_layers, LR)
+            computation_end()
 
             # fed_logger.info("start training")
             client.edge_offloading_train()
 
             # fed_logger.info("sending local weights")
+            start_transmission()
             client.edge_upload()
+            end_transmission()
 
             # fed_logger.info('ROUND: {} END'.format(r))
             # fed_logger.info('==> Waiting for aggregration')
 
-            meter.end()
-
-            enery = 0
-            if meter.result.pkg != None:
-                for en in meter.result.pkg:
-                    enery += en
-
             # fed_logger.info(f"Energy : {enery}")
-            client.energy(enery)
+            client.energy(float(energy())/batch_num)
 
             if r > 49:
                 LR = config.LR * 0.1
@@ -123,28 +117,25 @@ def run(options_ins):
 # run(options)
 def preTrain(client):
     splittingLayer = rl_utils.allPossibleSplitting(modelLen=config.model_len, deviceNumber=config.K)
-
-    meter = pyRAPL.Measurement('bar')
+    mx: int = int((N / K) * (index + 1))
+    mn: int = int((N / K) * index)
+    data_size = mx - mn
+    batch_num = data_size / config.B
 
     for splitting in splittingLayer:
         splittingArray = list()
         for char in splitting:
             splittingArray.append(int(char))
 
-        meter.begin()
         client.edge_global_weights()
         # fed_logger.info("test network")
         # client.test_network()
         client.split_layer()
+        computation_start(os.getpid())
         client.initialize(client.split_layers, 0.1)
+        computation_end()
         client.edge_offloading_train()
+        start_transmission()
         client.edge_upload()
-
-        meter.end()
-
-        enery = 0
-
-        if meter.result.pkg != None:
-            for en in meter.result.pkg:
-                enery += en
-        client.energy(enery)
+        end_transmission()
+        client.energy(float(energy())/batch_num)

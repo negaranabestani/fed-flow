@@ -1,15 +1,19 @@
+import logging
 import multiprocessing
+import os
 import socket
 import sys
-import pyRAPL
+import warnings
 
 sys.path.append('../../../')
 from app.entity.client import Client
 from app.config import config
 from app.config.config import *
-from app.util import data_utils, message_utils
+from app.util import data_utils, message_utils, energy_estimation
 from app.config.logger import fed_logger
 from app.entity.interface.fed_client_interface import FedClientInterface
+warnings.filterwarnings('ignore')
+logging.getLogger("requests").setLevel(logging.WARNING)
 
 
 def run_edge_based(client: FedClientInterface, LR):
@@ -17,12 +21,10 @@ def run_edge_based(client: FedClientInterface, LR):
     mn: int = int((N / K) * index)
     data_size = mx - mn
     batch_num = data_size / config.B
-    pyRAPL.setup()
-    meter = pyRAPL.Measurement('bar')
+
     for r in range(config.R):
         fed_logger.info('====================================>')
         fed_logger.info('ROUND: {} START'.format(r))
-        meter.begin()
         fed_logger.info("receiving global weights")
         client.edge_global_weights()
         # fed_logger.info("test network")
@@ -30,21 +32,21 @@ def run_edge_based(client: FedClientInterface, LR):
         fed_logger.info("receiving splitting info")
         client.split_layer()
         fed_logger.info("initializing client")
+        energy_estimation.computation_start()
         client.initialize(client.split_layers, LR)
+        energy_estimation.computation_end()
         fed_logger.info("start training")
         client.edge_offloading_train()
         fed_logger.info("sending local weights")
+        energy_estimation.start_transmission()
         client.edge_upload()
+        energy_estimation.end_transmission()
         fed_logger.info('ROUND: {} END'.format(r))
         fed_logger.info('==> Waiting for aggregration')
-        meter.end()
-        enery = 0
-        if meter.result.pkg != None:
-            for en in meter.result.pkg:
-                enery += en
-        enery /= batch_num
-        fed_logger.info(f"Energy : {enery}")
-        client.energy(enery)
+        energy=float(energy_estimation.energy())
+        energy /= batch_num
+        fed_logger.info(f"Energy : {energy}")
+        client.energy(energy)
 
         if r > 49:
             LR = config.LR * 0.1
@@ -90,6 +92,7 @@ def run_no_edge(client: FedClientInterface, LR):
 
 
 def run(options_ins):
+    energy_estimation.init(os.getpid())
     ip_address = socket.gethostname()
     fed_logger.info("start mode: " + str(options_ins.values()))
     index = config.index
