@@ -1,13 +1,22 @@
+import logging
 import threading
 from fastapi import FastAPI
 import config, system_utils
 import uvicorn, warnings
 from process import Process
+from log_filters import EndpointFilter
 
 warnings.filterwarnings('ignore')
 
 app = FastAPI()
 config.process = Process(0)
+
+
+excluded_endpoints = ["/init/", "/", "/computation-start/", "/computation-end/", "/start-transmission/",
+                      "/end-transmission/", "/get-cpu-utilization/"]
+
+# Add filter to the logger
+logging.getLogger("uvicorn.access").addFilter(EndpointFilter(excluded_endpoints))
 
 
 @app.get("/init/{pid}/{simnet}")
@@ -39,7 +48,7 @@ async def start_transmission():
 
 @app.get("/end-transmission/{bits}")
 async def end_transmission(bits):
-    system_utils.end_transmission(config.process, bits)
+    system_utils.end_transmission(config.process, int(bits))
 
 
 @app.get("/energy/")
@@ -52,5 +61,8 @@ async def energy():
 async def get_cpu_utilization(pid):
     return system_utils.get_cpu_u(pid)
 
-
+# uvconfig = uvicorn.Config(app, host="0.0.0.0", port=8023, log_level="critical")
+# server = uvicorn.Server(uvconfig)
+# server.run()
+# logging.critical("energy estimation service started on port "+str(8023))
 uvicorn.run(app, host="0.0.0.0", port=8023)

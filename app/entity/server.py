@@ -8,8 +8,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from app.fl_method import fl_method_parser
 from app.entity.interface.fed_server_interface import FedServerInterface
+from app.fl_method import fl_method_parser
 
 sys.path.append('../../')
 from app.util import message_utils, model_utils
@@ -243,16 +243,17 @@ class FedServer(FedServerInterface):
             eweights.append(msg[1])
         return eweights
 
-    def e_energy(self, client_ips):
+    def e_energy_tt(self, client_ips):
         """
         Returns: average energy consumption of clients
         """
-        energy = 0
-        for i in range(len(client_ips)):
-            msg = self.recv_msg(self.socks[socket.gethostbyname(client_ips[i])],
-                                message_utils.energy_edge_to_server + "_" + client_ips[i])
-            energy += msg[1]
-        return energy / len(client_ips)
+        energy_tt_list = []
+        for edge in list(self.edge_socks.keys()):
+            msg = self.recv_msg(self.edge_socks[edge],
+                                message_utils.energy_tt_edge_to_server + "_" + socket.gethostbyaddr(edge)[0])
+            energy_tt_list.append(msg[1])
+        fed_logger.log("ettlist:" + str(energy_tt_list))
+        return energy_tt_list
 
     def c_local_weights(self, client_ips):
         cweights = []
@@ -284,14 +285,33 @@ class FedServer(FedServerInterface):
         self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(state, self.group_labels)
         fed_logger.info('Next Round OPs: ' + str(self.split_layer))
 
-    def edge_based_state(self, tt, offloading, energy):
+    def edge_based_state(self, offloading, energy_tt_list):
         state = []
+        energy = 0
+        tt = []
+        for et in energy_tt_list:
+            energy += et[0]
+            tt.append(et[1])
+        energy /= len(config.CLIENTS_LIST)
         state.append(energy)
+        state.append(max(tt))
         state.append(tt)
         # for i in range(config.S):
         #     state.append("utilization" + str(i))
+        edge_offloading = []
+        server_offloading = 0
+        for i in range(len(config.EDGE_MAP)):
+            edge_offloading.append(0)
+            for j in range(len(config.EDGE_MAP.get((list(config.EDGE_MAP.keys()))[i]))):
+                split_key = config.CLIENTS_CONFIG.get(config.EDGE_MAP.get(list(config.EDGE_MAP.keys())[i])[j])
+                if self.split_layers[split_key][0] < model_utils.get_unit_model_len() - 1:
+                    edge_offloading[i] += 1
+                if self.split_layers[split_key][1] < model_utils.get_unit_model_len() - 1:
+                    server_offloading += 1
+            state.append(edge_offloading[i])
+        state.append(server_offloading)
+
         for i in range(len(offloading)):
             state.append(offloading[i][0])
             state.append(offloading[i][1])
-
         return state

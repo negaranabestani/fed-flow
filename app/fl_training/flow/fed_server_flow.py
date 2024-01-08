@@ -76,7 +76,9 @@ def run_edge_based_no_offload(server: FedServerInterface, LR, options):
 def run_edge_based_offload(server: FedServerInterface, LR, options):
     server.initialize(config.split_layer, LR)
     training_time = 0
-    energy = 0
+    energy_tt_list = []
+    for c in config.CLIENTS_LIST:
+        energy_tt_list.append([0,0])
     res = {}
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
     for r in range(config.R):
@@ -103,7 +105,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
         fed_logger.info("getting state")
         offloading = server.split_layers
 
-        state = server.edge_based_state(training_time, offloading, energy)
+        state = server.edge_based_state(offloading, energy_tt_list)
         fed_logger.info("state: " + str(state))
 
         fed_logger.info("splitting")
@@ -127,7 +129,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
         fed_logger.info("aggregating weights")
         server.call_aggregation(options, local_weights)
 
-        energy = server.e_energy(config.CLIENTS_LIST)
+        energy_tt_list = server.e_energy_tt(config.CLIENTS_LIST)
         e_time = time.time()
 
         # Recording each round training time, bandwidth and test_app accuracy

@@ -144,12 +144,15 @@ class FedEdgeServer(FedEdgeServerInterface):
         msg = [message_utils.local_weights_edge_to_server + "_" + client_ip, cweights]
         self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, msg)
 
-    def energy(self, client_ip):
-        energy = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
-                               message_utils.energy_client_to_edge + "_" + client_ip)[1]
+    def energy(self, client_ips):
+        energy_tt_list = []
+        for client_ip in client_ips:
+            ms = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
+                               message_utils.energy_client_to_edge + "_" + client_ip)
+            energy_tt_list.append([ms[1], ms[2]])
 
-        msg = [message_utils.energy_edge_to_server + "_" + client_ip, energy]
-        self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, msg)
+        msg = [message_utils.energy_tt_edge_to_server + "_" + socket.gethostname, energy_tt_list]
+        self.central_server_communicator.send_msg(self.central_server_communicator.sock, msg)
 
     def global_weights(self, client_ips: []):
         """
@@ -171,4 +174,4 @@ class FedEdgeServer(FedEdgeServerInterface):
     def thread_training(self, client_ip):
         self.forward_propagation(client_ip)
         self.local_weights(client_ip)
-        self.energy(client_ip)
+        # self.energy(client_ip)

@@ -31,11 +31,11 @@ def end_transmission(process, bits):
     process.end_tr_time = time.time()
 
     if config.simulate_network:
-        b = bits / process.end_tr_time - process.start_tr_time
-        b += random.uniform(-0.7 * b, 0.7 * b)
-        process.transmission_time += b * bits
+        b = bits / (process.end_tr_time - process.start_tr_time)
+        b = random.uniform(0.3 * b, 1.7 * b)
+        process.transmission_time += b / bits
     else:
-        process.transmission_time += process.end_tr_time - process.start_tr_time
+        process.transmission_time += (process.end_tr_time - process.start_tr_time)
 
 
 def get_cpu_u(pid):

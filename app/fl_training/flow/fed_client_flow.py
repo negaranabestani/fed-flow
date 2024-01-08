@@ -3,6 +3,7 @@ import multiprocessing
 import os
 import socket
 import sys
+import time
 import warnings
 
 sys.path.append('../../../')
@@ -33,6 +34,7 @@ def run_edge_based(client: FedClientInterface, LR):
         fed_logger.info("receiving splitting info")
         client.split_layer()
         fed_logger.info("initializing client")
+        st = time.time()
         energy_estimation.computation_start()
         client.initialize(client.split_layers, LR)
         energy_estimation.computation_end()
@@ -45,9 +47,11 @@ def run_edge_based(client: FedClientInterface, LR):
         fed_logger.info('ROUND: {} END'.format(r))
         fed_logger.info('==> Waiting for aggregration')
         energy = float(energy_estimation.energy())
-        energy /= batch_num
+        et = time.time()
+        tt = et - st
+        # energy /= batch_num
         fed_logger.info(f"Energy : {energy}")
-        client.energy(energy)
+        client.energy_tt(energy, tt)
 
         if r > 49:
             LR = config.LR * 0.1

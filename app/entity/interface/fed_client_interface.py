@@ -84,5 +84,5 @@ class FedClientInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def energy(self, energy):
+    def energy_tt(self, energy,tt):
         pass

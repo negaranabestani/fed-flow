@@ -1,4 +1,3 @@
-import logging
 import warnings
 from app.config import config
 
@@ -6,8 +5,6 @@ import requests
 
 URL = "http://127.0.0.1:8023"
 warnings.filterwarnings('ignore')
-logging.getLogger("requests").setLevel(logging.WARNING)
-
 
 def init(pid):
     session = requests.session()

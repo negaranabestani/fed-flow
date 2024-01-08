@@ -73,7 +73,7 @@ def run(options_ins):
 
         # fed_logger.info(f"Energy : {enery}")
 
-        client.energy(float(energy())/batch_num)
+        client.energy_tt(float(energy()) / batch_num)
 
         for i in range(config.max_timesteps):
             # fed_logger.info('====================================>')
@@ -105,7 +105,7 @@ def run(options_ins):
             # fed_logger.info('==> Waiting for aggregration')
 
             # fed_logger.info(f"Energy : {enery}")
-            client.energy(float(energy())/batch_num)
+            client.energy_tt(float(energy()) / batch_num)
 
             if r > 49:
                 LR = config.LR * 0.1
@@ -138,4 +138,4 @@ def preTrain(client):
         start_transmission()
         client.edge_upload()
         end_transmission()
-        client.energy(float(energy())/batch_num)
+        client.energy_tt(float(energy()) / batch_num)

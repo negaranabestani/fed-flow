@@ -205,9 +205,9 @@ class FedServerInterface(ABC, Communicator):
         return self.edge_bandwidth
 
     @abstractmethod
-    def e_energy(self, client_ips):
+    def e_energy_tt(self, client_ips):
         pass
 
     @abstractmethod
-    def edge_based_state(self, tt, offloading, energy):
+    def edge_based_state(self,offloading, energy):
         pass
