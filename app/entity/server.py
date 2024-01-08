@@ -263,6 +263,7 @@ class FedServer(FedServerInterface):
         for i in range(len(client_ips)):
             msg = self.recv_msg(self.edge_socks[socket.gethostbyname(client_ips[i])],
                                 message_utils.local_weights_client_to_server)
+            fed_logger.info(f"cw received {client_ips[i]}")
             self.tt_end[client_ips[i]] = time.time()
             cweights.append(msg[1])
         return cweights

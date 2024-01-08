@@ -42,7 +42,6 @@ class Client(FedClientInterface):
     def server_upload(self):
         msg = [message_utils.local_weights_client_to_server, self.net.cpu().state_dict()]
         self.send_msg(self.sock, msg)
-
     def test_network(self):
         """
         send message to test network speed

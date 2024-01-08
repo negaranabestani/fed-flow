@@ -13,6 +13,7 @@ from app.config.config import *
 from app.util import data_utils, message_utils, energy_estimation
 from app.config.logger import fed_logger
 from app.entity.interface.fed_client_interface import FedClientInterface
+from colorama import Fore, Back, Style
 
 warnings.filterwarnings('ignore')
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -50,7 +51,7 @@ def run_edge_based(client: FedClientInterface, LR):
         et = time.time()
         tt = et - st
         # energy /= batch_num
-        fed_logger.info(f"Energy : {energy}")
+        fed_logger.info(Fore.CYAN+f"Energy_tt : {energy}, {tt}")
         client.energy_tt(energy, tt)
 
         if r > 49:
@@ -97,7 +98,6 @@ def run_no_edge(client: FedClientInterface, LR):
 
 
 def run(options_ins):
-    energy_estimation.init(os.getpid())
     ip_address = socket.gethostname()
     fed_logger.info("start mode: " + str(options_ins.values()))
     index = config.index
@@ -114,6 +114,7 @@ def run(options_ins):
     offload = options_ins.get('offload')
     edge_based = options_ins.get('edgebased')
     if edge_based:
+        energy_estimation.init(os.getpid())
         client_ins = Client(server_addr=config.CLIENT_MAP[ip_address],
                             server_port=config.EDGESERVER_PORT[config.CLIENT_MAP[ip_address]],
                             datalen=datalen, model_name=options_ins.get('model'),
