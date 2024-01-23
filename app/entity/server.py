@@ -176,6 +176,7 @@ class FedServer(FedServerInterface):
 
     def aggregate(self, client_ips, aggregate_method, eweights):
         w_local_list = []
+        # fed_logger.info("aggregation start")
         for i in range(len(eweights)):
             # if self.split_layers[i] != (test_config.model_len - 1):
             #     w_local = (
@@ -188,8 +189,11 @@ class FedServer(FedServerInterface):
             # print("------------------------"+str(eweights[i]))
             w_local_list.append(w_local)
         zero_model = model_utils.zero_init(self.uninet).state_dict()
+        # fed_logger.info("calling aggregation method")
         aggregated_model = aggregate_method(zero_model, w_local_list, config.N)
+        # fed_logger.info("aggregation method end")
         self.uninet.load_state_dict(aggregated_model)
+        # fed_logger.info("aggregation end")
         return aggregated_model
 
     def test_network(self, connection_ips):
@@ -249,10 +253,12 @@ class FedServer(FedServerInterface):
         """
         energy_tt_list = []
         for edge in list(self.edge_socks.keys()):
+            # fed_logger.info(f"receiving {socket.gethostbyaddr(edge)[0]}")
             msg = self.recv_msg(self.edge_socks[edge],
-                                message_utils.energy_tt_edge_to_server + "_" + socket.gethostbyaddr(edge)[0])
-            energy_tt_list.append(msg[1])
-        fed_logger.log("ettlist:" + str(energy_tt_list))
+                                message_utils.energy_tt_edge_to_server)
+            energy_tt_list.append(msg[1][0])
+            energy_tt_list.append(msg[1][1])
+        # fed_logger.info("ettlist:" + str(energy_tt_list))
         return energy_tt_list
 
     def c_local_weights(self, client_ips):
@@ -263,7 +269,7 @@ class FedServer(FedServerInterface):
         for i in range(len(client_ips)):
             msg = self.recv_msg(self.edge_socks[socket.gethostbyname(client_ips[i])],
                                 message_utils.local_weights_client_to_server)
-            fed_logger.info(f"cw received {client_ips[i]}")
+            # fed_logger.info(f"cw received {client_ips[i]}")
             self.tt_end[client_ips[i]] = time.time()
             cweights.append(msg[1])
         return cweights
@@ -284,7 +290,7 @@ class FedServer(FedServerInterface):
 
     def split(self, state, options: dict):
         self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(state, self.group_labels)
-        fed_logger.info('Next Round OPs: ' + str(self.split_layer))
+        fed_logger.info('Next Round OPs: ' + str(self.split_layers))
 
     def edge_based_state(self, offloading, energy_tt_list):
         state = []

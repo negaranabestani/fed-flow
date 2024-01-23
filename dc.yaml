@@ -3,41 +3,67 @@ services:
   server:
     image: fed-flow:test
     ports:
-      - "5008:5008"
-    hostname: server
+      - "5004:5004"
     restart: always
     working_dir: /fed-flow/app/fl_training/runner
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py"
+    hostname: server
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py -o True -s no_splitting -e True"
+
+  edge1:
+    image: fed-flow:test
+    ports:
+      - "5001:5001"
+    restart: always
+    working_dir: /fed-flow/app/fl_training/runner
+    hostname: edge1
+    depends_on:
+      - server
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -i 0 -o True -s no_splitting -e True"
+
   client1:
     image: fed-flow:test
-    depends_on:
-      - server
-    hostname: client1
     restart: always
     working_dir: /fed-flow/app/fl_training/runner
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0"
+    hostname: client1
+    depends_on:
+      - edge1
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s no_splitting -e True & python3 /fed-flow/energy/service.py & wait -n"
+
   client2:
     image: fed-flow:test
-    depends_on:
-      - server
-    hostname: client2
     restart: always
     working_dir: /fed-flow/app/fl_training/runner
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 1"
+    hostname: client2
+    depends_on:
+      - edge1
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 1 -o True -s no_splitting -e True & python3 /fed-flow/energy/service.py & wait -n"
+
+  edge2:
+    image: fed-flow:test
+    ports:
+      - "5005:5005"
+    restart: always
+    working_dir: /fed-flow/app/fl_training/runner
+    hostname: edge2
+    depends_on:
+      - server
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -i 1 -o True -s no_splitting -e True"
+
   client3:
     image: fed-flow:test
-    depends_on:
-      - server
-    hostname: client3
     restart: always
     working_dir: /fed-flow/app/fl_training/runner
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 2"
+    hostname: client3
+    depends_on:
+      - edge2
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 2 -o True -s no_splitting -e True & python3 /fed-flow/energy/service.py & wait -n"
 
   client4:
     image: fed-flow:test
-    depends_on:
-      - server
-    hostname: client4
     restart: always
     working_dir: /fed-flow/app/fl_training/runner
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 3"
+    hostname: client4
+    depends_on:
+      - edge2
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 3 -o True -s no_splitting -e True & python3 /fed-flow/energy/service.py & wait -n"
+

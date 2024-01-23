@@ -150,8 +150,8 @@ class FedEdgeServer(FedEdgeServerInterface):
             ms = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
                                message_utils.energy_client_to_edge + "_" + client_ip)
             energy_tt_list.append([ms[1], ms[2]])
-
-        msg = [message_utils.energy_tt_edge_to_server + "_" + socket.gethostname, energy_tt_list]
+        # fed_logger.info(f"sending enery tt {socket.gethostname()}")
+        msg = [message_utils.energy_tt_edge_to_server, energy_tt_list]
         self.central_server_communicator.send_msg(self.central_server_communicator.sock, msg)
 
     def global_weights(self, client_ips: []):

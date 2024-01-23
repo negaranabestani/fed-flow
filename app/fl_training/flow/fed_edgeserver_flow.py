@@ -41,7 +41,7 @@ def run_offload(server: FedEdgeServerInterface, LR):
 
         for i in range(len(client_ips)):
             threads[client_ips[i]].join()
-
+        server.energy(client_ips)
         if r > 49:
             LR = config.LR * 0.1
 
