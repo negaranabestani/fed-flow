@@ -19,8 +19,8 @@ class NNModel(ABC, nn.Module):
             split_point = split_layer
             if edge_based:
                 split_point = split_layer[0]
-            assert split_point < len(self.cfg)
-            self.split_layer = split_layer
+                assert split_point < len(self.cfg)
+                self.split_layer = split_layer
         self.location = location
         self.features, self.denses = self._make_layers(edge_based)
         self._initialize_weights()
