@@ -51,9 +51,30 @@ def run_edge_based(client: FedClientInterface, LR):
         et = time.time()
         tt = et - st
         # energy /= batch_num
-        fed_logger.info(Fore.CYAN+f"Energy_tt : {energy}, {tt}")
+        fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}")
         client.energy_tt(energy, tt)
 
+        if r > 49:
+            LR = config.LR * 0.1
+
+
+def run_no_offload_edge(client: FedClientInterface, LR):
+    mx: int = int((N / K) * (index + 1))
+    mn: int = int((N / K) * index)
+    data_size = mx - mn
+    batch_num = data_size / config.B
+
+    for r in range(config.R):
+        fed_logger.info('====================================>')
+        fed_logger.info('ROUND: {} START'.format(r))
+        fed_logger.info("receiving global weights")
+        client.edge_global_weights()
+        fed_logger.info("start training")
+        client.no_offloading_train()
+        fed_logger.info("sending local weights")
+        client.edge_upload()
+        fed_logger.info('ROUND: {} END'.format(r))
+        fed_logger.info('==> Waiting for aggregration')
         if r > 49:
             LR = config.LR * 0.1
 
@@ -113,26 +134,36 @@ def run(options_ins):
 
     offload = options_ins.get('offload')
     edge_based = options_ins.get('edgebased')
-    if edge_based:
+    if edge_based and offload:
         energy_estimation.init(os.getpid())
         client_ins = Client(server_addr=config.CLIENT_MAP[ip_address],
                             server_port=config.EDGESERVER_PORT[config.CLIENT_MAP[ip_address]],
                             datalen=datalen, model_name=options_ins.get('model'),
-                            dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based)
+                            dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
+                            offload=offload)
         run_edge_based(client_ins, LR)
+    elif edge_based and not offload:
+        client_ins = Client(server_addr=config.CLIENT_MAP[ip_address],
+                            server_port=config.EDGESERVER_PORT[config.CLIENT_MAP[ip_address]],
+                            datalen=datalen, model_name=options_ins.get('model'),
+                            dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
+                            offload=offload)
+        run_no_offload_edge(client_ins, LR)
     elif offload:
         client_ins = Client(server_addr=config.SERVER_ADDR,
                             server_port=config.SERVER_PORT,
                             datalen=datalen, model_name=options_ins.get('model'),
-                            dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based)
+                            dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
+                            offload=offload)
         run_no_edge_offload(client_ins, LR)
     else:
         client_ins = Client(server_addr=config.SERVER_ADDR,
                             server_port=config.SERVER_PORT,
                             datalen=datalen, model_name=options_ins.get('model'),
-                            dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based)
+                            dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
+                            offload=offload)
         run_no_edge(client_ins, LR)
-    msg = client_ins.recv_msg(client_ins.sock, message_utils.finish)
+    client_ins.recv_msg(client_ins.sock, message_utils.finish)
 
 # parser = argparse.ArgumentParser()
 # options = input_utils.parse_argument(parser)

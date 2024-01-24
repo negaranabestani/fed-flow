@@ -67,7 +67,6 @@ class FedServerInterface(ABC, Communicator):
                 temp_socks[socket.gethostbyname(client_ip)] = sock
             self.socks = temp_socks
 
-        model_len = model_utils.get_unit_model_len()
         self.uninet = model_utils.get_model('Unit', config.split_layer[0], self.device, self.edge_based)
 
         self.testset = data_utils.get_testset()

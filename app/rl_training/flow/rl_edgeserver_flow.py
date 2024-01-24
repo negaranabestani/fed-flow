@@ -50,7 +50,7 @@ def run(options_ins):
         # fed_logger.info("start training")
 
         for i in range(len(client_ips)):
-            threads[client_ips[i]] = threading.Thread(target=edge_server.thread_training,
+            threads[client_ips[i]] = threading.Thread(target=edge_server.thread_offload_training,
                                                       args=(client_ips[i],), name=client_ips[i])
             threads[client_ips[i]].start()
 
@@ -85,7 +85,7 @@ def run(options_ins):
 
             # fed_logger.info("start training")
             for i in range(len(client_ips)):
-                threads[client_ips[i]] = threading.Thread(target=edge_server.thread_training,
+                threads[client_ips[i]] = threading.Thread(target=edge_server.thread_offload_training,
                                                           args=(client_ips[i],), name=client_ips[i])
                 threads[client_ips[i]].start()
 
@@ -116,7 +116,7 @@ def preTrain(edge_server, options, client_ips):
         threads = {}
 
         for i in range(len(client_ips)):
-            threads[client_ips[i]] = threading.Thread(target=edge_server.thread_training,
+            threads[client_ips[i]] = threading.Thread(target=edge_server.thread_offload_training,
                                                       args=(client_ips[i],), name=client_ips[i])
             threads[client_ips[i]].start()
 

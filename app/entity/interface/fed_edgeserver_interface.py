@@ -10,7 +10,7 @@ from app.util import data_utils, model_utils, message_utils
 
 
 class FedEdgeServerInterface(ABC, Communicator):
-    def __init__(self, ip_address, port, server_addr, server_port, model_name, dataset):
+    def __init__(self, ip_address, port, server_addr, server_port, model_name, dataset, offload):
         super(FedEdgeServerInterface, self).__init__()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.port = port
@@ -53,11 +53,12 @@ class FedEdgeServerInterface(ABC, Communicator):
             config.CLIENTS_LIST.append(str(ip))
             fed_logger.info(client_sock)
             self.socks[str(ip)] = client_sock
-        model_len = model_utils.get_unit_model_len()
-        self.uninet = model_utils.get_model('Unit', [model_len - 1, model_len - 1], self.device,True)
+        if offload:
+            model_len = model_utils.get_unit_model_len()
+            self.uninet = model_utils.get_model('Unit', [model_len - 1, model_len - 1], self.device, True)
 
-        self.testset = data_utils.get_testset()
-        self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
+            self.testset = data_utils.get_testset()
+            self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
 
     @abstractmethod
     def test_client_network(self, client_ips):
@@ -122,6 +123,9 @@ class FedEdgeServerInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def thread_training(self, client_ip):
+    def thread_offload_training(self, client_ip):
         pass
 
+    @abstractmethod
+    def thread_no_offload_training(self, client_ip):
+        pass

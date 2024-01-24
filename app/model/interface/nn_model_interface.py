@@ -15,11 +15,12 @@ class NNModel(ABC, nn.Module):
         self.features, self.denses = None, None
 
     def initialize(self, location, split_layer, edge_based):
-        split_point = split_layer
-        if edge_based:
-            split_point = split_layer[0]
-        assert split_point < len(self.cfg)
-        self.split_layer = split_layer
+        if self.location != 'Unit':  # Get the holistic nn_model
+            split_point = split_layer
+            if edge_based:
+                split_point = split_layer[0]
+            assert split_point < len(self.cfg)
+            self.split_layer = split_layer
         self.location = location
         self.features, self.denses = self._make_layers(edge_based)
         self._initialize_weights()
@@ -46,17 +47,17 @@ class NNModel(ABC, nn.Module):
         cfg = self.get_config()
         features = []
         denses = []
-        if self.location == 'Server':
-            cfg = cfg[self.split_layer[1] + 1:]
-
-        if self.location == 'Client':
-            cfg = cfg[:self.split_layer[0] + 1]
-
-        if self.location == 'Edge':
-            cfg = cfg[self.split_layer[0] + 1:self.split_layer[1] + 1]
-
         if self.location == 'Unit':  # Get the holistic nn_model
             pass
+
+        elif self.location == 'Server':
+            cfg = cfg[self.split_layer[1] + 1:]
+
+        elif self.location == 'Client':
+            cfg = cfg[:self.split_layer[0] + 1]
+
+        elif self.location == 'Edge':
+            cfg = cfg[self.split_layer[0] + 1:self.split_layer[1] + 1]
 
         #  TODO fill the featured and dense based on your model configuration
         nn.Sequential(*features), nn.Sequential(*denses)
