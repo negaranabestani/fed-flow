@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 import torch
 from torch import nn, optim
 
-from app.config import config
 from app.config.logger import fed_logger
 from app.entity.Communicator import Communicator
 from app.util import model_utils
@@ -11,7 +10,7 @@ from app.util import model_utils
 
 class FedClientInterface(ABC, Communicator):
     def __init__(self, server_addr, server_port, datalen, model_name, dataset,
-                 train_loader, LR, edge_based):
+                 train_loader, LR, edge_based, offload):
         super(FedClientInterface, self).__init__()
         self.datalen = datalen
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -21,8 +20,8 @@ class FedClientInterface(ABC, Communicator):
         self.train_loader = train_loader
         self.split_layers = None
         self.net = {}
-        model_len = model_utils.get_unit_model_len()
-        self.uninet = model_utils.get_model('Unit', config.split_layer[config.index], self.device, edge_based)
+        self.uninet = model_utils.get_model('Unit', None, self.device, edge_based)
+        # self.uninet = model_utils.get_model('Unit', config.split_layer[config.index], self.device, edge_based)
         self.net = self.uninet
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
@@ -84,5 +83,5 @@ class FedClientInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def energy(self, energy):
+    def energy_tt(self, energy, tt):
         pass

@@ -8,8 +8,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from app.fl_method import fl_method_parser
 from app.entity.interface.fed_server_interface import FedServerInterface
+from app.fl_method import fl_method_parser
 
 sys.path.append('../../')
 from app.util import message_utils, model_utils
@@ -176,6 +176,7 @@ class FedServer(FedServerInterface):
 
     def aggregate(self, client_ips, aggregate_method, eweights):
         w_local_list = []
+        # fed_logger.info("aggregation start")
         for i in range(len(eweights)):
             # if self.split_layers[i] != (test_config.model_len - 1):
             #     w_local = (
@@ -188,8 +189,11 @@ class FedServer(FedServerInterface):
             # print("------------------------"+str(eweights[i]))
             w_local_list.append(w_local)
         zero_model = model_utils.zero_init(self.uninet).state_dict()
+        # fed_logger.info("calling aggregation method")
         aggregated_model = aggregate_method(zero_model, w_local_list, config.N)
+        # fed_logger.info("aggregation method end")
         self.uninet.load_state_dict(aggregated_model)
+        # fed_logger.info("aggregation end")
         return aggregated_model
 
     def test_network(self, connection_ips):
@@ -243,16 +247,19 @@ class FedServer(FedServerInterface):
             eweights.append(msg[1])
         return eweights
 
-    def e_energy(self, client_ips):
+    def e_energy_tt(self, client_ips):
         """
         Returns: average energy consumption of clients
         """
-        energy = 0
-        for i in range(len(client_ips)):
-            msg = self.recv_msg(self.socks[socket.gethostbyname(client_ips[i])],
-                                message_utils.energy_edge_to_server + "_" + client_ips[i])
-            energy += msg[1]
-        return energy / len(client_ips)
+        energy_tt_list = []
+        for edge in list(self.edge_socks.keys()):
+            # fed_logger.info(f"receiving {socket.gethostbyaddr(edge)[0]}")
+            msg = self.recv_msg(self.edge_socks[edge],
+                                message_utils.energy_tt_edge_to_server)
+            energy_tt_list.append(msg[1][0])
+            energy_tt_list.append(msg[1][1])
+        # fed_logger.info("ettlist:" + str(energy_tt_list))
+        return energy_tt_list
 
     def c_local_weights(self, client_ips):
         cweights = []
@@ -262,6 +269,7 @@ class FedServer(FedServerInterface):
         for i in range(len(client_ips)):
             msg = self.recv_msg(self.edge_socks[socket.gethostbyname(client_ips[i])],
                                 message_utils.local_weights_client_to_server)
+            # fed_logger.info(f"cw received {client_ips[i]}")
             self.tt_end[client_ips[i]] = time.time()
             cweights.append(msg[1])
         return cweights
@@ -282,16 +290,35 @@ class FedServer(FedServerInterface):
 
     def split(self, state, options: dict):
         self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(state, self.group_labels)
-        fed_logger.info('Next Round OPs: ' + str(self.split_layer))
+        fed_logger.info('Next Round OPs: ' + str(self.split_layers))
 
-    def edge_based_state(self, tt, offloading, energy):
+    def edge_based_state(self, offloading, energy_tt_list):
         state = []
+        energy = 0
+        tt = []
+        for et in energy_tt_list:
+            energy += et[0]
+            tt.append(et[1])
+        energy /= len(config.CLIENTS_LIST)
         state.append(energy)
+        state.append(max(tt))
         state.append(tt)
         # for i in range(config.S):
         #     state.append("utilization" + str(i))
+        edge_offloading = []
+        server_offloading = 0
+        for i in range(len(config.EDGE_MAP)):
+            edge_offloading.append(0)
+            for j in range(len(config.EDGE_MAP.get((list(config.EDGE_MAP.keys()))[i]))):
+                split_key = config.CLIENTS_CONFIG.get(config.EDGE_MAP.get(list(config.EDGE_MAP.keys())[i])[j])
+                if self.split_layers[split_key][0] < model_utils.get_unit_model_len() - 1:
+                    edge_offloading[i] += 1
+                if self.split_layers[split_key][1] < model_utils.get_unit_model_len() - 1:
+                    server_offloading += 1
+            state.append(edge_offloading[i])
+        state.append(server_offloading)
+
         for i in range(len(offloading)):
             state.append(offloading[i][0])
             state.append(offloading[i][1])
-
         return state

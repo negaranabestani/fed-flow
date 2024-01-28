@@ -67,8 +67,7 @@ class FedServerInterface(ABC, Communicator):
                 temp_socks[socket.gethostbyname(client_ip)] = sock
             self.socks = temp_socks
 
-        model_len = model_utils.get_unit_model_len()
-        self.uninet = model_utils.get_model('Unit', config.split_layer[0], self.device, self.edge_based)
+        self.uninet = model_utils.get_model('Unit', None, self.device, self.edge_based)
 
         self.testset = data_utils.get_testset()
         self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
@@ -205,9 +204,9 @@ class FedServerInterface(ABC, Communicator):
         return self.edge_bandwidth
 
     @abstractmethod
-    def e_energy(self, client_ips):
+    def e_energy_tt(self, client_ips):
         pass
 
     @abstractmethod
-    def edge_based_state(self, tt, offloading, energy):
+    def edge_based_state(self,offloading, energy):
         pass

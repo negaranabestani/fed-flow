@@ -83,7 +83,7 @@ def run(options):
             fed_logger.info("aggregating weights")
             server.call_aggregation(options, local_weights)
 
-            energy = server.e_energy(config.CLIENTS_LIST)
+            energy = server.e_energy_tt(config.CLIENTS_LIST)
             e_time = time.time()
             # Recording each round training time, bandwidth and test_app accuracy
             training_time = e_time - s_time
@@ -155,7 +155,7 @@ def run(options):
                 fed_logger.info("aggregating weights")
                 server.call_aggregation(options, local_weights)
 
-                energy = server.e_energy(config.CLIENTS_LIST)
+                energy = server.e_energy_tt(config.CLIENTS_LIST)
                 e_time = time.time()
 
                 # Recording each round training time, bandwidth and test_app accuracy
@@ -304,7 +304,7 @@ def preTrain(server, options) -> tuple[float, float]:
         # fed_logger.info("aggregating weights")
         server.call_aggregation(options, local_weights)
 
-        energy = server.e_energy(config.CLIENTS_LIST)
+        energy = server.e_energy_tt(config.CLIENTS_LIST)
         e_time = time.time()
 
         # Recording each round training time, bandwidth and test_app accuracy
