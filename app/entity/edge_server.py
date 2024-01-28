@@ -43,41 +43,49 @@ class FedEdgeServer(FedEdgeServerInterface):
         flmsg = [message_utils.local_iteration_flag_edge_to_server + "_" + client_ip, flag]
         self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, flmsg)
         while flag:
-            flag = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
-                                 message_utils.local_iteration_flag_client_to_edge)[1]
-            flmsg = [message_utils.local_iteration_flag_edge_to_server + "_" + client_ip, flag]
-            self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, flmsg)
-            if not flag:
-                break
-            # fed_logger.info(client_ip + " receiving local activations")
-            msg = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
-                                message_utils.local_activations_client_to_edge)
-            smashed_layers = msg[1]
-            labels = msg[2]
-            # fed_logger.info(client_ip + " training model forward")
-            inputs, targets = smashed_layers.to(self.device), labels.to(self.device)
-            if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < \
-                    self.split_layers[config.CLIENTS_CONFIG[client_ip]][1]:
-                if self.optimizers.keys().__contains__(client_ip):
-                    self.optimizers[client_ip].zero_grad()
-            outputs = self.nets[client_ip](inputs)
+            if self.split_layers[config.CLIENTS_CONFIG.get(client_ip)] < model_utils.get_unit_model_len() - 1:
+                flag = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
+                                     message_utils.local_iteration_flag_client_to_edge)[1]
+                flmsg = [message_utils.local_iteration_flag_edge_to_server + "_" + client_ip, flag]
+                self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, flmsg)
+                if not flag:
+                    break
+                # fed_logger.info(client_ip + " receiving local activations")
+                msg = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
+                                    message_utils.local_activations_client_to_edge)
+                smashed_layers = msg[1]
+                labels = msg[2]
+                # fed_logger.info(client_ip + " training model forward")
+                inputs, targets = smashed_layers.to(self.device), labels.to(self.device)
+                if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < \
+                        self.split_layers[config.CLIENTS_CONFIG[client_ip]][1]:
+                    if self.optimizers.keys().__contains__(client_ip):
+                        self.optimizers[client_ip].zero_grad()
+                    outputs = self.nets[client_ip](inputs)
 
-            # fed_logger.info(client_ip + " sending local activations")
-            msg = [message_utils.local_activations_edge_to_server + "_" + client_ip, outputs.cpu(), targets.cpu()]
-            self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, msg)
-            # fed_logger.info(client_ip + " receiving gradients")
-            msg = self.central_server_socks[client_ip].recv_msg(self.central_server_socks[client_ip].sock,
-                                                                message_utils.server_gradients_server_to_edge + client_ip)
-            gradients = msg[1].to(self.device)
-            # fed_logger.info(client_ip + " training model backward")
-            outputs.backward(gradients)
-            if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < \
-                    self.split_layers[config.CLIENTS_CONFIG[client_ip]][1]:
-                if self.optimizers.keys().__contains__(client_ip):
-                    self.optimizers[client_ip].step()
-            # fed_logger.info(client_ip + " sending gradients")
-            msg = [message_utils.server_gradients_edge_to_client + client_ip, inputs.grad]
-            self.send_msg(self.socks[socket.gethostbyname(client_ip)], msg)
+                # fed_logger.info(client_ip + " sending local activations")
+                    msg = [message_utils.local_activations_edge_to_server + "_" + client_ip, outputs.cpu(), targets.cpu()]
+                    self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, msg)
+                    msg = self.central_server_socks[client_ip].recv_msg(self.central_server_socks[client_ip].sock,
+                                                                        message_utils.server_gradients_server_to_edge + client_ip)
+                    gradients = msg[1].to(self.device)
+                    # fed_logger.info(client_ip + " training model backward")
+                    outputs.backward(gradients)
+                else:
+                    msg = [message_utils.local_activations_edge_to_server + "_" + client_ip, inputs.cpu(),
+                           targets.cpu()]
+                    self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, msg)
+                # fed_logger.info(client_ip + " receiving gradients")
+                msg = self.central_server_socks[client_ip].recv_msg(self.central_server_socks[client_ip].sock,
+                                                                    message_utils.server_gradients_server_to_edge + client_ip)
+
+                if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < \
+                        self.split_layers[config.CLIENTS_CONFIG[client_ip]][1]:
+                    if self.optimizers.keys().__contains__(client_ip):
+                        self.optimizers[client_ip].step()
+                # fed_logger.info(client_ip + " sending gradients")
+                msg = [message_utils.server_gradients_edge_to_client + client_ip, msg[1]]
+                self.send_msg(self.socks[socket.gethostbyname(client_ip)], msg)
 
         fed_logger.info(str(client_ip) + ' offloading training end')
 
