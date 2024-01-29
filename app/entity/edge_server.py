@@ -43,7 +43,7 @@ class FedEdgeServer(FedEdgeServerInterface):
         flmsg = [message_utils.local_iteration_flag_edge_to_server + "_" + client_ip, flag]
         self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, flmsg)
         while flag:
-            if self.split_layers[config.CLIENTS_CONFIG.get(client_ip)] < model_utils.get_unit_model_len() - 1:
+            if self.split_layers[config.CLIENTS_CONFIG.get(client_ip)][0] < model_utils.get_unit_model_len() - 1:
                 flag = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
                                      message_utils.local_iteration_flag_client_to_edge)[1]
                 flmsg = [message_utils.local_iteration_flag_edge_to_server + "_" + client_ip, flag]
