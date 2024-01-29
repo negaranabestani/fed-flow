@@ -208,5 +208,5 @@ class FedServerInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def edge_based_state(self,offloading, energy):
+    def edge_based_state(self, offloading, energy_tt_list, total_tt):
         pass
