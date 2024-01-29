@@ -2,6 +2,7 @@ import sys
 
 CLIENTS_BANDWIDTH = []
 index = 0
+simnet=False
 
 # Dataset configration
 dataset_name = ''

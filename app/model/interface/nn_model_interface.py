@@ -15,15 +15,25 @@ class NNModel(ABC, nn.Module):
         self.features, self.denses = None, None
 
     def initialize(self, location, split_layer, edge_based):
-        if self.location != 'Unit':  # Get the holistic nn_model
+        if location == 'Unit':  # Get the holistic nn_model
+            self.location = location
+            self.features, self.denses = self._make_layers(edge_based)
+            self._initialize_weights()
+        elif edge_based:
+            split_point = split_layer[0]
+            assert split_point < len(self.cfg)
+            self.split_layer = split_layer
+            self.location = location
+            self.features, self.denses = self._make_layers(edge_based)
+            self._initialize_weights()
+        else:
             split_point = split_layer
-            if edge_based:
-                split_point = split_layer[0]
-                assert split_point < len(self.cfg)
-                self.split_layer = split_layer
-        self.location = location
-        self.features, self.denses = self._make_layers(edge_based)
-        self._initialize_weights()
+            assert split_point < len(self.cfg)
+            self.split_layer = split_layer
+            self.location = location
+            self.features, self.denses = self._make_layers(edge_based)
+            self._initialize_weights()
+
         return self
 
     def forward(self, x):
