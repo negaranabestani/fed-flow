@@ -44,7 +44,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
     training_time = 0
     energy_tt_list = []
     for c in config.CLIENTS_LIST:
-        energy_tt_list.append([0,0])
+        energy_tt_list.append([0, 0])
     res = {}
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
     for r in range(config.R):
@@ -71,7 +71,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
         fed_logger.info("getting state")
         offloading = server.split_layers
 
-        state = server.edge_based_state(offloading, energy_tt_list)
+        state = server.edge_based_state(offloading, energy_tt_list, training_time)
         fed_logger.info("state: " + str(state))
 
         fed_logger.info("splitting")

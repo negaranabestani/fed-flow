@@ -292,7 +292,7 @@ class FedServer(FedServerInterface):
         self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(state, self.group_labels)
         fed_logger.info('Next Round OPs: ' + str(self.split_layers))
 
-    def edge_based_state(self, offloading, energy_tt_list):
+    def edge_based_state(self, offloading, energy_tt_list, total_tt):
         state = []
         energy = 0
         tt = []
@@ -301,7 +301,7 @@ class FedServer(FedServerInterface):
             tt.append(et[1])
         energy /= len(config.CLIENTS_LIST)
         state.append(energy)
-        state.append(max(tt))
+        state.append(total_tt)
         state.append(tt)
         # for i in range(config.S):
         #     state.append("utilization" + str(i))
