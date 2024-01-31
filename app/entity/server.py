@@ -256,8 +256,8 @@ class FedServer(FedServerInterface):
             # fed_logger.info(f"receiving {socket.gethostbyaddr(edge)[0]}")
             msg = self.recv_msg(self.edge_socks[edge],
                                 message_utils.energy_tt_edge_to_server)
-            energy_tt_list.append(msg[1][0])
-            energy_tt_list.append(msg[1][1])
+            for i in range(len(msg[1])):
+                energy_tt_list.append(msg[1][i])
         # fed_logger.info("ettlist:" + str(energy_tt_list))
         return energy_tt_list
 
