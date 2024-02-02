@@ -3,6 +3,7 @@ import random
 import subprocess
 import time
 import config
+from config import energy_logger
 
 
 def init_p(process, pid, simulate_network):
@@ -29,10 +30,10 @@ def start_transmission(process):
 
 def end_transmission(process, bits):
     process.end_tr_time = time.time()
-
-    if config.simulate_network:
+    if config.simulate_network == True:
+        energy_logger.info(f"simnet:{config.simulate_network}")
         b = bits / (process.end_tr_time - process.start_tr_time)
-        b = random.uniform(0.3 * b, 1.7 * b)
+        b = random.uniform(0.7 * b, 1.5 * b)
         process.transmission_time += b / bits
     else:
         process.transmission_time += (process.end_tr_time - process.start_tr_time)
