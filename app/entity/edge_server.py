@@ -63,29 +63,40 @@ class FedEdgeServer(FedEdgeServerInterface):
                         self.optimizers[client_ip].zero_grad()
                     outputs = self.nets[client_ip](inputs)
 
-                # fed_logger.info(client_ip + " sending local activations")
-                    msg = [message_utils.local_activations_edge_to_server + "_" + client_ip, outputs.cpu(), targets.cpu()]
-                    self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, msg)
-                    msg = self.central_server_socks[client_ip].recv_msg(self.central_server_socks[client_ip].sock,
-                                                                        message_utils.server_gradients_server_to_edge + client_ip)
-                    gradients = msg[1].to(self.device)
-                    # fed_logger.info(client_ip + " training model backward")
-                    outputs.backward(gradients)
+                    # fed_logger.info(client_ip + " sending local activations")
+                    if self.split_layers[config.CLIENTS_CONFIG[client_ip]][1] < model_utils.get_unit_model_len() - 1:
+                        msg = [message_utils.local_activations_edge_to_server + "_" + client_ip, outputs.cpu(),
+                               targets.cpu()]
+                        self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, msg)
+                        msg = self.central_server_socks[client_ip].recv_msg(self.central_server_socks[client_ip].sock,
+                                                                            message_utils.server_gradients_server_to_edge + client_ip)
+                        gradients = msg[1].to(self.device)
+                        # fed_logger.info(client_ip + " training model backward")
+                        outputs.backward(gradients)
+                        msg = [message_utils.server_gradients_edge_to_client + client_ip, inputs.grad]
+                        self.send_msg(self.socks[socket.gethostbyname(client_ip)], msg)
+                    else:
+                        outputs = self.nets[client_ip](inputs)
+                        loss = self.criterion(outputs, targets)
+                        loss.backward()
+                        if self.optimizers.keys().__contains__(client_ip):
+                            self.optimizers[client_ip].step()
+                        msg = [message_utils.server_gradients_edge_to_client + client_ip, inputs.grad]
+                        self.send_msg(self.socks[socket.gethostbyname(client_ip)], msg)
                 else:
                     msg = [message_utils.local_activations_edge_to_server + "_" + client_ip, inputs.cpu(),
                            targets.cpu()]
                     self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, msg)
-                # fed_logger.info(client_ip + " receiving gradients")
-                msg = self.central_server_socks[client_ip].recv_msg(self.central_server_socks[client_ip].sock,
-                                                                    message_utils.server_gradients_server_to_edge + client_ip)
+                    # fed_logger.info(client_ip + " edge receiving gradients")
+                    msg = self.central_server_socks[client_ip].recv_msg(self.central_server_socks[client_ip].sock,
+                                                                        message_utils.server_gradients_server_to_edge + client_ip)
+                    # fed_logger.info(client_ip + " edge received gradients")
+                    msg = [message_utils.server_gradients_edge_to_client + client_ip, msg[1]]
+                    self.send_msg(self.socks[socket.gethostbyname(client_ip)], msg)
 
-                if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < \
-                        self.split_layers[config.CLIENTS_CONFIG[client_ip]][1]:
-                    if self.optimizers.keys().__contains__(client_ip):
-                        self.optimizers[client_ip].step()
                 # fed_logger.info(client_ip + " sending gradients")
-                msg = [message_utils.server_gradients_edge_to_client + client_ip, msg[1]]
-                self.send_msg(self.socks[socket.gethostbyname(client_ip)], msg)
+
+
 
         fed_logger.info(str(client_ip) + ' offloading training end')
 

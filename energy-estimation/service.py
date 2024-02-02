@@ -1,16 +1,18 @@
 import logging
 import threading
+
+from colorama import Fore
 from fastapi import FastAPI
 import config, system_utils
 import uvicorn, warnings
 from process import Process
+from config import energy_logger
 from log_filters import EndpointFilter
 
 warnings.filterwarnings('ignore')
 
 app = FastAPI()
 config.process = Process(0)
-
 
 excluded_endpoints = ["/init/", "/", "/computation-start/", "/computation-end/", "/start-transmission/",
                       "/end-transmission/", "/get-cpu-utilization/"]
@@ -53,6 +55,7 @@ async def end_transmission(bits):
 
 @app.get("/energy/")
 async def energy():
+    energy_logger.info(Fore.GREEN + f"conputation: {config.process.comp_time}, trasmission: {config.process.transmission_time}")
     return system_utils.estimate_computation_energy(config.process) + system_utils.estimate_communication_energy(config,
                                                                                                                  config.process)
 
@@ -60,6 +63,7 @@ async def energy():
 @app.get("/get-cpu-utilization/{pid}")
 async def get_cpu_utilization(pid):
     return system_utils.get_cpu_u(pid)
+
 
 # uvconfig = uvicorn.Config(app, host="0.0.0.0", port=8023, log_level="critical")
 # server = uvicorn.Server(uvconfig)
