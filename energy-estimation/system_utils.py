@@ -34,11 +34,12 @@ def end_transmission(process, bits):
         # energy_logger.info(f"simnet:{config.simulate_network}")
         b = bits / (process.end_tr_time - process.start_tr_time)
         b = random.uniform(0.6 * b, 1.2 * b)
-        process.transmission_time += b / bits
+        process.transmission_time += bits / b
     else:
         # b = bits / (process.end_tr_time - process.start_tr_time)
-        # b *= 0.6
-        # process.transmission_time += b / bits
+        # energy_logger.info((f"bandwidth: {b}, {bits}"))
+        # # b *= 0.01
+        # process.transmission_time += bits / b
         process.transmission_time += (process.end_tr_time - process.start_tr_time)
 
 
