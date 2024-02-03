@@ -26,5 +26,5 @@ services:
     working_dir: /fed-flow/app/fl_training/runner
     depends_on:
       - edge1
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s fake_splitting -e True"
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s fake_splitting -e True & python3 /fed-flow/energy/service.py & wait -n"
 
