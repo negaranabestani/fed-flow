@@ -296,19 +296,17 @@ class FedServer(FedServerInterface):
         for et in energy_tt_list:
             energy += et[0]
             tt.append(et[1])
-        energy /= len(config.CLIENTS_LIST)
+        energy /= len(energy_tt_list)
         state.append(energy)
         state.append(total_tt)
-        state.append(tt)
-        # for i in range(config.S):
-        #     state.append("utilization" + str(i))
+        state.extend(tt)
         edge_offloading = []
         server_offloading = 0
         for i in range(len(config.EDGE_MAP)):
             edge_offloading.append(0)
             for j in range(len(config.EDGE_MAP.get((list(config.EDGE_MAP.keys()))[i]))):
                 split_key = config.CLIENTS_CONFIG.get(config.EDGE_MAP.get(list(config.EDGE_MAP.keys())[i])[j])
-                if self.split_layers[split_key][0] < model_utils.get_unit_model_len() - 1:
+                if self.split_layers[split_key][0] < self.split_layers[split_key][1]:
                     edge_offloading[i] += 1
                 if self.split_layers[split_key][1] < model_utils.get_unit_model_len() - 1:
                     server_offloading += 1
