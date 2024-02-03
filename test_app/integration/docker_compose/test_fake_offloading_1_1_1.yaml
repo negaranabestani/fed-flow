@@ -5,7 +5,9 @@ services:
     ports:
       - "5002:5002"
     hostname: server
-    restart: always
+    deploy:
+      restart_policy:
+        condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py -o True -s fake_splitting -e True"
 
@@ -14,7 +16,9 @@ services:
     ports:
       - "5001:5001"
     hostname: edge1
-    restart: always
+    deploy:
+      restart_policy:
+        condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
     depends_on:
       - server
@@ -22,7 +26,9 @@ services:
   client1:
     image: fed-flow:test
     hostname: client1
-    restart: always
+    deploy:
+      restart_policy:
+        condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
     depends_on:
       - edge1
