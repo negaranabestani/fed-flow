@@ -5,7 +5,9 @@ services:
     ports:
       - "51008:51008"
     hostname: server
-    restart: always
+    deploy:
+      restart_policy:
+        condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py"
   client1:
@@ -13,7 +15,9 @@ services:
     depends_on:
       - server
     hostname: client1
-    restart: always
+    deploy:
+      restart_policy:
+        condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0"
   client2:
@@ -21,7 +25,9 @@ services:
     depends_on:
       - server
     hostname: client2
-    restart: always
+    deploy:
+      restart_policy:
+        condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 1"
   client3:
@@ -29,6 +35,8 @@ services:
     depends_on:
       - server
     hostname: client3
-    restart: always
+    deploy:
+      restart_policy:
+        condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 2"

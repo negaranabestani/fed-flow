@@ -55,9 +55,13 @@ async def end_transmission(bits):
 
 @app.get("/energy/")
 async def energy():
-    energy_logger.info(Fore.GREEN + f"conputation: {config.process.comp_time}, trasmission: {config.process.transmission_time}")
-    return system_utils.estimate_computation_energy(config.process) + system_utils.estimate_communication_energy(config,
-                                                                                                                 config.process)
+    energy_logger.info(
+        Fore.GREEN + f"conputation: {config.process.comp_time}, trasmission: {config.process.transmission_time}")
+    ene = system_utils.estimate_computation_energy(config.process) + system_utils.estimate_communication_energy(config,
+                                                                                                                config.process)
+    config.process.comp_time = 0
+    config.process.transmission_time = 0
+    return ene
 
 
 @app.get("/get-cpu-utilization/{pid}")
