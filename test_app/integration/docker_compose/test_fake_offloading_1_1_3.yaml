@@ -35,7 +35,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: '0.5'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
@@ -49,7 +49,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: '0.5'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
@@ -63,7 +63,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: '0.5'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner

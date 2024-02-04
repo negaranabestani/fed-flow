@@ -6,6 +6,11 @@ services:
       - "51008:51008"
     hostname: server
     deploy:
+      resources:
+        limits:
+          cpus: '3'
+        reservations:
+          cpus: '3'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
@@ -14,6 +19,11 @@ services:
     image: fed-flow:test
     hostname: client1
     deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+        reservations:
+          cpus: '0.5'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner

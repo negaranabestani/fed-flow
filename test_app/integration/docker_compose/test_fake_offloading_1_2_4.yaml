@@ -5,6 +5,11 @@ services:
     ports:
       - "5004:5004"
     deploy:
+      resources:
+        limits:
+          cpus: '3'
+        reservations:
+          cpus: '3'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
@@ -16,6 +21,11 @@ services:
     ports:
       - "5001:5001"
     deploy:
+      resources:
+        limits:
+          cpus: '1'
+        reservations:
+          cpus: '1'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
@@ -27,6 +37,11 @@ services:
   client1:
     image: fed-flow:test
     deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+        reservations:
+          cpus: '0.5'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
@@ -38,6 +53,11 @@ services:
   client2:
     image: fed-flow:test
     deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+        reservations:
+          cpus: '0.5'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
@@ -51,6 +71,11 @@ services:
     ports:
       - "5005:5005"
     deploy:
+      resources:
+        limits:
+          cpus: '1'
+        reservations:
+          cpus: '1'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
@@ -62,6 +87,11 @@ services:
   client3:
     image: fed-flow:test
     deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+        reservations:
+          cpus: '0.5'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
@@ -73,6 +103,11 @@ services:
   client4:
     image: fed-flow:test
     deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+        reservations:
+          cpus: '0.5'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner

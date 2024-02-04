@@ -3,6 +3,11 @@ services:
   server:
     image: fed-flow:test
     deploy:
+      resources:
+        limits:
+          cpus: '3'
+        reservations:
+          cpus: '3'
       restart_policy:
         condition: on-failure
     ports:
@@ -16,6 +21,11 @@ services:
   edge1:
     image: fed-flow:test
     deploy:
+      resources:
+        limits:
+          cpus: '2'
+        reservations:
+          cpus: '2'
       restart_policy:
         condition: on-failure
     ports:
@@ -29,6 +39,11 @@ services:
   client1:
     image: fed-flow:test
     deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+        reservations:
+          cpus: '0.5'
       restart_policy:
         condition: on-failure
     hostname: client1

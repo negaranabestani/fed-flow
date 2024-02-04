@@ -5,6 +5,11 @@ services:
     ports:
       - "51002:51002"
     deploy:
+      resources:
+        limits:
+          cpus: '3'
+        reservations:
+          cpus: '3'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
@@ -16,6 +21,11 @@ services:
     ports:
       - "51001:51001"
     deploy:
+      resources:
+        limits:
+          cpus: '2'
+        reservations:
+          cpus: '2'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
@@ -26,6 +36,11 @@ services:
   client1:
     image: fed-flow:test
     deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+        reservations:
+          cpus: '0.5'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
