@@ -6,6 +6,9 @@ services:
       - "5002:5002"
     hostname: server
     deploy:
+      resources:
+        limits:
+          cpus: '3'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
@@ -17,6 +20,9 @@ services:
       - "5001:5001"
     hostname: edge1
     deploy:
+      resources:
+        limits:
+          cpus: '2'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
@@ -27,6 +33,9 @@ services:
     image: fed-flow:test
     hostname: client1
     deploy:
+      resources:
+        limits:
+          cpus: '1'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
@@ -38,6 +47,9 @@ services:
     image: fed-flow:test
     hostname: client2
     deploy:
+      resources:
+        limits:
+          cpus: '1'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
@@ -49,11 +61,12 @@ services:
     image: fed-flow:test
     hostname: client3
     deploy:
+      resources:
+        limits:
+          cpus: '1'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
     depends_on:
       - edge1
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 2 -o True -s fake_splitting -e True & python3 /fed-flow/energy/service.py & wait -n"
-
-

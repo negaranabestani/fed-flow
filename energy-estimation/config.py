@@ -1,6 +1,6 @@
 import logging
 
-tx_power = 22
+tx_power = 0.15849
 power = 15
 counter = 0
 process = None

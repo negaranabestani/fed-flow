@@ -211,7 +211,9 @@ class FedServer(FedServerInterface):
         network_time_start = time.time()
         msg = [message_utils.test_network, self.uninet.cpu().state_dict()]
         self.send_msg(self.edge_socks[socket.gethostbyname(connection_ip)], msg)
+        fed_logger.info("server test network sent")
         msg = self.recv_msg(self.edge_socks[socket.gethostbyname(connection_ip)], message_utils.test_network)
+        fed_logger.info("server test network received")
         network_time_end = time.time()
         self.edge_bandwidth[connection_ip] = network_time_end - network_time_start
 
@@ -253,7 +255,7 @@ class FedServer(FedServerInterface):
             # fed_logger.info(f"receiving {socket.gethostbyaddr(edge)[0]}")
             msg = self.recv_msg(self.edge_socks[edge],
                                 message_utils.energy_tt_edge_to_server)
-            for i in range(len(msg[1])):
+            for i in range(len(client_ips)):
                 energy_tt_list.append(msg[1][i])
         # fed_logger.info("ettlist:" + str(energy_tt_list))
         return energy_tt_list
