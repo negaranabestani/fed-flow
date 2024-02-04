@@ -28,9 +28,10 @@ def run_edge_based(client: FedClientInterface, LR):
     for r in range(config.R):
         fed_logger.info('====================================>')
         fed_logger.info('ROUND: {} START'.format(r))
-        st = time.time()
+
         fed_logger.info("receiving global weights")
         client.edge_global_weights()
+        st = time.time()
         # fed_logger.info("test network")
         # client.test_network()
         fed_logger.info("receiving splitting info")
@@ -82,24 +83,37 @@ def run_no_offload_edge(client: FedClientInterface, LR):
 
 def run_no_edge_offload(client: FedClientInterface, LR):
     for r in range(config.R):
+
         fed_logger.info('====================================>')
         fed_logger.info('ROUND: {} START'.format(r))
         fed_logger.info("receiving global weights")
         client.server_global_weights()
+        st = time.time()
         fed_logger.info("test_app network")
-        client.test_network()
+        energy_estimation.start_transmission()
+        msg = client.test_network()
+        energy_estimation.end_transmission(sys.getsizeof(msg) * 8)
         fed_logger.info("receiving splitting info")
         client.split_layer()
+        energy_estimation.computation_start()
         fed_logger.info("initializing client")
         client.initialize(client.split_layers, LR)
         fed_logger.info("start training")
+        energy_estimation.computation_end()
         client.offloading_train()
         fed_logger.info("sending local weights")
-        client.server_upload()
+        energy_estimation.start_transmission()
+        msg = client.server_upload()
+        energy_estimation.end_transmission(msg)
         fed_logger.info('ROUND: {} END'.format(r))
         fed_logger.info('==> Waiting for aggregration')
         if r > 49:
             LR = config.LR * 0.1
+        et = time.time()
+        tt = et - st
+        energy = float(energy_estimation.energy())
+        # energy /= batch_num
+        fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}")
 
 
 def run_no_edge(client: FedClientInterface, LR):
@@ -151,6 +165,7 @@ def run(options_ins):
                             offload=offload)
         run_no_offload_edge(client_ins, LR)
     elif offload:
+        energy_estimation.init(os.getpid())
         client_ins = Client(server_addr=config.SERVER_ADDR,
                             server_port=config.SERVER_PORT,
                             datalen=datalen, model_name=options_ins.get('model'),

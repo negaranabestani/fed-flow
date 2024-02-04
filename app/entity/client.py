@@ -42,14 +42,18 @@ class Client(FedClientInterface):
     def server_upload(self):
         msg = [message_utils.local_weights_client_to_server, self.net.cpu().state_dict()]
         self.send_msg(self.sock, msg)
+        return msg
 
     def test_network(self):
         """
         send message to test network speed
         """
         msg = self.recv_msg(self.sock, message_utils.test_network)[1]
+        fed_logger.info("test network received")
         msg = [message_utils.test_network, self.uninet.cpu().state_dict()]
         self.send_msg(self.sock, msg)
+        fed_logger.info("test network sent")
+        return msg
 
     def split_layer(self):
         """
@@ -126,10 +130,15 @@ class Client(FedClientInterface):
 
     def offloading_train(self):
         flag = [message_utils.local_iteration_flag_client_to_server + '_' + socket.gethostname(), True]
+        start_transmission()
         self.send_msg(self.sock, flag)
+        end_transmission(sys.getsizeof(flag)*8)
         for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(self.train_loader)):
             flag = [message_utils.local_iteration_flag_client_to_server + '_' + socket.gethostname(), True]
+            start_transmission()
             self.send_msg(self.sock, flag)
+            end_transmission(sys.getsizeof(flag) * 8)
+            computation_start()
             inputs, targets = inputs.to(self.device), targets.to(self.device)
             if self.optimizer is not None:
                 self.optimizer.zero_grad()
@@ -137,7 +146,10 @@ class Client(FedClientInterface):
             # fed_logger.info("sending local activations")
             msg = [message_utils.local_activations_client_to_server + '_' + socket.gethostname(), outputs.cpu(),
                    targets.cpu()]
+            computation_end()
+            start_transmission()
             self.send_msg(self.sock, msg)
+            end_transmission(sys.getsizeof(msg)*8)
 
             # Wait receiving edge server gradients
             # fed_logger.info("receiving gradients")
@@ -146,12 +158,16 @@ class Client(FedClientInterface):
                     1].to(
                     self.device)
 
+            computation_start()
             outputs.backward(gradients)
             if self.optimizer is not None:
                 self.optimizer.step()
+            computation_end()
 
         flag = [message_utils.local_iteration_flag_client_to_server + '_' + socket.gethostname(), False]
+        start_transmission()
         self.send_msg(self.sock, flag)
+        end_transmission(sys.getsizeof(flag)*8)
 
     def no_offloading_train(self):
         self.net.to(self.device)

@@ -6,6 +6,9 @@ services:
       - "5002:5002"
     hostname: server
     deploy:
+      resources:
+        limits:
+          cpus: '3'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
@@ -17,6 +20,9 @@ services:
       - "5001:5001"
     hostname: edge1
     deploy:
+      resources:
+        limits:
+          cpus: '2'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
@@ -27,6 +33,9 @@ services:
     image: fed-flow:test
     hostname: client1
     deploy:
+      resources:
+        limits:
+          cpus: '1'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
