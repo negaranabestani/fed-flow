@@ -1,6 +1,8 @@
 version: '3'
 services:
   server:
+    volumes:
+      - ./config.py:/fed-flow/app/config/config.py
     image: fed-flow:test
     deploy:
       resources:
@@ -19,6 +21,8 @@ services:
       - ./../../../Graphs:/Graphs
 
   edge1:
+    volumes:
+      - ./config.py:/fed-flow/app/config/config.py
     image: fed-flow:test
     deploy:
       resources:
@@ -37,6 +41,8 @@ services:
     entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_edgeserver_runner.py -i 0 -o True -s edge_based_rl_splitting -e True"
 
   client1:
+    volumes:
+      - ./config.py:/fed-flow/app/config/config.py
     image: fed-flow:test
     deploy:
       resources:

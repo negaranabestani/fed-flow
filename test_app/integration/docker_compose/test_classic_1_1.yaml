@@ -9,6 +9,8 @@ services:
           cpus: '3'
       restart_policy:
         condition: on-failure
+    volumes:
+      - ./config.py:/fed-flow/app/config/config.py
     image: fed-flow:test
     hostname: server
     ports:
@@ -24,6 +26,8 @@ services:
           cpus: '0.5'
       restart_policy:
         condition: on-failure
+    volumes:
+      - ./config.py:/fed-flow/app/config/config.py
     image: fed-flow:test
     hostname: client1
     working_dir: /fed-flow/app/fl_training/runner
