@@ -103,9 +103,10 @@ def run(options_ins):
 
 
 def preTrain(edge_server, options, client_ips):
-    splittingLayer = rl_utils.allPossibleSplitting(modelLen=config.model_len, deviceNumber=1)
+    # splittingArray = [6, 6]
+    # edge_server.split_layers = [splittingArray * config.K]
 
-    for splitting in splittingLayer:
+    for i in range(5):
 
         fed_logger.info("receiving global weights")
         edge_server.global_weights(client_ips)
@@ -130,31 +131,3 @@ def preTrain(edge_server, options, client_ips):
             threads[client_ips[i]].join()
 
         edge_server.energy(client_ips)
-
-    # Max Energy Evaluation
-    edge_server.global_weights(client_ips)
-    edge_server.split_layer(client_ips)
-    edge_server.initialize(edge_server.split_layers, 0.1, client_ips)
-    threads = {}
-    for i in range(len(client_ips)):
-        threads[client_ips[i]] = threading.Thread(target=edge_server.thread_offload_training,
-                                                  args=(client_ips[i],), name=client_ips[i])
-        threads[client_ips[i]].start()
-
-    for i in range(len(client_ips)):
-        threads[client_ips[i]].join()
-    edge_server.energy(client_ips)
-
-    # Min Energy Evaluation
-    edge_server.global_weights(client_ips)
-    edge_server.split_layer(client_ips)
-    edge_server.initialize(edge_server.split_layers, 0.1, client_ips)
-    threads = {}
-    for i in range(len(client_ips)):
-        threads[client_ips[i]] = threading.Thread(target=edge_server.thread_offload_training,
-                                                  args=(client_ips[i],), name=client_ips[i])
-        threads[client_ips[i]].start()
-
-    for i in range(len(client_ips)):
-        threads[client_ips[i]].join()
-    edge_server.energy(client_ips)

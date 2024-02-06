@@ -124,13 +124,13 @@ def run(options_ins):
 # options = input_utils.parse_argument(parser)
 # run(options)
 def preTrain(client):
-    splittingLayer = rl_utils.allPossibleSplitting(modelLen=config.model_len, deviceNumber=1)
+    # splittingLayer = rl_utils.allPossibleSplitting(modelLen=config.model_len, deviceNumber=1)
     mx: int = int((N / K) * (index + 1))
     mn: int = int((N / K) * index)
     data_size = mx - mn
     batch_num = data_size / config.B
 
-    for splitting in splittingLayer:
+    for i in range(5):
 
         fed_logger.info("Getting params...")
         client.edge_global_weights()
@@ -155,33 +155,3 @@ def preTrain(client):
         end_transmission(sys.getsizeof(msg) * 8)
         client.energy_tt(float(energy()) / batch_num, tt)
         fed_logger.info(f"{float(energy()) / batch_num}, {tt}")
-
-    # Max Energy Evaluation
-    client.edge_global_weights()
-    client.split_layer()
-    st = time.time()
-    computation_start()
-    client.initialize(client.split_layers, 0.1)
-    computation_end()
-    client.edge_offloading_train()
-    start_transmission()
-    msg = client.edge_upload()
-    et = time.time()
-    tt = et - st
-    end_transmission(sys.getsizeof(msg) * 8)
-    client.energy_tt(float(energy()) / batch_num, tt)
-
-    # Min Energy Evaluation
-    client.edge_global_weights()
-    client.split_layer()
-    st = time.time()
-    computation_start()
-    client.initialize(client.split_layers, 0.1)
-    computation_end()
-    client.edge_offloading_train()
-    start_transmission()
-    msg = client.edge_upload()
-    et = time.time()
-    tt = et - st
-    end_transmission(sys.getsizeof(msg) * 8)
-    client.energy_tt(float(energy()) / batch_num, tt)

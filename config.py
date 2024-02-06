@@ -7,7 +7,7 @@ simnet = False
 dataset_name = ''
 home = sys.path[0].split('fed-flow')[0] + 'fed-flow' + "/app"
 dataset_path = home + '/dataset/data/'
-N = 500  # data length
+N = 2  # data length
 
 # Model configration
 model_cfg = {
@@ -28,10 +28,10 @@ model_len = 7
 # FL training configration
 R = 2  # FL rounds
 LR = 0.01  # Learning rate
-B = 100  # Batch size
+B = 2  # Batch size
 
 # RL training configration
-max_episodes = 100  # max training episodes
+max_episodes = 2000  # max training episodes
 max_timesteps = 50  # max timesteps in one episode
 exploration_times = 20  # exploration times without std decay
 n_latent_var = 64  # number of variables in hidden layer

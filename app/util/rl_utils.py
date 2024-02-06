@@ -77,11 +77,16 @@ def tanhActivation(x: float) -> float:
     return np.tanh(x)
 
 
-def normalizeReward(maxAmount, minAmount, x, minNormalized, maxNormalized):
+def normalizeReward_linear(maxAmount, minAmount, x, minNormalized, maxNormalized):
     P = [maxAmount, minNormalized]
     Q = [minAmount, maxNormalized]
     lineGradient = (P[1] - Q[1]) / (P[0] - Q[0])
     y = lineGradient * (x - Q[0]) + Q[1]
+    return y
+
+
+def normalizeReward_tan(x, turning_point):
+    y = max(min(-pow(x - turning_point, 3) / pow(turning_point, 3), 1), -1)
     return y
 
 
@@ -158,12 +163,29 @@ def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[int, int]:
 
 
 def rewardFun(fraction, energy, trainingTime, classicFlTrainingTime, maxEnergy, minEnergy):
+    rewardOfEnergy = normalizeReward_linear(maxAmount=maxEnergy,
+                                            minAmount=minEnergy,
+                                            x=energy,
+                                            minNormalized=-1,
+                                            maxNormalized=1)
+    rewardOfTrainingTime = trainingTime
+    rewardOfTrainingTime -= classicFlTrainingTime
+    rewardOfTrainingTime /= 100
+    rewardOfTrainingTime *= -1
+    rewardOfTrainingTime = min(max(rewardOfTrainingTime, -1), 1)
 
-    rewardOfEnergy = normalizeReward(maxAmount=maxEnergy,
-                                     minAmount=minEnergy,
-                                     x=energy,
-                                     minNormalized=-1,
-                                     maxNormalized=1)
+    if fraction <= 1:
+        reward = (fraction * rewardOfEnergy) + ((1 - fraction) * rewardOfTrainingTime)
+    else:
+        raise Exception("Fraction must be less than 1")
+    return reward
+
+
+def rewardFunTan(fraction, energy, trainingTime, classicFlTrainingTime, classic_Fl_Energy):
+    rewardOfEnergy = normalizeReward_tan(
+        x=energy,
+        turning_point=classic_Fl_Energy
+    )
     rewardOfTrainingTime = trainingTime
     rewardOfTrainingTime -= classicFlTrainingTime
     rewardOfTrainingTime /= 100
