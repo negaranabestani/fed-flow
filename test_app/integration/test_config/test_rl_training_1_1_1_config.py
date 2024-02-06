@@ -1,30 +1,13 @@
 import sys
 
-# # Network configration
-# SERVER_ADDR = 'server'
-#
-# SERVER_PORT = 51008
-# EDGESERVER_PORT = {'127.0.0.1': 51001}
-#
-# K = 1  # Number of devices
-# G = 1  # Number of groups
-#
-# # Unique clients order
-# HOST2IP = {}
-# CLIENTS_CONFIG = {}
-# EDGE_SERVER_LIST = ['127.0.0.1']
-# CLIENTS_LIST = []
-# EDGE_MAP = {'127.0.0.1': ['127.0.0.1']}
-# CLIENT_MAP = {'127.0.0.1': '127.0.0.1'}
-
 CLIENTS_BANDWIDTH = []
 index = 0
-
+simnet = False
 # Dataset configration
 dataset_name = ''
 home = sys.path[0].split('fed-flow')[0] + 'fed-flow' + "/app"
 dataset_path = home + '/dataset/data/'
-N = 50000  # data length
+N = 500  # data length
 
 # Model configration
 model_cfg = {
@@ -49,7 +32,7 @@ B = 100  # Batch size
 
 # RL training configration
 max_episodes = 100  # max training episodes
-max_timesteps = 100  # max timesteps in one episode
+max_timesteps = 50  # max timesteps in one episode
 exploration_times = 20  # exploration times without std decay
 n_latent_var = 64  # number of variables in hidden layer
 action_std = 0.5  # constant std for action distribution (Multivariate Normal)
