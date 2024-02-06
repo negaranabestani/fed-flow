@@ -120,46 +120,8 @@ def run(options):
                 fed_logger.info(f'==> Timestep {timestep} Start')
 
                 s_time = time.time()
+                energy_tt_list = rl_flow(server, options, r, LR)
 
-                fed_logger.info("sending global weights")
-                server.edge_offloading_global_weights()
-                # fed_logger.info("receiving client network info")
-                # server.client_network(config.EDGE_SERVER_LIST)
-                #
-                # fed_logger.info("test edge servers network")
-                # server.test_network(config.EDGE_SERVER_LIST)
-
-                fed_logger.info("preparing state...")
-                server.offloading = server.get_offloading(server.split_layers)
-
-                fed_logger.info("clustering")
-                server.cluster(options)
-
-                fed_logger.info("getting state")
-                offloading = server.split_layers
-
-                # fed_logger.info("splitting")
-                # server.split(state, options)
-                server.split_layer()
-
-                if r > 49:
-                    LR = config.LR * 0.1
-
-                fed_logger.info("initializing server")
-                server.initialize(server.split_layers, LR)
-
-                # fed_logger.info('==> Reinitialization Finish')
-
-                fed_logger.info("start training")
-                server.edge_offloading_train(config.CLIENTS_LIST)
-
-                fed_logger.info("receiving local weights")
-                local_weights = server.e_local_weights(config.CLIENTS_LIST)
-
-                fed_logger.info("aggregating weights")
-                server.call_aggregation(options, local_weights)
-
-                energy_tt_list = server.e_energy_tt(config.CLIENTS_LIST)
                 e_time = time.time()
                 training_time = e_time - s_time
 
@@ -168,10 +130,10 @@ def run(options):
                 # Recording each round training time, bandwidth and test_app accuracy
                 fed_logger.info('Updating Agent')
                 reward = rl_utils.rewardFunTan(fraction=0.8, energy=state[0], trainingTime=training_time,
-                                            classicFlTrainingTime=classicFlTrainingTime, classic_Fl_Energy=cl_energy)
+                                               classicFlTrainingTime=classicFlTrainingTime, classic_Fl_Energy=cl_energy)
                 agent.observe(terminal=False, reward=reward)
 
-                timestep_energy.append(energy)
+                timestep_energy.append(state[0])
                 timestep_trainingTime.append(training_time)
                 timestep_reward.append(reward)
 
@@ -188,6 +150,12 @@ def run(options):
 
                 fed_logger.info('Round Finish')
                 fed_logger.info('==> Round Training Time: {:}'.format(training_time))
+
+            x.append(r)
+            episode_energy.append(sum(timestep_energy) / config.max_timesteps)
+            episode_trainingTime.append(sum(timestep_trainingTime) / config.max_timesteps)
+            episode_reward.append(sum(timestep_reward) / config.max_timesteps)
+            timestep_energy, timestep_trainingTime, timestep_reward = [], [], []
             rl_utils.draw_graph(title="Reward vs Episode",
                                 xlabel="Episode",
                                 ylabel="Reward",
@@ -217,12 +185,6 @@ def run(options):
                                 y=episode_trainingTime,
                                 savePath='/Graphs',
                                 pictureName=f"TrainingTime_episode_3")
-
-            x.append(r)
-            episode_energy.append(sum(timestep_energy) / config.max_timesteps)
-            episode_trainingTime.append(sum(timestep_trainingTime) / config.max_timesteps)
-            episode_reward.append(sum(timestep_reward) / config.max_timesteps)
-            timestep_energy, timestep_trainingTime, timestep_reward = [], [], []
 
     fed_logger.info('===========================================')
     fed_logger.info('Saving Graphs')
@@ -355,8 +317,6 @@ def preTrain(server, options) -> tuple[float, float]:
         energyArray.append(state[0])
         trainingTimeArray.append(state[1])
 
-
-
     fed_logger.info("====================================>")
     fed_logger.info(f"Tries Finished.")
     for i in range(5):
@@ -381,8 +341,50 @@ def preTrain(server, options) -> tuple[float, float]:
     # fed_logger.info(f"==> Max Energy : {maxEnergy}")
     # fed_logger.info(f"==> Min Energy Splitting : {minEnergySplitting}")
     # fed_logger.info(f"==> Min Energy : {minEnergy}")
-    fed_logger.info(f"==> Classic FL Energy : {sum(energyArray)/len(energyArray)}")
+    fed_logger.info(f"==> Classic FL Energy : {sum(energyArray) / len(energyArray)}")
     fed_logger.info(f"==> Classic FL Training Timme : {classicFLTrainingTime}")
     fed_logger.info("====================================>")
 
-    return classicFLTrainingTime, sum(energyArray)/len(energyArray)
+    return classicFLTrainingTime, sum(energyArray) / len(energyArray)
+
+
+def rl_flow(server, options, r, LR):
+    fed_logger.info("sending global weights")
+    server.edge_offloading_global_weights()
+    # fed_logger.info("receiving client network info")
+    # server.client_network(config.EDGE_SERVER_LIST)
+    #
+    # fed_logger.info("test edge servers network")
+    # server.test_network(config.EDGE_SERVER_LIST)
+
+    fed_logger.info("preparing state...")
+    server.offloading = server.get_offloading(server.split_layers)
+
+    fed_logger.info("clustering")
+    server.cluster(options)
+
+    fed_logger.info("getting state")
+    offloading = server.split_layers
+
+    # fed_logger.info("splitting")
+    # server.split(state, options)
+    server.split_layer()
+
+    if r > 49:
+        LR = config.LR * 0.1
+
+    fed_logger.info("initializing server")
+    server.initialize(server.split_layers, LR)
+
+    # fed_logger.info('==> Reinitialization Finish')
+
+    fed_logger.info("start training")
+    server.edge_offloading_train(config.CLIENTS_LIST)
+
+    fed_logger.info("receiving local weights")
+    local_weights = server.e_local_weights(config.CLIENTS_LIST)
+
+    fed_logger.info("aggregating weights")
+    server.call_aggregation(options, local_weights)
+
+    energy_tt_list = server.e_energy_tt(config.CLIENTS_LIST)
