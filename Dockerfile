@@ -6,6 +6,8 @@ USER root
 ADD requirements.txt /fed-flow/
 COPY fedflow-env/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY app /fed-flow/app
+COPY energy-estimation /fed-flow/energy
+
 #WORKDIR /fed-flow/
 #RUN pip install --default-timeout=1200 -r requirements.txt
 

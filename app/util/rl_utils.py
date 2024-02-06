@@ -1,12 +1,11 @@
 import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
 
-from tensorforce import Environment
-from app.model.entity.rl_model import NoSplitting, TRPO, AC, TensorforceAgent, RandomAgent
 import app.util.model_utils as model_utils
-from app.config.logger import fed_logger
+from app.model.entity.rl_model import NoSplitting, TRPO, AC, TensorforceAgent, RandomAgent
 
 
 def draw_graph(figSizeX, figSizeY, x, y, title, xlabel, ylabel, savePath, pictureName, saveFig=True):
@@ -78,9 +77,9 @@ def tanhActivation(x: float) -> float:
     return np.tanh(x)
 
 
-def normalizeReward(maxAmount, minAmount, x):
-    P = [maxAmount, 0]
-    Q = [minAmount, 1]
+def normalizeReward(maxAmount, minAmount, x, minNormalized, maxNormalized):
+    P = [maxAmount, minNormalized]
+    Q = [minAmount, maxNormalized]
     lineGradient = (P[1] - Q[1]) / (P[0] - Q[0])
     y = lineGradient * (x - Q[0]) + Q[1]
     return y
@@ -158,26 +157,21 @@ def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[int, int]:
     return op1, op2
 
 
-def rewardFun(fraction, energy, trainingTime, classicFlTrainingTime, maxEnergy):
-    rewardOfEnergy = 1 - (energy / maxEnergy)
-    rewardOfTrainingTime = (classicFlTrainingTime - trainingTime) / max(classicFlTrainingTime, trainingTime)
+def rewardFun(fraction, energy, trainingTime, classicFlTrainingTime, maxEnergy, minEnergy):
+
+    rewardOfEnergy = normalizeReward(maxAmount=maxEnergy,
+                                     minAmount=minEnergy,
+                                     x=energy,
+                                     minNormalized=-1,
+                                     maxNormalized=1)
+    rewardOfTrainingTime = trainingTime
+    rewardOfTrainingTime -= classicFlTrainingTime
+    rewardOfTrainingTime /= 100
+    rewardOfTrainingTime *= -1
+    rewardOfTrainingTime = min(max(rewardOfTrainingTime, -1), 1)
 
     if fraction <= 1:
         reward = (fraction * rewardOfEnergy) + ((1 - fraction) * rewardOfTrainingTime)
-
     else:
         raise Exception("Fraction must be less than 1")
-
-    # logger.info("-------------------------------------------")
-    # logger.info(f"Offloading layer : {offloadingPointsList} \n")
-    # logger.info(f"Avg Energy : {averageEnergyConsumption} \n")
-    # logger.info(f"Training time : {maxTrainingTime} \n")
-    # logger.info(f"Reward of this action : {reward} \n")
-    # logger.info(f"Reward of energy : {self.fraction * rewardOfEnergy} \n")
-    # logger.info(f"Reward of training time : {(1 - self.fraction) * rewardOfTrainingTime} \n")
-    # logger.info(f"IOTs Capacities : {iotDeviceCapacity} \n")
-    # logger.info(f"Edges Capacities : {edgeCapacity} \n")
-    # logger.info(f"Cloud Capacities : {cloudCapacity} \n")
-    # newState.extend(edgeCapacity)
-    # newState.append(cloudCapacity)
     return reward

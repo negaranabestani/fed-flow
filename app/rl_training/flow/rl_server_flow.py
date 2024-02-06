@@ -1,10 +1,9 @@
-import pickle
 import sys
 import time
 
 sys.path.append('../../../')
 from app.config import config
-from app.util import model_utils, message_utils, rl_utils
+from app.util import message_utils, rl_utils
 from app.entity.server import FedServer
 from app.config.logger import fed_logger
 import numpy as np
@@ -34,7 +33,7 @@ def run(options):
         x = []
         actionList = []
 
-        classicFlTrainingTime, maxEnergy = preTrain(server, options)
+        classicFlTrainingTime, maxEnergy, minEnergy = preTrain(server, options)
 
         for r in range(config.max_episodes):
             fed_logger.info('====================================>')
@@ -80,14 +79,19 @@ def run(options):
             fed_logger.info("receiving local weights")
             local_weights = server.e_local_weights(config.CLIENTS_LIST)
 
-            fed_logger.info("aggregating weights")
+            fed_logger.info("aggregating weights starts")
             server.call_aggregation(options, local_weights)
+            fed_logger.info("aggregating weights ends")
 
-            energy = server.e_energy_tt(config.CLIENTS_LIST)
+            fed_logger.info("creating energy_tt starts")
+            energy_tt_list = server.e_energy_tt(config.CLIENTS_LIST)
+            fed_logger.info("creating energy_tt ends.")
+
             e_time = time.time()
-            # Recording each round training time, bandwidth and test_app accuracy
             training_time = e_time - s_time
-            state = server.edge_based_state(training_time, offloading, energy)
+
+            # Recording each round training time, bandwidth and test_app accuracy
+            state = server.edge_based_state(offloading, energy_tt_list, training_time)
             fed_logger.info("state: " + str(state))
 
             # res['training_time'].append(training_time)
@@ -155,14 +159,15 @@ def run(options):
                 fed_logger.info("aggregating weights")
                 server.call_aggregation(options, local_weights)
 
-                energy = server.e_energy_tt(config.CLIENTS_LIST)
+                energy_tt_list = server.e_energy_tt(config.CLIENTS_LIST)
                 e_time = time.time()
-
-                # Recording each round training time, bandwidth and test_app accuracy
                 training_time = e_time - s_time
 
+                state = server.edge_based_state(offloading, energy_tt_list, training_time)
+
+                # Recording each round training time, bandwidth and test_app accuracy
                 fed_logger.info('Updating Agent')
-                reward = rl_utils.rewardFun(fraction=0.8, energy=energy, trainingTime=training_time,
+                reward = rl_utils.rewardFun(fraction=0.8, energy=state[0], trainingTime=training_time,
                                             classicFlTrainingTime=classicFlTrainingTime, maxEnergy=maxEnergy)
                 agent.observe(terminal=False, reward=reward)
 
@@ -170,7 +175,6 @@ def run(options):
                 timestep_trainingTime.append(training_time)
                 timestep_reward.append(reward)
 
-                state = server.edge_based_state(training_time, offloading, energy)
                 fed_logger.info("state: " + str(state))
 
                 # res['training_time'].append(training_time)
@@ -243,151 +247,176 @@ def run(options):
 
 
 # this method return maxEnergy and classicFL training Time for reward tuning
-def preTrain(server, options) -> tuple[float, float]:
+def preTrain(server, options) -> tuple[float, float, float]:
     classicFLTrainingTime = 0
     maxEnergySplitting = []
+    minEnergySplitting = []
     maxEnergy = 0
+    minEnergy = 5000000000
     energyArray = []
     trainingTimeArray = []
-
+    minEnergyList = []
+    maxEnergyList = []
+    minEnergySplittingList = []
+    maxEnergySplittingList = []
     splittingLayer = rl_utils.allPossibleSplitting(modelLen=config.model_len, deviceNumber=1)
     fed_logger.info('====================================>')
     fed_logger.info(f'==> Pre Training Started')
 
-    for splitting in splittingLayer:
-        splittingArray = list()
-        for i in range(0, len(splitting) - 1, 2):
-            op1 = int(splitting[i])
-            op2 = int(splitting[i + 1])
-            splittingArray.append([op1, op2])
-
-        server.split_layers = splittingArray
-
+    for j in range(5):
+        fed_logger.info(f"Try {j + 1}/5")
         fed_logger.info('====================================>')
-        fed_logger.info(f'==> Action : {splittingArray}')
+        for splitting in splittingLayer:
+            splittingArray = list()
+            for char in splitting:
+                splittingArray.append(int(char))
 
-        s_time = time.time()
+            server.split_layers = [splittingArray * config.K]
 
-        # fed_logger.info("sending global weights")
-        server.edge_offloading_global_weights()
+            s_time = time.time()
 
-        # fed_logger.info("receiving client network info")
-        # server.client_network(config.EDGE_SERVER_LIST)
+            # fed_logger.info("sending global weights")
+            server.edge_offloading_global_weights()
 
-        # fed_logger.info("test edge servers network")
-        # server.test_network(config.EDGE_SERVER_LIST)
+            # fed_logger.info("receiving client network info")
+            # server.client_network(config.EDGE_SERVER_LIST)
 
-        # fed_logger.info("preparing state...")
-        server.offloading = server.get_offloading(server.split_layers)
+            # fed_logger.info("test edge servers network")
+            # server.test_network(config.EDGE_SERVER_LIST)
 
-        # fed_logger.info("clustering")
-        server.cluster(options)
+            # fed_logger.info("preparing state...")
+            server.offloading = server.get_offloading(server.split_layers)
 
-        # fed_logger.info("getting state")
-        offloading = server.split_layers
+            # fed_logger.info("clustering")
+            server.cluster(options)
 
-        # fed_logger.info("splitting")
-        # server.split(state, options)
-        server.split_layer()
+            # fed_logger.info("getting state")
+            offloading = server.split_layers
 
-        # fed_logger.info("initializing server")
-        server.initialize(server.split_layers, 0.1)
+            # fed_logger.info("splitting")
+            # server.split(state, options)
+            server.split_layer()
 
-        # fed_logger.info('==> Reinitialization Finish')
+            # fed_logger.info("initializing server")
+            server.initialize(server.split_layers, 0.1)
 
-        # fed_logger.info("start training")
-        server.edge_offloading_train(config.CLIENTS_LIST)
+            # fed_logger.info('==> Reinitialization Finish')
 
-        # fed_logger.info("receiving local weights")
-        local_weights = server.e_local_weights(config.CLIENTS_LIST)
+            # fed_logger.info("start training")
+            server.edge_offloading_train(config.CLIENTS_LIST)
 
-        # fed_logger.info("aggregating weights")
-        server.call_aggregation(options, local_weights)
+            # fed_logger.info("receiving local weights")
+            local_weights = server.e_local_weights(config.CLIENTS_LIST)
 
-        energy = server.e_energy_tt(config.CLIENTS_LIST)
-        e_time = time.time()
+            # fed_logger.info("aggregating weights")
+            server.call_aggregation(options, local_weights)
 
-        # Recording each round training time, bandwidth and test_app accuracy
-        training_time = e_time - s_time
+            energy_tt_list = server.e_energy_tt(config.CLIENTS_LIST)
+            e_time = time.time()
+            training_time = e_time - s_time
 
-        state = server.edge_based_state(training_time, offloading, energy)
-        # fed_logger.info("state: " + str(state))
-        fed_logger.info(f"Energy of Action {splittingArray} : {energy}")
-        fed_logger.info(f"Training Time of Action {splittingArray} : {training_time}")
+            state = server.edge_based_state(offloading, energy_tt_list, training_time)
 
-        if splittingArray == [[config.model_len - 1, config.model_len - 1]]:
-            fed_logger.info("====================================>")
-            fed_logger.info("Classic FL Energy ")
-            fed_logger.info(f"Energy : {energy}")
-            fed_logger.info("Classic FL Training Time ")
-            fed_logger.info(f"TrainingTime : {training_time}")
-            classicFLTrainingTime = training_time
+            # Recording each round training time, bandwidth and test_app accuracy
+            fed_logger.info("====================")
+            fed_logger.info(f"Action : {offloading}")
+            fed_logger.info(f"state: {state}")
+            fed_logger.info(f"Energy of Action {offloading} : {state[0]}")
+            fed_logger.info(f"Training Time of Action {offloading} : {state[1]}")
 
-        energyArray.append(energy)
-        trainingTimeArray.append(training_time)
+            if offloading == [[config.model_len - 1, config.model_len - 1] * config.K]:
+                fed_logger.info("====================================>")
+                fed_logger.info("Classic FL Energy ")
+                fed_logger.info(f"Energy : {state[0]}")
+                fed_logger.info("Classic FL Training Time ")
+                fed_logger.info(f"TrainingTime : {state[1]}")
+                classicFLTrainingTime = state[1]
 
-        if energy > maxEnergy:
-            maxEnergy = energy
-            maxEnergySplitting = splittingArray[0]
+            energyArray.append(state[0])
+            trainingTimeArray.append(state[1])
 
+            if state[0] > maxEnergy:
+                maxEnergy = state[0]
+                maxEnergySplitting = offloading
+            if state[0] < minEnergy:
+                minEnergy = state[0]
+                minEnergySplitting = offloading
+
+        minEnergyList.append(minEnergy)
+        maxEnergyList.append(maxEnergy)
+        minEnergySplittingList.append(minEnergySplitting)
+        maxEnergySplittingList.append(maxEnergySplitting)
+
+    fed_logger.info("====================================>")
+    fed_logger.info(f"Tries Finished.")
+    for i in range(5):
+        fed_logger.info(f"Try {i + 1}/5 :")
+        fed_logger.info(f"==> Max Energy Splitting : {maxEnergySplittingList[i]}")
+        fed_logger.info(f"==> Max Energy : {maxEnergyList[i]}")
+        fed_logger.info(f"==> Min Energy Splitting : {minEnergySplittingList[i]}")
+        fed_logger.info(f"==> Min Energy : {minEnergyList[i]}")
+    fed_logger.info("====================================>")
+
+    # Max Energy Evaluation
     server.split_layers = []
     for _ in range(config.K):
         server.split_layers.append(maxEnergySplitting)
 
-    # fed_logger.info("sending global weights")
+    s_time = time.time()
     server.edge_offloading_global_weights()
-
-    # fed_logger.info("receiving client network info")
-    # server.client_network(config.EDGE_SERVER_LIST)
-
-    # fed_logger.info("test edge servers network")
-    # server.test_network(config.EDGE_SERVER_LIST)
-
-    # fed_logger.info("preparing state...")
     server.offloading = server.get_offloading(server.split_layers)
-
-    # fed_logger.info("clustering")
     server.cluster(options)
-
-    # fed_logger.info("getting state")
     offloading = server.split_layers
-
-    # fed_logger.info("splitting")
-    # server.split(state, options)
     server.split_layer()
-
-    # fed_logger.info("initializing server")
     server.initialize(server.split_layers, 0.1)
-
-    # fed_logger.info('==> Reinitialization Finish')
-
-    # fed_logger.info("start training")
     server.edge_offloading_train(config.CLIENTS_LIST)
-
-    # fed_logger.info("receiving local weights")
     local_weights = server.e_local_weights(config.CLIENTS_LIST)
-
-    # fed_logger.info("aggregating weights")
     server.call_aggregation(options, local_weights)
+    e_time = time.time()
+    training_time = e_time - s_time
+    energy_tt_list = server.e_energy_tt(config.CLIENTS_LIST)
+    state = server.edge_based_state(offloading, energy_tt_list, training_time)
+    maxEnergy = state[0]
 
-    energy = server.e_energy(config.CLIENTS_LIST)
-    maxEnergy = energy
+    # Min Energy evaluation
+    server.split_layers = []
+    for _ in range(config.K):
+        server.split_layers.append(minEnergySplitting)
+
+    s_time = time.time()
+    server.edge_offloading_global_weights()
+    server.offloading = server.get_offloading(server.split_layers)
+    server.cluster(options)
+    offloading = server.split_layers
+    server.split_layer()
+    server.initialize(server.split_layers, 0.1)
+    server.edge_offloading_train(config.CLIENTS_LIST)
+    local_weights = server.e_local_weights(config.CLIENTS_LIST)
+    server.call_aggregation(options, local_weights)
+    e_time = time.time()
+    training_time = e_time - s_time
+    energy_tt_list = server.e_energy_tt(config.CLIENTS_LIST)
+    state = server.edge_based_state(offloading, energy_tt_list, training_time)
+    minEnergy = state[0]
 
     rl_utils.draw_hist(title='Energy',
                        x=energyArray,
                        xlabel="Energy",
                        savePath='/Graphs',
-                       pictureName='energy_hist_3')
+                       pictureName='PreTrain_energy_hist')
     rl_utils.draw_hist(title='trainingTime',
                        x=trainingTimeArray,
                        xlabel="TrainingTime",
                        savePath='/Graphs',
-                       pictureName='trainingTime_hist_3')
+                       pictureName='PreTrain_trainingTime_hist')
 
     fed_logger.info("====================================>")
-    fed_logger.info("==> Pre Training Ends")
-    fed_logger.info(f"==> Max Energy : {maxEnergy}")
+    fed_logger.info(f"==> Pre Training Ends")
     fed_logger.info(f"==> Max Energy Splitting : {maxEnergySplitting}")
+    fed_logger.info(f"==> Max Energy : {maxEnergy}")
+    fed_logger.info(f"==> Min Energy Splitting : {minEnergySplitting}")
+    fed_logger.info(f"==> Min Energy : {minEnergy}")
     fed_logger.info(f"==> Classic FL Training Timme : {classicFLTrainingTime}")
+    fed_logger.info("====================================>")
 
-    return classicFLTrainingTime, maxEnergy
+    return classicFLTrainingTime, maxEnergy, minEnergy
