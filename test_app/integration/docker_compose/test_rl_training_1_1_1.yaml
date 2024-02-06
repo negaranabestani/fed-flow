@@ -1,8 +1,15 @@
 version: '3'
 services:
   server:
+    volumes:
+      - ./config.py:/fed-flow/app/config/config.py
     image: fed-flow:test
     deploy:
+      resources:
+        limits:
+          cpus: '3'
+        reservations:
+          cpus: '3'
       restart_policy:
         condition: on-failure
     ports:
@@ -14,8 +21,15 @@ services:
       - ./../../../Graphs:/Graphs
 
   edge1:
+    volumes:
+      - ./config.py:/fed-flow/app/config/config.py
     image: fed-flow:test
     deploy:
+      resources:
+        limits:
+          cpus: '2'
+        reservations:
+          cpus: '2'
       restart_policy:
         condition: on-failure
     ports:
@@ -27,8 +41,15 @@ services:
     entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_edgeserver_runner.py -i 0 -o True -s edge_based_rl_splitting -e True"
 
   client1:
+    volumes:
+      - ./config.py:/fed-flow/app/config/config.py
     image: fed-flow:test
     deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+        reservations:
+          cpus: '0.5'
       restart_policy:
         condition: on-failure
     hostname: client1
