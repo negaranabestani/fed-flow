@@ -54,7 +54,7 @@ def run_no_offload(server: FedEdgeServerInterface, LR):
         fed_logger.info('====================================>')
         fed_logger.info('==> Round {:} Start'.format(r))
         fed_logger.info("receiving global weights")
-        server.global_weights(client_ips)
+        server.no_offload_global_weights()
         # fed_logger.info("test clients network")
         # server.test_client_network(client_ips)
         # fed_logger.info("sending clients network")
@@ -79,7 +79,7 @@ def run(options_ins):
     ip_address = socket.gethostname()
     fed_logger.info('Preparing Sever.')
     offload = options_ins.get('offload')
-    if offload:
+    if offload=='True':
         edge_server_ins = FedEdgeServer(ip_address, config.EDGESERVER_PORT[ip_address], config.SERVER_ADDR,
                                         config.SERVER_PORT, options_ins.get('model'),
                                         options_ins.get('dataset'), offload=offload)

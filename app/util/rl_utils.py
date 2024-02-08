@@ -47,7 +47,7 @@ def draw_scatter(x, y, title, xlabel, ylabel, savePath, pictureName, saveFig=Tru
             os.makedirs(savePath)
         plt.savefig(os.path.join(savePath, pictureName))
     plt.close()
-    # plt.show()
+    plt.show()
 
 
 def draw_3dGraph(x, y, z, xlabel, ylabel, zlabel):
@@ -111,7 +111,7 @@ def allPossibleSplitting(modelLen, deviceNumber):
             if int(item[j]) > int(item[j + 1]):
                 isOk = False
         if isOk:
-            result.append(item)
+            result.append([int(int(item)/10),int(int(item)%10)])
     return result
 
 

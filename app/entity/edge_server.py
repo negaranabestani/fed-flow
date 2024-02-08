@@ -189,7 +189,12 @@ class FedEdgeServer(FedEdgeServerInterface):
 
         msg = [message_utils.initial_global_weights_edge_to_client, weights]
         self.scatter(msg)
-
+    def no_offload_global_weights(self):
+        weights = \
+            self.central_server_communicator.recv_msg(self.central_server_communicator.sock,
+                                                      message_utils.initial_global_weights_server_to_edge)[1]
+        msg = [message_utils.initial_global_weights_edge_to_client, weights]
+        self.scatter(msg)
     def thread_offload_training(self, client_ip):
         self.forward_propagation(client_ip)
         self.local_weights(client_ip)

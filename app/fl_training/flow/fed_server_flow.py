@@ -4,7 +4,7 @@ import time
 
 sys.path.append('../../../')
 from app.config import config
-from app.util import model_utils, message_utils
+from app.util import model_utils, message_utils, rl_utils
 from app.entity.server import FedServer
 from app.config.logger import fed_logger
 from app.entity.interface.fed_server_interface import FedServerInterface
@@ -17,7 +17,6 @@ def run_edge_based_no_offload(server: FedServerInterface, LR, options):
     for r in range(config.R):
         fed_logger.info('====================================>')
         fed_logger.info('==> Round {:} Start'.format(r))
-
 
         fed_logger.info("sending global weights")
         server.edge_offloading_global_weights()
@@ -44,16 +43,17 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
     server.initialize(config.split_layer, LR)
     training_time = 0
     energy_tt_list = []
+    all_splitting = rl_utils.allPossibleSplitting(7, 1)
+    energy_x = []
+    training_y = []
     for c in config.CLIENTS_LIST:
         energy_tt_list.append([0, 0])
     res = {}
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
-    for r in range(config.R):
+    for r in range(len(all_splitting)):
 
         fed_logger.info('====================================>')
         fed_logger.info('==> Round {:} Start'.format(r))
-
-
 
         fed_logger.info("sending global weights")
         server.edge_offloading_global_weights()
@@ -74,10 +74,13 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
         offloading = server.split_layers
 
         state = server.edge_based_state(offloading, energy_tt_list, training_time)
+        energy_x.append(state[0])
+        training_y.append(state[1])
         fed_logger.info("state: " + str(state))
 
         fed_logger.info("splitting")
-        server.split(state, options)
+        server.split_layers = [all_splitting[r]]
+        # server.split(state, options)
         server.split_layer()
 
         if r > 49:
@@ -114,6 +117,8 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
 
         fed_logger.info('Round Finish')
         fed_logger.info('==> Round Training Time: {:}'.format(training_time))
+        rl_utils.draw_scatter(energy_x, training_y, "e-t", "energy", "training time",
+                              "/home/little-wolf/projects/FL-2023/graphs", "e-t", True)
 
 
 def run_no_edge_offload(server: FedServerInterface, LR, options):
@@ -128,7 +133,6 @@ def run_no_edge_offload(server: FedServerInterface, LR, options):
         for r in range(config.R):
             fed_logger.info('====================================>')
             fed_logger.info('==> Round {:} Start'.format(r))
-
 
             fed_logger.info("sending global weights")
             server.no_offloading_global_weights()
@@ -180,7 +184,6 @@ def run_no_edge(server: FedServerInterface, options):
         fed_logger.info('====================================>')
         fed_logger.info('==> Round {:} Start'.format(r))
 
-
         fed_logger.info("sending global weights")
         server.no_offloading_global_weights()
         s_time = time.time()
@@ -212,15 +215,15 @@ def run(options_ins):
     fed_logger.info("start mode: " + str(options_ins.values()))
     offload = options_ins.get('offload')
     edge_based = options_ins.get('edgebased')
-    if edge_based and offload:
+    if edge_based == "True" and offload == "True":
         server_ins = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)
         run_edge_based_offload(server_ins, LR, options_ins)
-    elif edge_based and not offload:
+    elif edge_based == "True" and offload == "False":
         server_ins = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)
         run_edge_based_no_offload(server_ins, LR, options_ins)
-    elif offload and not edge_based:
+    elif offload == 'True' and edge_based == 'False':
         server_ins = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)
         run_no_edge_offload(server_ins, LR, options_ins)

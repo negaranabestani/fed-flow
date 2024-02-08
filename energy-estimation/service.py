@@ -50,6 +50,7 @@ async def start_transmission():
 
 @app.get("/end-transmission/{bits}")
 async def end_transmission(bits):
+    # energy_logger.info(Fore.RED + f"{int(bits)}")
     system_utils.end_transmission(config.process, int(bits))
 
 

@@ -7,7 +7,7 @@ simnet = False
 dataset_name = ''
 home = sys.path[0].split('fed-flow')[0] + 'fed-flow' + "/app"
 dataset_path = home + '/dataset/data/'
-N = 2  # data length
+N = 10000  # data length
 
 # Model configration
 model_cfg = {
@@ -26,9 +26,9 @@ split_layer = [[6, 6]]  # Initial split layers
 model_len = 7
 
 # FL training configration
-R = 2  # FL rounds
+R = 100000  # FL rounds
 LR = 0.01  # Learning rate
-B = 2  # Batch size
+B = 100  # Batch size
 
 # RL training configration
 max_episodes = 2000  # max training episodes

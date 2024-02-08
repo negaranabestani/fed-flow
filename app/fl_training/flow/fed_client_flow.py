@@ -46,7 +46,7 @@ def run_edge_based(client: FedClientInterface, LR):
         fed_logger.info("sending local weights")
         energy_estimation.start_transmission()
         msg = client.edge_upload()
-        energy_estimation.end_transmission(sys.getsizeof(msg) * 8)
+        energy_estimation.end_transmission(data_utils.sizeofmessage(msg))
         et = time.time()
         fed_logger.info('ROUND: {} END'.format(r))
         fed_logger.info('==> Waiting for aggregration')
@@ -71,14 +71,22 @@ def run_no_offload_edge(client: FedClientInterface, LR):
         fed_logger.info('ROUND: {} START'.format(r))
         fed_logger.info("receiving global weights")
         client.edge_global_weights()
+        st = time.time()
         fed_logger.info("start training")
         client.no_offloading_train()
         fed_logger.info("sending local weights")
-        client.edge_upload()
+        energy_estimation.start_transmission()
+        msg = client.edge_upload()
+        energy_estimation.end_transmission(data_utils.sizeofmessage(msg))
         fed_logger.info('ROUND: {} END'.format(r))
         fed_logger.info('==> Waiting for aggregration')
         if r > 49:
             LR = config.LR * 0.1
+        et = time.time()
+        tt = et - st
+        energy = float(energy_estimation.energy())
+        # energy /= batch_num
+        fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}")
 
 
 def run_no_edge_offload(client: FedClientInterface, LR):
@@ -92,7 +100,7 @@ def run_no_edge_offload(client: FedClientInterface, LR):
         fed_logger.info("test_app network")
         energy_estimation.start_transmission()
         msg = client.test_network()
-        energy_estimation.end_transmission(sys.getsizeof(msg) * 8)
+        energy_estimation.end_transmission(data_utils.sizeofmessage(msg))
         fed_logger.info("receiving splitting info")
         client.split_layer()
         energy_estimation.computation_start()
@@ -104,7 +112,7 @@ def run_no_edge_offload(client: FedClientInterface, LR):
         fed_logger.info("sending local weights")
         energy_estimation.start_transmission()
         msg = client.server_upload()
-        energy_estimation.end_transmission(msg)
+        energy_estimation.end_transmission(data_utils.sizeofmessage(msg))
         fed_logger.info('ROUND: {} END'.format(r))
         fed_logger.info('==> Waiting for aggregration')
         if r > 49:
@@ -149,7 +157,7 @@ def run(options_ins):
 
     offload = options_ins.get('offload')
     edge_based = options_ins.get('edgebased')
-    if edge_based and offload:
+    if edge_based == "True" and offload == "True":
         energy_estimation.init(os.getpid())
         client_ins = Client(server_addr=config.CLIENT_MAP[ip_address],
                             server_port=config.EDGESERVER_PORT[config.CLIENT_MAP[ip_address]],
@@ -157,14 +165,15 @@ def run(options_ins):
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             offload=offload)
         run_edge_based(client_ins, LR)
-    elif edge_based and not offload:
+    elif edge_based == "True" and offload == "False":
+        energy_estimation.init(os.getpid())
         client_ins = Client(server_addr=config.CLIENT_MAP[ip_address],
                             server_port=config.EDGESERVER_PORT[config.CLIENT_MAP[ip_address]],
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             offload=offload)
         run_no_offload_edge(client_ins, LR)
-    elif offload:
+    elif offload == "True":
         energy_estimation.init(os.getpid())
         client_ins = Client(server_addr=config.SERVER_ADDR,
                             server_port=config.SERVER_PORT,
@@ -173,12 +182,14 @@ def run(options_ins):
                             offload=offload)
         run_no_edge_offload(client_ins, LR)
     else:
+        energy_estimation.init(os.getpid())
         client_ins = Client(server_addr=config.SERVER_ADDR,
                             server_port=config.SERVER_PORT,
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             offload=offload)
         run_no_edge(client_ins, LR)
+    fed_logger.info("5")
     client_ins.recv_msg(client_ins.sock, message_utils.finish)
 
 # parser = argparse.ArgumentParser()

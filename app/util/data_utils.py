@@ -28,6 +28,13 @@ def get_trainloader(trainset, part_tr, cpu_count):
     return trainloader
 
 
+def sizeofmessage(msg):
+    size = 0
+    for i in range(len(msg)):
+        size += sys.getsizeof(msg[i])
+    return size * 8
+
+
 def get_testloader(testset, cpu_count):
     return torch.utils.data.DataLoader(testset, batch_size=B, shuffle=False, num_workers=cpu_count)
 

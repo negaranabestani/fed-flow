@@ -7,11 +7,12 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import tqdm
+from colorama import Fore
 
 from app.config import config
 
 sys.path.append('../../')
-from app.util import message_utils, model_utils
+from app.util import message_utils, model_utils, data_utils
 from app.entity.interface.fed_client_interface import FedClientInterface
 from app.config.logger import fed_logger
 from app.util.energy_estimation import *
@@ -78,66 +79,79 @@ class Client(FedClientInterface):
         self.net.load_state_dict(pweights)
 
     def edge_offloading_train(self):
+        computation_start()
+        self.net.to(self.device)
+        self.net.train()
+        computation_end()
         flag = [message_utils.local_iteration_flag_client_to_edge, True]
         if self.split_layers[config.index][0] == model_utils.get_unit_model_len() - 1:
+            fed_logger.info("no offloding training start----------------------------")
             flag = [message_utils.local_iteration_flag_client_to_edge, False]
-        start_transmission()
-        self.send_msg(self.sock, flag)
-        end_transmission(sys.getsizeof(flag) * 8)
-        for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(self.train_loader)):
-
-            computation_start()
-            inputs, targets = inputs.to(self.device), targets.to(self.device)
-            if self.optimizer is not None:
+            start_transmission()
+            self.send_msg(self.sock, flag)
+            end_transmission(data_utils.sizeofmessage(flag))
+            for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(self.train_loader)):
+                computation_start()
+                inputs, targets = inputs.to(self.device), targets.to(self.device)
                 self.optimizer.zero_grad()
-            outputs = self.net(inputs)
-            computation_end()
-            # fed_logger.info("sending local activations")
-            if self.split_layers[config.index][0] < model_utils.get_unit_model_len() - 1:
+                outputs = self.net(inputs)
+                loss = self.criterion(outputs, targets)
+                loss.backward()
+                self.optimizer.step()
+                computation_end()
+
+        if self.split_layers[config.index][0] < model_utils.get_unit_model_len() - 1:
+            fed_logger.info("offloding training start----------------------------")
+            start_transmission()
+            self.send_msg(self.sock, flag)
+            end_transmission(data_utils.sizeofmessage(flag))
+            for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(self.train_loader)):
+
+                computation_start()
+                inputs, targets = inputs.to(self.device), targets.to(self.device)
+                if self.optimizer is not None:
+                    self.optimizer.zero_grad()
+                outputs = self.net(inputs)
+                computation_end()
+                # fed_logger.info("sending local activations")
                 flag = [message_utils.local_iteration_flag_client_to_edge, True]
                 start_transmission()
                 self.send_msg(self.sock, flag)
-                end_transmission(sys.getsizeof(flag) * 8)
+                end_transmission(data_utils.sizeofmessage(flag))
                 msg = [message_utils.local_activations_client_to_edge, outputs.cpu(), targets.cpu()]
                 start_transmission()
                 self.send_msg(self.sock, msg)
-                end_transmission(sys.getsizeof(msg) * 8)
+                end_transmission(data_utils.sizeofmessage(msg))
 
-                # Wait receiving edge server gradients
-                # fed_logger.info("receiving gradients")
+                    # Wait receiving edge server gradients
+                    # fed_logger.info("receiving gradients")
                 gradients = \
-                self.recv_msg(self.sock, message_utils.server_gradients_edge_to_client + socket.gethostname())[
-                    1].to(
-                    self.device)
-                # fed_logger.info("received gradients")
+                        self.recv_msg(self.sock, message_utils.server_gradients_edge_to_client + socket.gethostname())[
+                            1].to(
+                            self.device)
+                 # fed_logger.info("received gradients")
                 computation_start()
                 outputs.backward(gradients)
                 if self.optimizer is not None:
                     self.optimizer.step()
                 computation_end()
-            else:
-                # fed_logger.info("processing")
-                computation_start()
-                loss = self.criterion(outputs, targets)
-                loss.backward()
-                self.optimizer.step()
-                computation_end()
-        if self.split_layers[config.index][0] < model_utils.get_unit_model_len() - 1:
             flag = [message_utils.local_iteration_flag_client_to_edge, False]
             start_transmission()
             self.send_msg(self.sock, flag)
-            end_transmission(sys.getsizeof(flag) * 8)
+            end_transmission(data_utils.sizeofmessage(flag))
 
     def offloading_train(self):
+        self.net.to(self.device)
+        self.net.train()
         flag = [message_utils.local_iteration_flag_client_to_server + '_' + socket.gethostname(), True]
         start_transmission()
         self.send_msg(self.sock, flag)
-        end_transmission(sys.getsizeof(flag)*8)
+        end_transmission(data_utils.sizeofmessage(flag))
         for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(self.train_loader)):
             flag = [message_utils.local_iteration_flag_client_to_server + '_' + socket.gethostname(), True]
             start_transmission()
             self.send_msg(self.sock, flag)
-            end_transmission(sys.getsizeof(flag) * 8)
+            end_transmission(data_utils.sizeofmessage(flag))
             computation_start()
             inputs, targets = inputs.to(self.device), targets.to(self.device)
             if self.optimizer is not None:
@@ -149,7 +163,7 @@ class Client(FedClientInterface):
             computation_end()
             start_transmission()
             self.send_msg(self.sock, msg)
-            end_transmission(sys.getsizeof(msg)*8)
+            end_transmission(data_utils.sizeofmessage(msg))
 
             # Wait receiving edge server gradients
             # fed_logger.info("receiving gradients")
@@ -157,7 +171,6 @@ class Client(FedClientInterface):
                 self.recv_msg(self.sock, message_utils.server_gradients_server_to_client + socket.gethostname())[
                     1].to(
                     self.device)
-
             computation_start()
             outputs.backward(gradients)
             if self.optimizer is not None:
@@ -167,18 +180,20 @@ class Client(FedClientInterface):
         flag = [message_utils.local_iteration_flag_client_to_server + '_' + socket.gethostname(), False]
         start_transmission()
         self.send_msg(self.sock, flag)
-        end_transmission(sys.getsizeof(flag)*8)
+        end_transmission(data_utils.sizeofmessage(flag))
 
     def no_offloading_train(self):
         self.net.to(self.device)
         self.net.train()
         for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(self.train_loader)):
+            computation_start()
             inputs, targets = inputs.to(self.device), targets.to(self.device)
             self.optimizer.zero_grad()
             outputs = self.net(inputs)
             loss = self.criterion(outputs, targets)
             loss.backward()
             self.optimizer.step()
+            computation_end()
 
     def energy_tt(self, energy, tt):
         msg = [message_utils.energy_client_to_edge + '_' + socket.gethostname(), energy, tt]

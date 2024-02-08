@@ -129,3 +129,7 @@ class FedEdgeServerInterface(ABC, Communicator):
     @abstractmethod
     def thread_no_offload_training(self, client_ip):
         pass
+
+    @abstractmethod
+    def no_offload_global_weights(self):
+        pass
