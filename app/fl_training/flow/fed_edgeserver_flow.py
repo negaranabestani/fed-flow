@@ -79,7 +79,7 @@ def run(options_ins):
     ip_address = socket.gethostname()
     fed_logger.info('Preparing Sever.')
     offload = options_ins.get('offload')
-    if offload=='True':
+    if offload:
         edge_server_ins = FedEdgeServer(ip_address, config.EDGESERVER_PORT[ip_address], config.SERVER_ADDR,
                                         config.SERVER_PORT, options_ins.get('model'),
                                         options_ins.get('dataset'), offload=offload)

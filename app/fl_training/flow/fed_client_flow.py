@@ -157,7 +157,7 @@ def run(options_ins):
 
     offload = options_ins.get('offload')
     edge_based = options_ins.get('edgebased')
-    if edge_based == "True" and offload == "True":
+    if edge_based and offload:
         energy_estimation.init(os.getpid())
         client_ins = Client(server_addr=config.CLIENT_MAP[ip_address],
                             server_port=config.EDGESERVER_PORT[config.CLIENT_MAP[ip_address]],
@@ -165,7 +165,7 @@ def run(options_ins):
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             offload=offload)
         run_edge_based(client_ins, LR)
-    elif edge_based == "True" and offload == "False":
+    elif edge_based and not offload:
         energy_estimation.init(os.getpid())
         client_ins = Client(server_addr=config.CLIENT_MAP[ip_address],
                             server_port=config.EDGESERVER_PORT[config.CLIENT_MAP[ip_address]],
@@ -173,7 +173,7 @@ def run(options_ins):
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             offload=offload)
         run_no_offload_edge(client_ins, LR)
-    elif offload == "True":
+    elif offload :
         energy_estimation.init(os.getpid())
         client_ins = Client(server_addr=config.SERVER_ADDR,
                             server_port=config.SERVER_PORT,
