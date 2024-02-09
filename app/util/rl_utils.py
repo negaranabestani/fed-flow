@@ -46,8 +46,8 @@ def draw_scatter(x, y, title, xlabel, ylabel, savePath, pictureName, saveFig=Tru
         if not os.path.exists(savePath):
             os.makedirs(savePath)
         plt.savefig(os.path.join(savePath, pictureName))
+    #plt.show()
     plt.close()
-    plt.show()
 
 
 def draw_3dGraph(x, y, z, xlabel, ylabel, zlabel):
@@ -112,6 +112,19 @@ def allPossibleSplitting(modelLen, deviceNumber):
                 isOk = False
         if isOk:
             result.append([int(int(item)/10),int(int(item)%10)])
+    return result
+
+
+def randomSelectionSplitting(modelLen, deviceNumber) -> list[list[int]]:
+    splittingForOneDevice = []
+    for i in range(0, modelLen):
+        for j in range(0, i + 1):
+            splittingForOneDevice.append([j, i])
+
+    result = []
+    for i in range(deviceNumber):
+        rand = random.randint(0, len(splittingForOneDevice) - 1)
+        result.append(splittingForOneDevice[rand])
     return result
 
 
