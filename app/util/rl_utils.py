@@ -107,12 +107,16 @@ def allPossibleSplitting(modelLen, deviceNumber):
         convert_To_Len_th_base(i, arr, modelLen, deviceNumber, allPossible)
     result = list()
     for item in allPossible:
+        temp = []
         isOk = True
         for j in range(0, len(item) - 1, 2):
             if int(item[j]) > int(item[j + 1]):
                 isOk = False
         if isOk:
-            result.append([int(int(item) / 10), int(int(item) % 10)])
+            for i in range(0, len(item), 2):
+                temp.append([int(item[i]), int(item[i + 1])])
+        if len(temp) != 0:
+            result.append(temp)
     return result
 
 
