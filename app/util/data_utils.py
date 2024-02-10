@@ -1,9 +1,13 @@
+import pickle
+
 import torch
 import torchvision.transforms as transforms
+from colorama import Fore
 from torch.utils.data import DataLoader, Subset
 
 from app.config import config
 from app.config.config import *
+from app.config.logger import fed_logger
 from app.dataset.entity.dataset_interface import DatasetInterface
 
 DATASET_BASE_DIR = "app.dataset.entity."
@@ -31,7 +35,8 @@ def get_trainloader(trainset, part_tr, cpu_count):
 def sizeofmessage(msg):
     size = 0
     for i in range(len(msg)):
-        size += sys.getsizeof(msg[i])
+        size += sys.getsizeof(pickle.dumps(msg[i]))
+    # fed_logger.info(Fore.RED+f"{msg[0]},{size}")
     return size * 8
 
 
