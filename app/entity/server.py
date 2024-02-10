@@ -175,16 +175,19 @@ class FedServer(FedServerInterface):
         w_local_list = []
         # fed_logger.info("aggregation start")
         for i in range(len(eweights)):
-            # if self.split_layers[i] != (test_config.model_len - 1):
-            #     w_local = (
-            #         model_utils.concat_weights(self.uninet.state_dict(), eweights[i],
-            #                                    self.nets[client_ips[i]].state_dict()),
-            #         test_config.N / test_config.K)
-            #     w_local_list.append(w_local)
-            # else:
-            w_local = (eweights[i], config.N / config.K)
-            # print("------------------------"+str(eweights[i]))
-            w_local_list.append(w_local)
+            sp = self.split_layers[i]
+            if self.edge_based:
+                sp=self.split_layers[i][0]
+            if sp != (config.model_len - 1):
+                w_local = (
+                    model_utils.concat_weights(self.uninet.state_dict(), eweights[i],
+                                               self.nets[client_ips[i]].state_dict()),
+                    config.N / config.K)
+                w_local_list.append(w_local)
+            else:
+                w_local = (eweights[i], config.N / config.K)
+                # print("------------------------"+str(eweights[i]))
+                w_local_list.append(w_local)
         zero_model = model_utils.zero_init(self.uninet).state_dict()
         # fed_logger.info("calling aggregation method")
         aggregated_model = aggregate_method(zero_model, w_local_list, config.N)

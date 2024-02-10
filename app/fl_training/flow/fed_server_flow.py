@@ -50,7 +50,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
         energy_tt_list.append([0, 0])
     res = {}
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
-    for r in range(len(all_splitting)):
+    for r in range(config.R):
 
         fed_logger.info('====================================>')
         fed_logger.info('==> Round {:} Start'.format(r))
@@ -79,7 +79,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
         fed_logger.info("state: " + str(state))
 
         fed_logger.info("splitting")
-        server.split_layers = [all_splitting[r]]
+        server.split(state, options)
         # server.split(state, options)
         server.split_layer()
 
@@ -215,15 +215,15 @@ def run(options_ins):
     fed_logger.info("start mode: " + str(options_ins.values()))
     offload = options_ins.get('offload')
     edge_based = options_ins.get('edgebased')
-    if edge_based == "True" and offload == "True":
+    if edge_based and offload:
         server_ins = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)
         run_edge_based_offload(server_ins, LR, options_ins)
-    elif edge_based == "True" and offload == "False":
+    elif edge_based and not offload:
         server_ins = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)
         run_edge_based_no_offload(server_ins, LR, options_ins)
-    elif offload == 'True' and edge_based == 'False':
+    elif offload and not edge_based:
         server_ins = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)
         run_no_edge_offload(server_ins, LR, options_ins)

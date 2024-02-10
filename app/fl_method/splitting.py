@@ -50,7 +50,7 @@ def none(state, labels):
 def no_edge_fake(state, labels):
     split_list = []
     for i in range(config.K):
-        split_list.append(3)
+        split_list.append(random.randint(1, config.model_len - 1))
     return split_list
 
 
