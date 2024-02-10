@@ -3,6 +3,8 @@ services:
   server:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
+      - ./../../../Graphs:/Graphs
+      - ./../../../agent:/app/agent
     image: fed-flow:test
     ports:
       - "5002:5002"
@@ -16,9 +18,27 @@ services:
       restart_policy:
         condition: always
     working_dir: /fed-flow/app/fl_training/runner
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py -o True -s no_edge_fake_splitting -e False"
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py -o True -s random_splitting -e True"
 
-
+  edge1:
+    volumes:
+      - ./config.py:/fed-flow/app/config/config.py
+    image: fed-flow:test
+    ports:
+      - "5001:5001"
+    hostname: edge1
+    deploy:
+      resources:
+        limits:
+          cpus: '0.7'
+        reservations:
+          cpus: '0.7'
+      restart_policy:
+        condition: always
+    working_dir: /fed-flow/app/fl_training/runner
+    depends_on:
+      - server
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -i 0 -o True -s random_splitting -e True"
   client1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
@@ -27,15 +47,15 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: '0.5'
         reservations:
-          cpus: '1'
+          cpus: '0.5'
       restart_policy:
         condition: always
     working_dir: /fed-flow/app/fl_training/runner
     depends_on:
-      - server
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s no_edge_fake_splitting -e False & python3 /fed-flow/energy/service.py & wait -n"
+      - edge1
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s random_splitting -e True & python3 /fed-flow/energy/service.py & wait -n"
 
   client2:
     volumes:
@@ -45,48 +65,48 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: '0.5'
         reservations:
-          cpus: '1'
+          cpus: '0.5'
       restart_policy:
         condition: always
     working_dir: /fed-flow/app/fl_training/runner
     depends_on:
-      - server
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 1 -o True -s no_edge_fake_splitting -e False & python3 /fed-flow/energy/service.py & wait -n"
+      - edge1
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 1 -o True -s random_splitting -e True & python3 /fed-flow/energy/service.py & wait -n"
 
-  client3:
-    volumes:
-      - ./config.py:/fed-flow/app/config/config.py
-    image: fed-flow:test
-    hostname: client3
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-        reservations:
-          cpus: '1'
-      restart_policy:
-        condition: always
-    working_dir: /fed-flow/app/fl_training/runner
-    depends_on:
-      - server
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 2 -o True -s no_edge_fake_splitting -e False & python3 /fed-flow/energy/service.py & wait -n"
-
-  client4:
-    volumes:
-      - ./config.py:/fed-flow/app/config/config.py
-    image: fed-flow:test
-    hostname: client4
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-        reservations:
-          cpus: '1'
-      restart_policy:
-        condition: always
-    working_dir: /fed-flow/app/fl_training/runner
-    depends_on:
-      - server
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 3 -o True -s no_edge_fake_splitting -e False & python3 /fed-flow/energy/service.py & wait -n"
+#  client3:
+#    volumes:
+#      - ./config.py:/fed-flow/app/config/config.py
+#    image: fed-flow:test
+#    hostname: client3
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '0.5'
+#        reservations:
+#          cpus: '0.5'
+#      restart_policy:
+#        condition: always
+#    working_dir: /fed-flow/app/fl_training/runner
+#    depends_on:
+#      - edge1
+#    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 2 -o True -s random_splitting -e True & python3 /fed-flow/energy/service.py & wait -n"
+#
+#  client4:
+#    volumes:
+#      - ./config.py:/fed-flow/app/config/config.py
+#    image: fed-flow:test
+#    hostname: client4
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '0.5'
+#        reservations:
+#          cpus: '0.5'
+#      restart_policy:
+#        condition: always
+#    working_dir: /fed-flow/app/fl_training/runner
+#    depends_on:
+#      - edge1
+#    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 3 -o True -s random_splitting -e True & python3 /fed-flow/energy/service.py & wait -n"

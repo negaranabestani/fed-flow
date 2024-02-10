@@ -96,8 +96,6 @@ class FedEdgeServer(FedEdgeServerInterface):
 
                 # fed_logger.info(client_ip + " sending gradients")
 
-
-
         fed_logger.info(str(client_ip) + ' offloading training end')
 
     def backward_propagation(self, outputs, client_ip, inputs):
@@ -159,8 +157,14 @@ class FedEdgeServer(FedEdgeServerInterface):
         """
         cweights = self.recv_msg(self.socks[socket.gethostbyname(client_ip)],
                                  message_utils.local_weights_client_to_edge)[1]
-
-        msg = [message_utils.local_weights_edge_to_server + "_" + client_ip, cweights]
+        sp = self.split_layers[config.CLIENTS_CONFIG[client_ip]][0]
+        if sp != (config.model_len - 1):
+            w_local = model_utils.concat_weights(self.uninet.state_dict(), cweights,
+                                                 self.nets[client_ip].state_dict())
+        else:
+            w_local = cweights
+            # print("------------------------"+str(eweights[i]))
+        msg = [message_utils.local_weights_edge_to_server + "_" + client_ip, w_local]
         self.central_server_socks[client_ip].send_msg(self.central_server_socks[client_ip].sock, msg)
 
     def energy(self, client_ips):
@@ -189,12 +193,14 @@ class FedEdgeServer(FedEdgeServerInterface):
 
         msg = [message_utils.initial_global_weights_edge_to_client, weights]
         self.scatter(msg)
+
     def no_offload_global_weights(self):
         weights = \
             self.central_server_communicator.recv_msg(self.central_server_communicator.sock,
                                                       message_utils.initial_global_weights_server_to_edge)[1]
         msg = [message_utils.initial_global_weights_edge_to_client, weights]
         self.scatter(msg)
+
     def thread_offload_training(self, client_ip):
         self.forward_propagation(client_ip)
         self.local_weights(client_ip)

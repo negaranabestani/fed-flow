@@ -22,8 +22,7 @@ model_name = ''
 model_size = 1.28
 model_flops = 32.902
 total_flops = 8488192
-# split_layer = [[6, 6], [6, 6],[6, 6], [6, 6]]  # Initial split layers
-split_layer = [6, 6, 6, 6]  # Initial split layers
+split_layer = [[6, 6], [6, 6]]  # Initial split layers
 model_len = 7
 
 # FL training configration
@@ -54,14 +53,14 @@ SERVER_ADDR = 'server'
 SERVER_PORT = 5002
 EDGESERVER_PORT = {'edge1': 5001}
 
-K = 4  # Number of devices
+K = 2  # Number of devices
 G = 1  # Number of groups
-S = 4
+S = 1
 
 # Unique clients order
 HOST2IP = {}
-CLIENTS_CONFIG = {'client1': 0, 'client2': 1,'client3': 2,'client4': 3}
+CLIENTS_CONFIG = {'client1': 0, 'client2': 1}
 EDGE_SERVER_LIST = ['edge1']
-CLIENTS_LIST = ['client1', 'client2','client3','client4']
-EDGE_MAP = {'edge1': ['client1', 'client2','client3','client4']}
-CLIENT_MAP = {'client1': 'edge1', 'client2': 'edge1','client3': 'edge1','client4': 'edge1'}
+CLIENTS_LIST = ['client1', 'client2']
+EDGE_MAP = {'edge1': ['client1', 'client2']}
+CLIENT_MAP = {'client1': 'edge1', 'client2': 'edge1'}

@@ -177,7 +177,7 @@ class FedServer(FedServerInterface):
         for i in range(len(eweights)):
             sp = self.split_layers[i]
             if self.edge_based:
-                sp=self.split_layers[i][0]
+                sp = self.split_layers[i][0]
             if sp != (config.model_len - 1):
                 w_local = (
                     model_utils.concat_weights(self.uninet.state_dict(), eweights[i],

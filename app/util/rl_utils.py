@@ -47,7 +47,7 @@ def draw_scatter(x, y, title, xlabel, ylabel, savePath, pictureName, saveFig=Tru
         if not os.path.exists(savePath):
             os.makedirs(savePath)
         plt.savefig(os.path.join(savePath, pictureName))
-    #plt.show()
+    # plt.show()
     plt.close()
 
 
@@ -112,7 +112,7 @@ def allPossibleSplitting(modelLen, deviceNumber):
             if int(item[j]) > int(item[j + 1]):
                 isOk = False
         if isOk:
-            result.append([int(int(item)/10),int(int(item)%10)])
+            result.append([int(int(item) / 10), int(int(item) % 10)])
     return result
 
 
