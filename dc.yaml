@@ -5,7 +5,7 @@ services:
       - ./config.py:/fed-flow/app/config/config.py
       - ./../../../Graphs(1-5):/Graphs
       - ./../../../agent:/app/agent
-    image: fed-flow:test1
+    image: fed-flow:test
     ports:
       - "5002:5002"
     hostname: server
@@ -23,7 +23,7 @@ services:
   edge1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: fed-flow:test1
+    image: fed-flow:test
     ports:
       - "5001:5001"
     hostname: edge1
@@ -42,7 +42,7 @@ services:
   client1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: fed-flow:test1
+    image: fed-flow:test
     hostname: client1
     deploy:
       resources:
@@ -55,12 +55,12 @@ services:
     working_dir: /fed-flow/app/fl_training/runner
     depends_on:
       - edge1
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s random_splitting -e True & python3 /fed-flow/energy/service.py & wait -n"
+    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s random_splitting -e True & wait -n"
 
 #  client2:
 #    volumes:
 #      - ./config.py:/fed-flow/app/config/config.py
-#    image: fed-flow:test1
+#    image: fed-flow:test
 #    hostname: client2
 #    deploy:
 #      resources:
@@ -78,7 +78,7 @@ services:
 #  client3:
 #    volumes:
 #      - ./config.py:/fed-flow/app/config/config.py
-#    image: fed-flow:test1
+#    image: fed-flow:test
 #    hostname: client3
 #    deploy:
 #      resources:
@@ -96,7 +96,7 @@ services:
 #  client4:
 #    volumes:
 #      - ./config.py:/fed-flow/app/config/config.py
-#    image: fed-flow:test1
+#    image: fed-flow:test
 #    hostname: client4
 #    deploy:
 #      resources:
@@ -114,7 +114,7 @@ services:
 #  client5:
 #    volumes:
 #      - ./config.py:/fed-flow/app/config/config.py
-#    image: fed-flow:test1
+#    image: fed-flow:test
 #    hostname: client5
 #    deploy:
 #      resources:

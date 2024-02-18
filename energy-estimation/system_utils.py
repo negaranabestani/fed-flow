@@ -19,9 +19,9 @@ def estimate_computation_energy(process):
         return 0
     max_energy_per_core = ((process.system_energy / 1000) / process.cpu_u_count)
     utilization = process.cpu_utilization / process.cpu_u_count
-    energy_logger.info(Fore.RED+f"{utilization}")
+    # energy_logger.info(Fore.RED+f"{utilization}")
     computation_time = process.comp_time
-    energy_logger.info(Fore.LIGHTYELLOW_EX + f"{process.cpu_u_count}")
+    # energy_logger.info(Fore.LIGHTYELLOW_EX + f"{process.cpu_u_count}")
     return max_energy_per_core * utilization * computation_time
 
 
@@ -71,9 +71,12 @@ def get_TX():
 
 
 def computation_start(process):
+    config.process.end_comp = False
     process.start_comp_time = time.time()
+    # energy_logger.info(f": {process.end_comp}")
     while not process.end_comp:
         process.cpu_u_count += 1
+        # energy_logger.info(f"count: {process.cpu_u_count}")
         process.cpu_utilization += get_cpu_u(process.pid)
         process.system_energy += float(get_power_now())
 

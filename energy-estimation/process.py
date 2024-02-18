@@ -12,4 +12,4 @@ class Process:
         self.transmission_bits = 0
         self.transmission_time = 0
         self.comp_time = 0
-        self.bandwidth=0
+        self.bandwidth = 0

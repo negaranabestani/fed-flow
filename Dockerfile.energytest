@@ -6,6 +6,7 @@ ADD requirements.txt /fed-flow/
 RUN pip install fastapi
 RUN pip install uvicorn
 RUN pip install requests
+RUN pip install colorama
 #COPY fedflow-env/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY comm.py /fed-flow/
 #COPY app /fed-flow/app

@@ -7,7 +7,7 @@ simnet = False
 dataset_name = ''
 home = sys.path[0].split('fed-flow')[0] + 'fed-flow' + "/app"
 dataset_path = home + '/dataset/data/'
-N = 50000  # data length
+N = 400  # data length
 
 # Model configration
 model_cfg = {
