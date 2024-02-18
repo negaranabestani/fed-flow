@@ -35,7 +35,7 @@ async def root():
 async def computation_start():
     x = threading.Thread(target=system_utils.computation_start, args=(config.process,))
     x.start()
-    energy_logger.info("computation started")
+    # energy_logger.info("computation started")
     # asyncio.create_task(system_utils.computation_start(config.process))
 
 
