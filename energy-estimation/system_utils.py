@@ -2,6 +2,9 @@ import logging
 import random
 import subprocess
 import time
+
+from colorama import Fore
+
 import config
 from config import energy_logger
 
@@ -16,7 +19,9 @@ def estimate_computation_energy(process):
         return 0
     max_energy_per_core = ((process.system_energy / 1000) / process.cpu_u_count)
     utilization = process.cpu_utilization / process.cpu_u_count
+    energy_logger.info(Fore.RED+f"{utilization}")
     computation_time = process.comp_time
+    energy_logger.info(Fore.LIGHTYELLOW_EX + f"{process.cpu_u_count}")
     return max_energy_per_core * utilization * computation_time
 
 
@@ -50,6 +55,7 @@ def get_cpu_u(pid):
     result = data.stdout.split("\n")
     target = result[7].split(" ")
     # print(target[len(target)-8])
+    # energy_logger.info(Fore.LIGHTYELLOW_EX + f"{float(target[len(target) - 8])}")
     return float(target[len(target) - 8])
 
 

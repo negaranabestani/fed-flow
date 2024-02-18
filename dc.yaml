@@ -3,18 +3,18 @@ services:
   server:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-      - ./../../../Graphs(1-1-1):/Graphs
+      - ./../../../Graphs(1-5):/Graphs
       - ./../../../agent:/app/agent
-    image: fed-flow:test
+    image: fed-flow:test1
     ports:
       - "5002:5002"
     hostname: server
     deploy:
       resources:
         limits:
-          cpus: '2'
+          cpus: '3.5'
         reservations:
-          cpus: '2'
+          cpus: '3.5'
       restart_policy:
         condition: always
     working_dir: /fed-flow/app/fl_training/runner
@@ -23,16 +23,16 @@ services:
   edge1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: fed-flow:test
+    image: fed-flow:test1
     ports:
       - "5001:5001"
     hostname: edge1
     deploy:
       resources:
         limits:
-          cpus: '2'
+          cpus: '2.5'
         reservations:
-          cpus: '2'
+          cpus: '2.5'
       restart_policy:
         condition: always
     working_dir: /fed-flow/app/fl_training/runner
@@ -42,14 +42,14 @@ services:
   client1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: fed-flow:test
+    image: fed-flow:test1
     hostname: client1
     deploy:
       resources:
         limits:
-          cpus: '3'
+          cpus: '2'
         reservations:
-          cpus: '3'
+          cpus: '2'
       restart_policy:
         condition: always
     working_dir: /fed-flow/app/fl_training/runner
@@ -60,7 +60,7 @@ services:
 #  client2:
 #    volumes:
 #      - ./config.py:/fed-flow/app/config/config.py
-#    image: fed-flow:test
+#    image: fed-flow:test1
 #    hostname: client2
 #    deploy:
 #      resources:
@@ -74,11 +74,11 @@ services:
 #    depends_on:
 #      - edge1
 #    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 1 -o True -s random_splitting -e True & python3 /fed-flow/energy/service.py & wait -n"
-
+#
 #  client3:
 #    volumes:
 #      - ./config.py:/fed-flow/app/config/config.py
-#    image: fed-flow:test
+#    image: fed-flow:test1
 #    hostname: client3
 #    deploy:
 #      resources:
@@ -96,7 +96,7 @@ services:
 #  client4:
 #    volumes:
 #      - ./config.py:/fed-flow/app/config/config.py
-#    image: fed-flow:test
+#    image: fed-flow:test1
 #    hostname: client4
 #    deploy:
 #      resources:
@@ -110,3 +110,21 @@ services:
 #    depends_on:
 #      - edge1
 #    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 3 -o True -s random_splitting -e True & python3 /fed-flow/energy/service.py & wait -n"
+#
+#  client5:
+#    volumes:
+#      - ./config.py:/fed-flow/app/config/config.py
+#    image: fed-flow:test1
+#    hostname: client5
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '0.5'
+#        reservations:
+#          cpus: '0.5'
+#      restart_policy:
+#        condition: always
+#    working_dir: /fed-flow/app/fl_training/runner
+#    depends_on:
+#      - edge1
+#    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 4 -o True -s random_splitting -e True & python3 /fed-flow/energy/service.py & wait -n"
