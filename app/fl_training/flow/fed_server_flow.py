@@ -79,8 +79,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
         fed_logger.info("state: " + str(state))
 
         fed_logger.info("splitting")
-        # server.split_layers = all_splitting[r]
-        server.split(state, options)
+        server.split_layers = all_splitting[r]
         # server.split(state, options)
         server.split_layer()
 

@@ -17,12 +17,14 @@ def init_p(process, pid, simulate_network):
 def estimate_computation_energy(process):
     if process.cpu_u_count == 0:
         return 0
-    max_energy_per_core = ((process.system_energy / 1000) / process.cpu_u_count)
-    utilization = process.cpu_utilization / process.cpu_u_count
+    # max_energy_per_core = ((process.system_energy) / process.cpu_u_count)
+    cores = int(subprocess.run("nproc", capture_output=True, shell=True, text=True).stdout)
+    # energy_logger.info(f"cpus: {cores}")
+    utilization = process.cpu_utilization / process.cpu_u_count / 100 / cores
     # energy_logger.info(Fore.RED+f"{utilization}")
     computation_time = process.comp_time
     # energy_logger.info(Fore.LIGHTYELLOW_EX + f"{process.cpu_u_count}")
-    return max_energy_per_core * utilization * computation_time
+    return get_power_now() * utilization * computation_time
 
 
 def estimate_communication_energy(config, process):
@@ -78,7 +80,7 @@ def computation_start(process):
         process.cpu_u_count += 1
         # energy_logger.info(f"count: {process.cpu_u_count}")
         process.cpu_utilization += get_cpu_u(process.pid)
-        process.system_energy += float(get_power_now())
+        # process.system_energy += float(get_power_now())
 
 
 def pcpuc(process, config):
