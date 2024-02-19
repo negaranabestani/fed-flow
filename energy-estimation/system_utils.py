@@ -56,9 +56,21 @@ def get_cpu_u(pid):
     # print("result"+str(data.stdout))
     result = data.stdout.split("\n")
     target = result[7].split(" ")
-    # print(target[len(target)-8])
+    i = 0
+    j = len(target) - 1
+    ut = ''
+    while j != 0:
+        st = target[j]
+        if st != '':
+            i += 1
+        if i == 4:
+            ut = st
+            break
+        j -= 1
+    energy_logger.info(ut)
     # energy_logger.info(Fore.LIGHTYELLOW_EX + f"{float(target[len(target) - 8])}")
-    return float(target[len(target) - 8])
+    # return float(target[len(target) - 8])
+    return float(ut)
 
 
 def get_power_now():
