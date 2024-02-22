@@ -3,7 +3,7 @@ services:
   server:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-      - ./../../../Graphs(1-1-1-l):/Graphs
+      - ./../../../Graphs:/Graphs
       - ./../../../agent:/app/agent
     image: fed-flow:test
     ports:
@@ -30,9 +30,9 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.5'
+          cpus: '0.5'
         reservations:
-          cpus: '2.5'
+          cpus: '0.5'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner

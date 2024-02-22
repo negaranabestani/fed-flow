@@ -55,6 +55,17 @@ class vgg(NNModel):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.constant_(m.bias, 0)
 
+    def forward(self, x):
+        if len(self.features) > 0:
+            out = self.features(x)
+        else:
+            out = x
+        if len(self.denses) > 0:
+            out = out.view(out.size(0), -1)
+            out = self.denses(out)
+
+        return out
+
     def get_config(self):
         return [('C', 3, 32, 3, 32 * 32 * 32, 32 * 32 * 32 * 3 * 3 * 3), ('M', 32, 32, 2, 32 * 16 * 16, 0),
                 ('C', 32, 64, 3, 64 * 16 * 16, 64 * 16 * 16 * 3 * 3 * 32), ('M', 64, 64, 2, 64 * 8 * 8, 0),

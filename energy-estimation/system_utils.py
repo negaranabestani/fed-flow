@@ -44,7 +44,7 @@ def end_transmission(process, bits):
         process.transmission_time += bits / b
     else:
         # b = bits / (process.end_tr_time - process.start_tr_time)
-        # energy_logger.info((f"bandwidth: {b}, {bits}"))
+        energy_logger.info((f"bandwidth: {bits/(process.end_tr_time - process.start_tr_time)}, {bits}"))
         # # b *= 0.01
         # process.transmission_time += bits / b
         process.transmission_time += (process.end_tr_time - process.start_tr_time)
