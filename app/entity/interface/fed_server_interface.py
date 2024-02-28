@@ -119,12 +119,12 @@ class FedServerInterface(ABC, Communicator):
         pass
 
     def scatter(self, msg, is_weight=False):
-        list = config.CLIENTS_LIST
+        list1 = config.CLIENTS_LIST
         if self.edge_based:
-            list = config.EDGE_SERVER_LIST
+            list1 = config.EDGE_SERVER_LIST
 
-        for i in list:
-            self.send_msg(i, msg, is_weight)
+        for i in list1:
+            self.send_msg(i, msg, is_weight, i)
 
     def concat_norm(self, ttpi, offloading):
         ttpi_order = []

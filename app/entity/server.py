@@ -1,4 +1,3 @@
-import socket
 import sys
 import threading
 import time
@@ -141,17 +140,20 @@ class FedServer(FedServerInterface):
     def _thread_edge_training(self, client_ip):
         # iteration = int((test_config.N / (test_config.K * test_config.B)))
         flag = self.recv_msg(config.CLIENT_MAP[client_ip],
-                             message_utils.local_iteration_flag_edge_to_server + "_" + client_ip)[1]
+                             message_utils.local_iteration_flag_edge_to_server + "_" + client_ip,
+                             url=config.CLIENT_MAP[client_ip])[1]
         while flag:
             flag = self.recv_msg(config.CLIENT_MAP[client_ip],
-                                 message_utils.local_iteration_flag_edge_to_server + "_" + client_ip)[1]
+                                 message_utils.local_iteration_flag_edge_to_server + "_" + client_ip,
+                                 url=config.CLIENT_MAP[client_ip])[1]
             if not flag:
                 break
             # fed_logger.info(client_ip + " receiving local activations")
             if self.split_layers[config.CLIENTS_CONFIG[client_ip]][1] < len(
                     self.uninet.cfg) - 1:
                 msg = self.recv_msg(config.CLIENT_MAP[client_ip],
-                                    message_utils.local_activations_edge_to_server + "_" + client_ip, True)
+                                    message_utils.local_activations_edge_to_server + "_" + client_ip, True,
+                                    config.CLIENT_MAP[client_ip])
                 smashed_layers = msg[1]
                 labels = msg[2]
                 # fed_logger.info(client_ip + " training model")
@@ -166,7 +168,7 @@ class FedServer(FedServerInterface):
                 # Send gradients to edge
                 # fed_logger.info(client_ip + " sending gradients")
                 msg = [message_utils.server_gradients_server_to_edge + str(client_ip), inputs.grad]
-                self.send_msg(config.CLIENT_MAP[client_ip], msg, True)
+                self.send_msg(config.CLIENT_MAP[client_ip], msg, True, config.CLIENT_MAP[client_ip])
 
         fed_logger.info(str(client_ip) + ' offloading training end')
         return 'Finish'
@@ -244,7 +246,8 @@ class FedServer(FedServerInterface):
         eweights = []
         for i in range(len(client_ips)):
             msg = self.recv_msg(config.CLIENT_MAP[client_ips[i]],
-                                message_utils.local_weights_edge_to_server + "_" + client_ips[i], True)
+                                message_utils.local_weights_edge_to_server + "_" + client_ips[i], True,
+                                config.CLIENT_MAP[client_ips[i]])
             self.tt_end[client_ips[i]] = time.time()
             eweights.append(msg[1])
         return eweights
@@ -257,7 +260,7 @@ class FedServer(FedServerInterface):
         for edge in list(config.EDGE_SERVER_LIST):
             # fed_logger.info(f"receiving {socket.gethostbyaddr(edge)[0]}")
             msg = self.recv_msg(edge,
-                                message_utils.energy_tt_edge_to_server)
+                                message_utils.energy_tt_edge_to_server, edge)
             for i in range(len(config.EDGE_MAP[edge])):
                 energy_tt_list.append(msg[1][i])
         # fed_logger.info("ettlist:" + str(energy_tt_list))
