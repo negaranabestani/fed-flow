@@ -13,7 +13,7 @@ from app.config.config import *
 from app.util import data_utils, message_utils, energy_estimation
 from app.config.logger import fed_logger
 from app.entity.interface.fed_client_interface import FedClientInterface
-from colorama import Fore, Back, Style
+from colorama import Fore
 
 warnings.filterwarnings('ignore')
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -142,7 +142,6 @@ def run_no_edge(client: FedClientInterface, LR):
 
 
 def run(options_ins):
-    ip_address = socket.gethostname()
     fed_logger.info("start mode: " + str(options_ins.values()))
     index = config.index
     datalen = config.N / config.K
@@ -159,38 +158,33 @@ def run(options_ins):
     edge_based = options_ins.get('edgebased')
     if edge_based and offload:
         energy_estimation.init(os.getpid())
-        client_ins = Client(server_addr=config.CLIENT_MAP[ip_address],
-                            server_port=config.EDGESERVER_PORT[config.CLIENT_MAP[ip_address]],
-                            datalen=datalen, model_name=options_ins.get('model'),
+        client_ins = Client(server=config.CLIENT_MAP[config.CLIENTS_INDEX[index]], datalen=datalen,
+                            model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
-                            offload=offload)
+                            )
         run_edge_based(client_ins, LR)
     elif edge_based and not offload:
         energy_estimation.init(os.getpid())
-        client_ins = Client(server_addr=config.CLIENT_MAP[ip_address],
-                            server_port=config.EDGESERVER_PORT[config.CLIENT_MAP[ip_address]],
+        client_ins = Client(server=config.CLIENT_MAP[config.CLIENTS_INDEX[index]],
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
-                            offload=offload)
+                            )
         run_no_offload_edge(client_ins, LR)
-    elif offload :
+    elif offload:
         energy_estimation.init(os.getpid())
-        client_ins = Client(server_addr=config.SERVER_ADDR,
-                            server_port=config.SERVER_PORT,
+        client_ins = Client(server=config.SERVER_ADDR,
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
-                            offload=offload)
+                            )
         run_no_edge_offload(client_ins, LR)
     else:
         energy_estimation.init(os.getpid())
-        client_ins = Client(server_addr=config.SERVER_ADDR,
-                            server_port=config.SERVER_PORT,
+        client_ins = Client(server=config.SERVER_ADDR,
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
-                            offload=offload)
+                            )
         run_no_edge(client_ins, LR)
-    fed_logger.info("5")
-    client_ins.recv_msg(client_ins.sock, message_utils.finish)
+    client_ins.recv_msg(message_utils.finish)
 
 # parser = argparse.ArgumentParser()
 # options = input_utils.parse_argument(parser)

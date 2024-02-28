@@ -79,8 +79,8 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
         fed_logger.info("state: " + str(state))
 
         fed_logger.info("splitting")
-        server.split_layers = all_splitting[r]
-        # server.split(state, options)
+        # server.split_layers = all_splitting[r]
+        server.split(state, options)
         server.split_layer()
 
         if r > 49:
@@ -216,19 +216,19 @@ def run(options_ins):
     offload = options_ins.get('offload')
     edge_based = options_ins.get('edgebased')
     if edge_based and offload:
-        server_ins = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
+        server_ins = FedServer(options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)
         run_edge_based_offload(server_ins, LR, options_ins)
     elif edge_based and not offload:
-        server_ins = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
+        server_ins = FedServer(options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)
         run_edge_based_no_offload(server_ins, LR, options_ins)
     elif offload and not edge_based:
-        server_ins = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
+        server_ins = FedServer(options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)
         run_no_edge_offload(server_ins, LR, options_ins)
     else:
-        server_ins = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options_ins.get('model'),
+        server_ins = FedServer(options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)
         run_no_edge(server_ins, options_ins)
     msg = [message_utils.finish, True]

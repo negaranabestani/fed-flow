@@ -44,7 +44,7 @@ def end_transmission(process, bits):
         process.transmission_time += bits / b
     else:
         # b = bits / (process.end_tr_time - process.start_tr_time)
-        energy_logger.info((f"bandwidth: {bits/(process.end_tr_time - process.start_tr_time)}, {bits}"))
+        # energy_logger.info((f"bandwidth: {bits/(process.end_tr_time - process.start_tr_time)}, {bits}"))
         # # b *= 0.01
         # process.transmission_time += bits / b
         process.transmission_time += (process.end_tr_time - process.start_tr_time)
@@ -67,7 +67,7 @@ def get_cpu_u(pid):
             ut = st
             break
         j -= 1
-    energy_logger.info(ut)
+    # energy_logger.info(ut)
     # energy_logger.info(Fore.LIGHTYELLOW_EX + f"{float(target[len(target) - 8])}")
     # return float(target[len(target) - 8])
     return float(ut)

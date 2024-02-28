@@ -7,8 +7,13 @@ simnet = False
 dataset_name = ''
 home = sys.path[0].split('fed-flow')[0] + 'fed-flow' + "/app"
 dataset_path = home + '/dataset/data/'
-N = 500  # data length
-
+N = 100  # data length
+# mq_url = "sparrow.rmq.cloudamqp.com"
+mq_port = 5672
+mq_url = "amqps://zjqlucqg:4jgfSGbaVompLrpTF97b1yYys-0y3IbZ@cow.rmq2.cloudamqp.com/zjqlucqg"
+# mq_user = "unspbyvk:"
+# mq_pass = "n4ZRJKnuQ2vYn1foWUe_E1UgMEXYZUSX"
+cluster = "fed-flow"
 # Model configration
 model_cfg = {
     # (Type, in_channels, out_channels, kernel_size, out_size(c_out*h*w), flops(c_out*h*w*k*k*c_in))
@@ -59,8 +64,10 @@ S = 1
 
 # Unique clients order
 HOST2IP = {}
+CLIENTS_INDEX = {0: 'client1'}
 CLIENTS_CONFIG = {'client1': 0}
 EDGE_SERVER_LIST = ['edge1']
+EDGE_SERVER_CONFIG = {0: 'edge1'}
 CLIENTS_LIST = ['client1']
 EDGE_MAP = {'edge1': ['client1']}
 CLIENT_MAP = {'client1': 'edge1'}

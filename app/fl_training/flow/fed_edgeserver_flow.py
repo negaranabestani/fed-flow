@@ -12,11 +12,11 @@ from app.entity.interface.fed_edgeserver_interface import FedEdgeServerInterface
 
 
 def run_offload(server: FedEdgeServerInterface, LR):
-    server.initialize(config.split_layer, LR, config.EDGE_MAP[server.ip])
+    server.initialize(config.split_layer, LR, config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]])
 
     res = {}
     res['trianing_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
-    client_ips = config.EDGE_MAP[server.ip]
+    client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
     for r in range(config.R):
         fed_logger.info('====================================>')
         fed_logger.info('==> Round {:} Start'.format(r))
@@ -49,7 +49,7 @@ def run_offload(server: FedEdgeServerInterface, LR):
 def run_no_offload(server: FedEdgeServerInterface, LR):
     res = {}
     res['trianing_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
-    client_ips = config.EDGE_MAP[server.ip]
+    client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
     for r in range(config.R):
         fed_logger.info('====================================>')
         fed_logger.info('==> Round {:} Start'.format(r))
@@ -76,20 +76,18 @@ def run_no_offload(server: FedEdgeServerInterface, LR):
 
 def run(options_ins):
     LR = config.LR
-    ip_address = socket.gethostname()
     fed_logger.info('Preparing Sever.')
     offload = options_ins.get('offload')
     if offload:
-        edge_server_ins = FedEdgeServer(ip_address, config.EDGESERVER_PORT[ip_address], config.SERVER_ADDR,
-                                        config.SERVER_PORT, options_ins.get('model'),
-                                        options_ins.get('dataset'), offload=offload)
+        edge_server_ins = FedEdgeServer(
+            options_ins.get('model'),
+            options_ins.get('dataset'), offload=offload)
         fed_logger.info("start mode: " + str(options_ins.values()))
         run_offload(edge_server_ins, LR)
     else:
-        edge_server_ins = FedEdgeServer(ip_address, config.EDGESERVER_PORT[ip_address], config.SERVER_ADDR,
-                                        config.SERVER_PORT, options_ins.get('model'),
+        edge_server_ins = FedEdgeServer(options_ins.get('model'),
                                         options_ins.get('dataset'), offload=offload)
         fed_logger.info("start mode: " + str(options_ins.values()))
         run_no_offload(edge_server_ins, LR)
-    msg = edge_server_ins.recv_msg(edge_server_ins.central_server_communicator.sock, message_utils.finish)
+    msg = edge_server_ins.recv_msg(config.SERVER_ADDR, message_utils.finish)
     edge_server_ins.scatter(msg)
