@@ -184,7 +184,7 @@ def run(options_ins):
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             )
         run_no_edge(client_ins, LR)
-    client_ins.recv_msg(message_utils.finish)
+    client_ins.recv_msg(config.CLIENTS_INDEX[index], message_utils.finish)
 
 # parser = argparse.ArgumentParser()
 # options = input_utils.parse_argument(parser)
