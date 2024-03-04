@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from colorama import Fore
 
 from app.entity.interface.fed_server_interface import FedServerInterface
 from app.fl_method import fl_method_parser
@@ -259,8 +260,8 @@ class FedServer(FedServerInterface):
         energy_tt_list = []
         for edge in list(config.EDGE_SERVER_LIST):
             # fed_logger.info(f"receiving {socket.gethostbyaddr(edge)[0]}")
-            msg = self.recv_msg(edge,
-                                message_utils.energy_tt_edge_to_server, edge)
+            msg = self.recv_msg(exchange=edge,
+                                expect_msg_type=message_utils.energy_tt_edge_to_server, url=edge)
             for i in range(len(config.EDGE_MAP[edge])):
                 energy_tt_list.append(msg[1][i])
         # fed_logger.info("ettlist:" + str(energy_tt_list))

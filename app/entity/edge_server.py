@@ -2,6 +2,7 @@ import socket
 import threading
 import time
 
+from colorama import Fore
 from torch import optim, nn
 
 from app.config import config
@@ -51,8 +52,8 @@ class FedEdgeServer(FedEdgeServerInterface):
                 if not flag:
                     break
                 # fed_logger.info(client_ip + " receiving local activations")
-                msg = self.recv_msg(client_ip,
-                                    message_utils.local_activations_client_to_edge, True)
+                msg = self.recv_msg(exchange=client_ip,
+                                    expect_msg_type=message_utils.local_activations_client_to_edge, is_weight=True)
                 smashed_layers = msg[1]
                 labels = msg[2]
                 # fed_logger.info(client_ip + " training model forward")
@@ -67,14 +68,15 @@ class FedEdgeServer(FedEdgeServerInterface):
                     if self.split_layers[config.CLIENTS_CONFIG[client_ip]][1] < model_utils.get_unit_model_len() - 1:
                         msg = [message_utils.local_activations_edge_to_server + "_" + client_ip, outputs.cpu(),
                                targets.cpu()]
-                        self.send_msg(config.EDGE_SERVER_CONFIG[config.index], msg, True)
-                        msg = self.recv_msg(config.EDGE_SERVER_CONFIG[config.index],
-                                            message_utils.server_gradients_server_to_edge + client_ip, True)
+                        self.send_msg(exchange=config.EDGE_SERVER_CONFIG[config.index], msg=msg, is_weight=True)
+                        msg = self.recv_msg(exchange=config.EDGE_SERVER_CONFIG[config.index],
+                                            expect_msg_type=message_utils.server_gradients_server_to_edge + client_ip,
+                                            is_weight=True)
                         gradients = msg[1].to(self.device)
                         # fed_logger.info(client_ip + " training model backward")
                         outputs.backward(gradients)
                         msg = [message_utils.server_gradients_edge_to_client + client_ip, inputs.grad]
-                        self.send_msg(client_ip, msg, True)
+                        self.send_msg(exchange=client_ip, msg=msg, is_weight=True)
                     else:
                         outputs = self.nets[client_ip](inputs)
                         loss = self.criterion(outputs, targets)
@@ -82,17 +84,18 @@ class FedEdgeServer(FedEdgeServerInterface):
                         if self.optimizers.keys().__contains__(client_ip):
                             self.optimizers[client_ip].step()
                         msg = [message_utils.server_gradients_edge_to_client + client_ip, inputs.grad]
-                        self.send_msg(client_ip, msg, True)
+                        self.send_msg(exchange=client_ip, msg=msg, is_weight=True)
                 else:
                     msg = [message_utils.local_activations_edge_to_server + "_" + client_ip, inputs.cpu(),
                            targets.cpu()]
-                    self.send_msg(config.EDGE_SERVER_CONFIG[config.index], msg, True)
+                    self.send_msg(exchange=config.EDGE_SERVER_CONFIG[config.index], msg=msg, is_weight=True)
                     # fed_logger.info(client_ip + " edge receiving gradients")
-                    msg = self.recv_msg(config.EDGE_SERVER_CONFIG[config.index],
-                                        message_utils.server_gradients_server_to_edge + client_ip)
+                    msg = self.recv_msg(exchange=config.EDGE_SERVER_CONFIG[config.index],
+                                        expect_msg_type=message_utils.server_gradients_server_to_edge + client_ip,
+                                        is_weight=True)
                     # fed_logger.info(client_ip + " edge received gradients")
                     msg = [message_utils.server_gradients_edge_to_client + client_ip, msg[1]]
-                    self.send_msg(client_ip, msg, True)
+                    self.send_msg(exchange=client_ip, msg=msg, is_weight=True)
 
                 # fed_logger.info(client_ip + " sending gradients")
 
@@ -143,6 +146,7 @@ class FedEdgeServer(FedEdgeServerInterface):
         msg = self.recv_msg(config.EDGE_SERVER_CONFIG[config.index],
                             message_utils.split_layers)
         self.split_layers = msg[1]
+        fed_logger.info(Fore.LIGHTYELLOW_EX + f"{msg[1]}")
         msg = [message_utils.split_layers, self.split_layers]
         self.scatter(msg)
         # for i in range(len(self.split_layers)):

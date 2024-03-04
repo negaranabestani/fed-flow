@@ -64,8 +64,8 @@ class Client(FedClientInterface):
         receive global weights
         """
         weights = \
-        self.recv_msg(config.CLIENTS_INDEX[config.index], message_utils.initial_global_weights_edge_to_client,
-                      True)[1]
+            self.recv_msg(config.CLIENTS_INDEX[config.index], message_utils.initial_global_weights_edge_to_client,
+                          True)[1]
         pweights = model_utils.split_weights_client(weights, self.net.state_dict())
         self.net.load_state_dict(pweights)
 
@@ -120,15 +120,17 @@ class Client(FedClientInterface):
                 self.send_msg(config.CLIENTS_INDEX[config.index], flag)
                 end_transmission(data_utils.sizeofmessage(flag))
                 msg = [message_utils.local_activations_client_to_edge, outputs.cpu(), targets.cpu()]
+                # fed_logger.info(f"{msg[1], msg[2]}")
                 start_transmission()
-                self.send_msg(config.CLIENTS_INDEX[config.index], msg, True)
+                self.send_msg(exchange=config.CLIENTS_INDEX[config.index], msg=msg, is_weight=True)
                 end_transmission(data_utils.sizeofmessage(msg))
 
                 # Wait receiving edge server gradients
                 # fed_logger.info("receiving gradients")
                 gradients = \
-                    self.recv_msg(config.CLIENTS_INDEX[config.index],
-                                  message_utils.server_gradients_edge_to_client + socket.gethostname(),True)[
+                    self.recv_msg(exchange=config.CLIENTS_INDEX[config.index],
+                                  expect_msg_type=message_utils.server_gradients_edge_to_client + socket.gethostname(),
+                                  is_weight=True)[
                         1].to(
                         self.device)
                 # fed_logger.info("received gradients")

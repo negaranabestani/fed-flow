@@ -10,9 +10,11 @@ dataset_path = home + '/dataset/data/'
 N = 100  # data length
 # mq_url = "sparrow.rmq.cloudamqp.com"
 mq_port = 5672
-mq_url = "amqp://user:password@"
-# mq_user = "unspbyvk:"
-# mq_pass = "n4ZRJKnuQ2vYn1foWUe_E1UgMEXYZUSX"
+mq_url = "amqp://user:password@broker:5672/%2F"
+mq_host = "broker"
+mq_user = "user"
+mq_pass = "password"
+mq_vh = "/"
 cluster = "fed-flow"
 # Model configration
 model_cfg = {

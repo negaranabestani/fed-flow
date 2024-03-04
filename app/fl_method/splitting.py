@@ -95,6 +95,10 @@ def randomSplitting(state, labels):
         op2 = random.randint(op1, config.model_len - 1)
         splittingArray.append([op1, op2])
     return splittingArray
+    # split_list = []
+    # for i in range(config.K):
+    #     split_list.append([1, 1])
+    # return split_list
 
 
 # FedMec: which empirically deploys the convolutional layers of a DNN on the device-side while
