@@ -3,7 +3,6 @@ import io
 import json
 import logging
 import pickle
-from retry import retry
 
 import pika
 import torch
@@ -37,7 +36,6 @@ def pack(msg, is_weight=False):
 
 
 def unpack(msg, is_weight=False):
-
     if is_weight:
         fl = []
         ll = pickle.loads(msg)
@@ -48,103 +46,131 @@ def unpack(msg, is_weight=False):
         return json.loads(msg)
 
 
-def close_connection(ch, c):
-    if ch.is_open:
-        ch.close()
-    if c.is_open:
-        c.close()
-
-
 class Communicator(object):
     def __init__(self):
-        pass
+        self.connection = None
+        self.channel = None
+        self.url = None
+        self.should_close = False
+
+    def close_connection(self, ch, c):
+        self.should_close = True
+        if ch.is_open:
+            ch.close()
+        if c.is_open:
+            c.close()
+        while not (c.is_closed and ch.close):
+            pass
+        self.should_close = False
+        self.connection = None
+        self.channel = None
 
     def open_connection(self, url=None):
+        fed_logger.info("connecting")
         if url is None:
             url = config.mq_host
+        url = config.mq_host
+        self.url = url
+
         # url = config.mq_host
 
         # else:
         #     url = config.mq_host + url + ':5672/%2F'
         # url = config.mq_url
         # fed_logger.info(Fore.RED + f"{url}")
-        ch = None
-        c = None
-        while ch is None:
-            ch, c = self.connect(url)
-            if c is not None and ch is None:
-                c.close()
-        return ch, c
+        while self.channel is None:
+            self.connect(url)
+        # self.connection = self.connect(url)
+        # self.connection.ioloop.start()
+        fed_logger.info("started")
 
     def connect(self, url):
-        connection = None
         try:
 
-            connection = pika.BlockingConnection(pika.ConnectionParameters(host=url, port=config.mq_port,
-                                                                           credentials=pika.PlainCredentials(
-                                                                               username=config.mq_user,
-                                                                               password=config.mq_pass), heartbeat=0)
-                                                 )
-            return connection.channel(), connection
-        except Exception:
-            return None, connection
+            # connection = pika.SelectConnection(on_close_callback=self.reconnect,
+            #                                    on_open_callback=self.on_connection_open,
+            #                                    parameters=pika.ConnectionParameters(host=url, port=config.mq_port,
+            #                                                                         credentials=pika.PlainCredentials(
+            #                                                                             username=config.mq_user,
+            #                                                                             password=config.mq_pass))
+            #                                    )
+            self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=url, port=config.mq_port,
+                                                                                credentials=pika.PlainCredentials(
+                                                                                    username=config.mq_user,
+                                                                                    password=config.mq_pass)))
+
+            self.channel = self.connection.channel()
+
+        except Exception as e:
+            pass
+
+    def on_connection_open(self, _unused_connection):
+        fed_logger.info("opened")
+        self.channel = self.connection.channel()
+        fed_logger.info("connected")
+
+    def reconnect(self, _unused_connection: pika.BlockingConnection):
+        if not self.should_close and (_unused_connection.is_closed):
+            self.open_connection(self.url)
 
     def send_msg(self, exchange, msg, is_weight=False, url=None):
 
         bb = pack(msg, is_weight)
-        channel, con = self.open_connection(url)
+        self.open_connection(url)
+        fed_logger.info(Fore.YELLOW + f"published {msg[0]}")
         try:
-            channel.exchange_declare(exchange=config.cluster + "." + exchange, durable=True, exchange_type='topic')
-            channel.queue_declare(queue=config.cluster + "." + msg[0] + "." + exchange, auto_delete=True)
-            channel.queue_bind(exchange=config.cluster + "." + exchange,
-                               queue=config.cluster + "." + msg[0] + "." + exchange,
-                               routing_key=config.cluster + "." + msg[0] + "." + exchange)
-            channel.basic_publish(exchange=config.cluster + "." + exchange,
-                                  routing_key=config.cluster + "." + msg[0] + "." + exchange,
-                                  body=bb)
-            close_connection(channel, con)
+            self.channel.exchange_declare(exchange=config.cluster + "." + exchange, durable=True, exchange_type='topic')
+            self.channel.queue_declare(queue=config.cluster + "." + msg[0] + "." + exchange, auto_delete=True)
+            self.channel.queue_bind(exchange=config.cluster + "." + exchange,
+                                    queue=config.cluster + "." + msg[0] + "." + exchange,
+                                    routing_key=config.cluster + "." + msg[0] + "." + exchange)
+            self.channel.basic_publish(exchange=config.cluster + "." + exchange,
+                                       routing_key=config.cluster + "." + msg[0] + "." + exchange,
+                                       body=bb)
+            self.close_connection(self.channel, self.connection)
         except Exception as e:
-            fed_logger.error(e)
-            close_connection(channel, con)
+            # fed_logger.error(e)
+            self.close_connection(self.channel, self.connection)
             self.send_msg(exchange, msg, is_weight, url)
 
-    @retry(pika.exceptions.AMQPConnectionError, delay=5, jitter=(1, 3))
+    # @retry(pika.exceptions.AMQPConnectionError, delay=5, jitter=(1, 3))
     def recv_msg(self, exchange, expect_msg_type=None, is_weight=False, url=None):
+        self.open_connection(url)
         fed_logger.info(Fore.YELLOW + f"receiving {expect_msg_type}")
-        channel, con = self.open_connection(url)
         res = None
         try:
-            channel.queue_declare(queue=config.cluster + "." + expect_msg_type + "." + exchange, auto_delete=True)
-            channel.queue_declare(queue=config.cluster + "." + expect_msg_type + "." + exchange, auto_delete=True)
-            channel.exchange_declare(exchange=config.cluster + "." + exchange, durable=True, exchange_type='topic')
-            channel.queue_bind(exchange=config.cluster + "." + exchange,
-                               queue=config.cluster + "." + expect_msg_type + "." + exchange,
-                               routing_key=config.cluster + "." + expect_msg_type + "." + exchange)
+            self.channel.queue_declare(queue=config.cluster + "." + expect_msg_type + "." + exchange, auto_delete=True)
+            self.channel.queue_declare(queue=config.cluster + "." + expect_msg_type + "." + exchange, auto_delete=True)
+            self.channel.exchange_declare(exchange=config.cluster + "." + exchange, durable=True, exchange_type='topic')
+            self.channel.queue_bind(exchange=config.cluster + "." + exchange,
+                                    queue=config.cluster + "." + expect_msg_type + "." + exchange,
+                                    routing_key=config.cluster + "." + expect_msg_type + "." + exchange)
             fed_logger.info(Fore.YELLOW + f"connected {expect_msg_type}")
 
             while True:
-                for method_frame, properties, body in channel.consume(queue=
-                                                                      config.cluster + "." + expect_msg_type + "." + exchange,
-                                                                      auto_ack=True):
+                self.reconnect(self.connection)
+                for method_frame, properties, body in self.channel.consume(queue=
+                                                                           config.cluster + "." + expect_msg_type + "." + exchange,
+                                                                           auto_ack=True):
                     fed_logger.info(Fore.YELLOW + f"loop {expect_msg_type}")
-                    # channel.basic_ack(method_frame.delivery_tag)
+                    # self.channel.basic_ack(method_frame.delivery_tag)
                     if method_frame.delivery_tag == 1:
                         msg = [expect_msg_type]
                         res = unpack(body, is_weight)
                         msg.extend(res)
-                        channel.stop_consuming()
-                        # channel.cancel()
-                        close_connection(channel, con)
-                        fed_logger.info(Fore.CYAN+f"{msg[0]},{type(msg[1])},{is_weight}")
+                        self.channel.stop_consuming()
+                        # self.channel.cancel()
+                        self.close_connection(self.channel, self.connection)
+                        fed_logger.info(Fore.CYAN + f"{msg[0]},{type(msg[1])},{is_weight}")
                         return msg
         except Exception as e:
             fed_logger.info(Fore.CYAN + f"{expect_msg_type},{e},{is_weight}")
             if res is None:
-                channel.stop_consuming()
-                # channel.cancel()
-                close_connection(channel, con)
+                self.channel.stop_consuming()
+                # self.channel.cancel()
+                self.close_connection(self.channel, self.connection)
                 return self.recv_msg(exchange, expect_msg_type, is_weight, url)
-            close_connection(channel, con)
+            self.close_connection(self.channel, self.connection)
             msg = [expect_msg_type]
             msg.extend(res)
             return msg
