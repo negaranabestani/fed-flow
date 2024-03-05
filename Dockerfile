@@ -1,3 +1,4 @@
+FROM python:3.10
 RUN pip install absl-py==1.4.0
 RUN pip install amqp==5.2.0
 RUN pip install annotated-types==0.6.0
@@ -54,68 +55,71 @@ RUN pip install msgpack-numpy==0.4.8
 RUN pip install networkx==3.1
 RUN pip install numpy==1.25.2
 RUN pip install nvidia-cublas-cu11==11.10.3.66
-RUN pip nvidia-cuda-cupti-cu11==11.7.101
-RUN pip nvidia-cuda-nvrtc-cu11==11.7.99
-RUN pip nvidia-cuda-runtime-cu11==11.7.99
-RUN pip nvidia-cudnn-cu11==8.5.0.96
-RUN pip nvidia-cufft-cu11==10.9.0.58
-RUN pip nvidia-curand-cu11==10.2.10.91
-RUN pip nvidia-cusolver-cu11==11.4.0.1
-RUN pip nvidia-cusparse-cu11==11.7.4.91
-RUN pip nvidia-nccl-cu11==2.14.3
-RUN pip nvidia-nvtx-cu11==11.7.91
-RUN pip oauthlib==3.2.2
-RUN pip opt-einsum==3.3.0
-RUN pip packaging==23.1
-RUN pip pandas==2.1.0
-RUN pip pathtools==0.1.2
-RUN pip pika==1.3.2
-RUN pip Pillow==10.0.0
-RUN pip plotly==5.17.0
-RUN pip pluggy==1.3.0
-RUN pip protobuf==3.19.0
-RUN pip psutil==5.9.6
-RUN pip py==1.11.0
-RUN pip pyasn1==0.5.0
-RUN pip pyasn1-modules==0.3.0
-RUN pip pydantic==2.5.1
-RUN pip pydantic_core==2.14.3
-RUN pip pyparsing==3.0.9
-RUN pip pyRAPL==0.2.3.1
-RUN pip pytest==7.4.0
-RUN pip python-dateutil==2.8.2
-RUN pip pytz==2023.3.post1
-RUN pip PyYAML==6.0.1
-RUN pip requests==2.31.0
-RUN pip requests-oauthlib==1.3.1
-RUN pip retry==0.9.2
-RUN pip rsa==4.9
-RUN pip scipy==1.11.2
-RUN pip sentry-sdk==1.32.0
-RUN pip setproctitle==1.3.3
-RUN pip six==1.16.0
-RUN pip smmap==5.0.1
-RUN pip sniffio==1.3.0
-RUN pip starlette==0.27.0
-RUN pip sympy==1.12
-RUN pip tenacity==8.2.3
-RUN pip tensorboard==2.8.0
-RUN pip tensorboard-data-server==0.6.1
-RUN pip tensorboard-plugin-wit==1.8.1
-RUN pip tensordict==0.1.2
-RUN pip termcolor==2.3.0
-RUN pip tf-estimator-nightly==2.8.0.dev2021122109
-RUN pip tomli==2.0.1
-RUN pip torch==2.0.1
-RUN pip torchrl==0.1.1
-RUN pip torchvision==0.15.2
-RUN pip tqdm==4.66.1
-RUN pip triton==2.0.0
-RUN pip typing_extensions==4.8.0
-RUN pip tzdata==2023.3
-RUN pip urllib3==1.26.17
-RUN pip uvicorn==0.24.0.post1
-RUN pip vine==5.1.0
-RUN pip wandb==0.15.12
-RUN pip Werkzeug==2.3.7
-RUN pip wrapt==1.15.0
+RUN pip install nvidia-cuda-cupti-cu11==11.7.101
+RUN pip install nvidia-cuda-nvrtc-cu11==11.7.99
+RUN pip install nvidia-cuda-runtime-cu11==11.7.99
+RUN pip install nvidia-cudnn-cu11==8.5.0.96
+RUN pip install nvidia-cufft-cu11==10.9.0.58
+RUN pip install nvidia-curand-cu11==10.2.10.91
+RUN pip install nvidia-cusolver-cu11==11.4.0.1
+RUN pip install nvidia-cusparse-cu11==11.7.4.91
+RUN pip install nvidia-nccl-cu11==2.14.3
+RUN pip install nvidia-nvtx-cu11==11.7.91
+RUN pip install oauthlib==3.2.2
+RUN pip install opt-einsum==3.3.0
+RUN pip install packaging==23.1
+RUN pip install pandas==2.1.0
+RUN pip install pathtools==0.1.2
+RUN pip install pika==1.3.2
+RUN pip install Pillow==10.0.0
+RUN pip install plotly==5.17.0
+RUN pip install pluggy==1.3.0
+RUN pip install protobuf==3.19.0
+RUN pip install psutil==5.9.6
+RUN pip install py==1.11.0
+RUN pip install pyasn1==0.5.0
+RUN pip install pyasn1-modules==0.3.0
+RUN pip install pydantic==2.5.1
+RUN pip install pydantic_core==2.14.3
+RUN pip install pyparsing==3.0.9
+RUN pip install pyRAPL==0.2.3.1
+RUN pip install pytest==7.4.0
+RUN pip install python-dateutil==2.8.2
+RUN pip install pytz==2023.3.post1
+RUN pip install PyYAML==6.0.1
+RUN pip install requests==2.31.0
+RUN pip install requests-oauthlib==1.3.1
+RUN pip install retry==0.9.2
+RUN pip install rsa==4.9
+RUN pip install scipy==1.11.2
+RUN pip install sentry-sdk==1.32.0
+RUN pip install setproctitle==1.3.3
+RUN pip install six==1.16.0
+RUN pip install smmap==5.0.1
+RUN pip install sniffio==1.3.0
+RUN pip install starlette==0.27.0
+RUN pip install sympy==1.12
+RUN pip install tenacity==8.2.3
+RUN pip install tensorboard==2.8.0
+RUN pip install tensorboard-data-server==0.6.1
+RUN pip install tensorboard-plugin-wit==1.8.1
+RUN pip install tensordict==0.1.2
+RUN pip install termcolor==2.3.0
+RUN pip install tf-estimator-nightly==2.8.0.dev2021122109
+RUN pip install tomli==2.0.1
+RUN pip install torch==2.0.1
+RUN pip install torchrl==0.1.1
+RUN pip install torchvision==0.15.2
+RUN pip install tqdm==4.66.1
+RUN pip install triton==2.0.0
+RUN pip install typing_extensions==4.8.0
+RUN pip install tzdata==2023.3
+RUN pip install urllib3==1.26.17
+RUN pip install uvicorn==0.24.0.post1
+RUN pip install vine==5.1.0
+RUN pip install wandb==0.15.12
+RUN pip install Werkzeug==2.3.7
+RUN pip install wrapt==1.15.0
+COPY app /fed-flow/app
+COPY energy-estimation /fed-flow/energy
+WORKDIR /fed-flow/
