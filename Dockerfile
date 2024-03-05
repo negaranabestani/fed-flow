@@ -54,68 +54,68 @@ RUN pip install msgpack-numpy==0.4.8
 RUN pip install networkx==3.1
 RUN pip install numpy==1.25.2
 RUN pip install nvidia-cublas-cu11==11.10.3.66
-nvidia-cuda-cupti-cu11==11.7.101
-nvidia-cuda-nvrtc-cu11==11.7.99
-nvidia-cuda-runtime-cu11==11.7.99
-nvidia-cudnn-cu11==8.5.0.96
-nvidia-cufft-cu11==10.9.0.58
-nvidia-curand-cu11==10.2.10.91
-nvidia-cusolver-cu11==11.4.0.1
-nvidia-cusparse-cu11==11.7.4.91
-nvidia-nccl-cu11==2.14.3
-nvidia-nvtx-cu11==11.7.91
-oauthlib==3.2.2
-opt-einsum==3.3.0
-packaging==23.1
-pandas==2.1.0
-pathtools==0.1.2
-pika==1.3.2
-Pillow==10.0.0
-plotly==5.17.0
-pluggy==1.3.0
-protobuf==3.19.0
-psutil==5.9.6
-py==1.11.0
-pyasn1==0.5.0
-pyasn1-modules==0.3.0
-pydantic==2.5.1
-pydantic_core==2.14.3
-pyparsing==3.0.9
-pyRAPL==0.2.3.1
-pytest==7.4.0
-python-dateutil==2.8.2
-pytz==2023.3.post1
-PyYAML==6.0.1
-requests==2.31.0
-requests-oauthlib==1.3.1
-retry==0.9.2
-rsa==4.9
-scipy==1.11.2
-sentry-sdk==1.32.0
-setproctitle==1.3.3
-six==1.16.0
-smmap==5.0.1
-sniffio==1.3.0
-starlette==0.27.0
-sympy==1.12
-tenacity==8.2.3
-tensorboard==2.8.0
-tensorboard-data-server==0.6.1
-tensorboard-plugin-wit==1.8.1
-tensordict==0.1.2
-termcolor==2.3.0
-tf-estimator-nightly==2.8.0.dev2021122109
-tomli==2.0.1
-torch==2.0.1
-torchrl==0.1.1
-torchvision==0.15.2
-tqdm==4.66.1
-triton==2.0.0
-typing_extensions==4.8.0
-tzdata==2023.3
-urllib3==1.26.17
-uvicorn==0.24.0.post1
-vine==5.1.0
-wandb==0.15.12
-Werkzeug==2.3.7
-wrapt==1.15.0
+RUN pip nvidia-cuda-cupti-cu11==11.7.101
+RUN pip nvidia-cuda-nvrtc-cu11==11.7.99
+RUN pip nvidia-cuda-runtime-cu11==11.7.99
+RUN pip nvidia-cudnn-cu11==8.5.0.96
+RUN pip nvidia-cufft-cu11==10.9.0.58
+RUN pip nvidia-curand-cu11==10.2.10.91
+RUN pip nvidia-cusolver-cu11==11.4.0.1
+RUN pip nvidia-cusparse-cu11==11.7.4.91
+RUN pip nvidia-nccl-cu11==2.14.3
+RUN pip nvidia-nvtx-cu11==11.7.91
+RUN pip oauthlib==3.2.2
+RUN pip opt-einsum==3.3.0
+RUN pip packaging==23.1
+RUN pip pandas==2.1.0
+RUN pip pathtools==0.1.2
+RUN pip pika==1.3.2
+RUN pip Pillow==10.0.0
+RUN pip plotly==5.17.0
+RUN pip pluggy==1.3.0
+RUN pip protobuf==3.19.0
+RUN pip psutil==5.9.6
+RUN pip py==1.11.0
+RUN pip pyasn1==0.5.0
+RUN pip pyasn1-modules==0.3.0
+RUN pip pydantic==2.5.1
+RUN pip pydantic_core==2.14.3
+RUN pip pyparsing==3.0.9
+RUN pip pyRAPL==0.2.3.1
+RUN pip pytest==7.4.0
+RUN pip python-dateutil==2.8.2
+RUN pip pytz==2023.3.post1
+RUN pip PyYAML==6.0.1
+RUN pip requests==2.31.0
+RUN pip requests-oauthlib==1.3.1
+RUN pip retry==0.9.2
+RUN pip rsa==4.9
+RUN pip scipy==1.11.2
+RUN pip sentry-sdk==1.32.0
+RUN pip setproctitle==1.3.3
+RUN pip six==1.16.0
+RUN pip smmap==5.0.1
+RUN pip sniffio==1.3.0
+RUN pip starlette==0.27.0
+RUN pip sympy==1.12
+RUN pip tenacity==8.2.3
+RUN pip tensorboard==2.8.0
+RUN pip tensorboard-data-server==0.6.1
+RUN pip tensorboard-plugin-wit==1.8.1
+RUN pip tensordict==0.1.2
+RUN pip termcolor==2.3.0
+RUN pip tf-estimator-nightly==2.8.0.dev2021122109
+RUN pip tomli==2.0.1
+RUN pip torch==2.0.1
+RUN pip torchrl==0.1.1
+RUN pip torchvision==0.15.2
+RUN pip tqdm==4.66.1
+RUN pip triton==2.0.0
+RUN pip typing_extensions==4.8.0
+RUN pip tzdata==2023.3
+RUN pip urllib3==1.26.17
+RUN pip uvicorn==0.24.0.post1
+RUN pip vine==5.1.0
+RUN pip wandb==0.15.12
+RUN pip Werkzeug==2.3.7
+RUN pip wrapt==1.15.0

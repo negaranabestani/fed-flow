@@ -89,5 +89,5 @@ def run(options_ins):
                                         options_ins.get('dataset'), offload=offload)
         fed_logger.info("start mode: " + str(options_ins.values()))
         run_no_offload(edge_server_ins, LR)
-    msg = edge_server_ins.recv_msg(config.SERVER_ADDR, message_utils.finish)
-    edge_server_ins.scatter(msg)
+    # msg = edge_server_ins.recv_msg(config.SERVER_ADDR, message_utils.finish)
+    # edge_server_ins.scatter(msg)

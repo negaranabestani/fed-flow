@@ -231,5 +231,5 @@ def run(options_ins):
         server_ins = FedServer(options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)
         run_no_edge(server_ins, options_ins)
-    msg = [message_utils.finish, True]
-    server_ins.scatter(msg)
+    # msg = [message_utils.finish, True]
+    # server_ins.scatter(msg)
