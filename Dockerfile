@@ -5,7 +5,6 @@ ADD requirements2.txt /
 ADD heavy-requirements.txt /
 RUN pip install -r requirements.txt
 RUN pip install -r requirements1.txt
-RUN pip install -r requirements2.txt
 #RUN pip install -r heavy-requirements.txt
 RUN pip install nvidia-cublas-cu11==11.10.3.66
 RUN pip install nvidia-cuda-cupti-cu11==11.7.101
@@ -26,6 +25,7 @@ RUN pip install torch==2.0.1
 RUN pip install torchrl==0.1.1
 RUN pip install torchvision==0.15.2
 RUN pip install tqdm==4.66.1
+RUN pip install -r requirements2.txt
 COPY app /fed-flow/app
 COPY energy-estimation /fed-flow/energy
 WORKDIR /fed-flow/
