@@ -1,9 +1,4 @@
-FROM python:3.10
-USER root
-ADD requirements.txt /fed-flow/
-COPY fedflow-env/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
-#RUN pip uninstall numpy -y
-#RUN pip install numpy==1.22.4
+FROM docker-reg.ir/fed-flow:base
 COPY app /fed-flow/app
 COPY energy-estimation /fed-flow/energy
 WORKDIR /fed-flow/

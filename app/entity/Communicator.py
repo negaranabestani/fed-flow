@@ -12,7 +12,6 @@ from app.config import config
 from app.config.logger import fed_logger
 
 logging.getLogger("pika").setLevel(logging.ERROR)
-global answer
 
 
 def call_back_recv_msg(ch, method, properties, body):
@@ -78,8 +77,12 @@ class Communicator(object):
         #     url = config.mq_host + url + ':5672/%2F'
         # url = config.mq_url
         # fed_logger.info(Fore.RED + f"{url}")
-        while self.channel is None:
+        while self.connection is None:
             self.connect(url)
+
+        while self.channel is None:
+            self.channel = self.connection.channel()
+            self.channel.basic_recover(requeue=True)
         # self.connection = self.connect(url)
         # self.connection.ioloop.start()
         fed_logger.info("started")
@@ -99,7 +102,6 @@ class Communicator(object):
                                                                                     username=config.mq_user,
                                                                                     password=config.mq_pass)))
 
-            self.channel = self.connection.channel()
 
         except Exception as e:
             pass
@@ -111,6 +113,8 @@ class Communicator(object):
 
     def reconnect(self, _unused_connection: pika.BlockingConnection):
         if not self.should_close and (_unused_connection.is_closed):
+            self.connection = None
+            self.channel = None
             self.open_connection(self.url)
 
     def send_msg(self, exchange, msg, is_weight=False, url=None):
@@ -120,7 +124,7 @@ class Communicator(object):
         fed_logger.info(Fore.YELLOW + f"published {msg[0]}")
         try:
             self.channel.exchange_declare(exchange=config.cluster + "." + exchange, durable=True, exchange_type='topic')
-            self.channel.queue_declare(queue=config.cluster + "." + msg[0] + "." + exchange, auto_delete=True)
+            self.channel.queue_declare(queue=config.cluster + "." + msg[0] + "." + exchange)
             self.channel.queue_bind(exchange=config.cluster + "." + exchange,
                                     queue=config.cluster + "." + msg[0] + "." + exchange,
                                     routing_key=config.cluster + "." + msg[0] + "." + exchange)
@@ -139,8 +143,7 @@ class Communicator(object):
         fed_logger.info(Fore.YELLOW + f"receiving {expect_msg_type}")
         res = None
         try:
-            self.channel.queue_declare(queue=config.cluster + "." + expect_msg_type + "." + exchange, auto_delete=True)
-            self.channel.queue_declare(queue=config.cluster + "." + expect_msg_type + "." + exchange, auto_delete=True)
+            self.channel.queue_declare(queue=config.cluster + "." + expect_msg_type + "." + exchange)
             self.channel.exchange_declare(exchange=config.cluster + "." + exchange, durable=True, exchange_type='topic')
             self.channel.queue_bind(exchange=config.cluster + "." + exchange,
                                     queue=config.cluster + "." + expect_msg_type + "." + exchange,
@@ -148,25 +151,43 @@ class Communicator(object):
             fed_logger.info(Fore.YELLOW + f"connected {expect_msg_type}")
 
             while True:
-                self.reconnect(self.connection)
-                for method_frame, properties, body in self.channel.consume(queue=
-                                                                           config.cluster + "." + expect_msg_type + "." + exchange,
-                                                                           auto_ack=True):
+                try:
+                    self.reconnect(self.connection)
+                    self.channel.queue_declare(queue=config.cluster + "." + expect_msg_type + "." + exchange)
+                    self.channel.exchange_declare(exchange=config.cluster + "." + exchange, durable=True,
+                                                  exchange_type='topic')
+                    self.channel.queue_bind(exchange=config.cluster + "." + exchange,
+                                            queue=config.cluster + "." + expect_msg_type + "." + exchange,
+                                            routing_key=config.cluster + "." + expect_msg_type + "." + exchange)
+
                     fed_logger.info(Fore.YELLOW + f"loop {expect_msg_type}")
-                    # self.channel.basic_ack(method_frame.delivery_tag)
-                    if method_frame.delivery_tag == 1:
+                    for method_frame, properties, body in self.channel.consume(queue=
+                                                                               config.cluster + "." + expect_msg_type + "." + exchange
+                                                                               ):
                         msg = [expect_msg_type]
                         res = unpack(body, is_weight)
                         msg.extend(res)
                         self.channel.stop_consuming()
                         # self.channel.cancel()
+                        self.channel.basic_ack(method_frame.delivery_tag)
+                        self.channel.queue_delete(queue=config.cluster + "." + expect_msg_type + "." + exchange)
                         self.close_connection(self.channel, self.connection)
-                        fed_logger.info(Fore.CYAN + f"{msg[0]},{type(msg[1])},{is_weight}")
+                        fed_logger.info(Fore.CYAN + f"received {msg[0]},{type(msg[1])},{is_weight}")
                         return msg
+                except Exception as e:
+                    fed_logger.info(Fore.RED + f"{expect_msg_type},{e},{is_weight}")
+                    fed_logger.info(Fore.RED + f"revived {expect_msg_type}")
+                    if res is None:
+                        continue
+                    self.close_connection(self.channel, self.connection)
+                    msg = [expect_msg_type]
+                    msg.extend(res)
+                    fed_logger.info(Fore.CYAN + f"received {msg[0]},{type(msg[1])},{is_weight}")
+                    return msg
         except Exception as e:
             fed_logger.info(Fore.CYAN + f"{expect_msg_type},{e},{is_weight}")
             if res is None:
-                self.channel.stop_consuming()
+                # self.channel.stop_consuming()
                 # self.channel.cancel()
                 self.close_connection(self.channel, self.connection)
                 return self.recv_msg(exchange, expect_msg_type, is_weight, url)

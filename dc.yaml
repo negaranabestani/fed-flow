@@ -5,7 +5,7 @@ services:
       - ./config.py:/fed-flow/app/config/config.py
       - ./../../../Graphs:/Graphs
       - ./../../../agent:/app/agent
-    image: fed-flow:test
+    image: docker-reg.ir/fed-flow:rabbitmq
     ports:
       - "5002:5002"
     hostname: server
@@ -28,7 +28,7 @@ services:
   edge1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: fed-flow:test
+    image: docker-reg.ir/fed-flow:rabbitmq
     ports:
       - "5001:5001"
     hostname: edge1
@@ -43,7 +43,7 @@ services:
   client1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: fed-flow:test
+    image: docker-reg.ir/fed-flow:rabbitmq
     hostname: client1
     deploy:
       restart_policy:
