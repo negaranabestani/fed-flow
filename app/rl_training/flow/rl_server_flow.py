@@ -17,8 +17,7 @@ def run(options):
     edge_based = options.get('edgebased')
     if edge_based:
 
-        server = FedServer(config.SERVER_ADDR, config.SERVER_PORT, options.get('model'),
-                           options.get('dataset'), offload, edge_based)
+        server = FedServer(options.get('model'), options.get('dataset'), offload, edge_based)
 
         agent = rl_utils.createAgent(agentType='tensorforce', fraction=0.8, timestepNum=config.max_timesteps,
                                      saveSummariesPath=None)
@@ -39,10 +38,11 @@ def run(options):
             fed_logger.info('====================================>')
             fed_logger.info(f'==> Episode {r} Start')
 
-            s_time = time.time()
 
             fed_logger.info("sending global weights")
             server.edge_offloading_global_weights()
+            s_time = time.time()
+
             # fed_logger.info("receiving client network info")
             # server.client_network(config.EDGE_SERVER_LIST)
             #

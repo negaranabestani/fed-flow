@@ -14,10 +14,7 @@ def run(options_ins):
     LR = config.LR
     ip_address = socket.gethostname()
     # fed_logger.info('Preparing Sever.')
-    edge_server = FedEdgeServer(ip_address, config.EDGESERVER_PORT[ip_address], config.SERVER_ADDR,
-                                config.SERVER_PORT, options_ins.get('model'),
-                                options_ins.get('dataset'),
-                                offload=options_ins.get('offload'))
+    edge_server = FedEdgeServer(options_ins.get('model'),options_ins.get('dataset'),offload=options_ins.get('offload'))
     # fed_logger.info("start mode: " + str(options_ins.values()))
 
     edge_server.initialize(config.split_layer, LR, config.EDGE_MAP[edge_server.ip])

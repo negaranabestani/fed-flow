@@ -2,14 +2,12 @@ import multiprocessing
 import os
 import socket
 import sys
-import pyRAPL
 import time
 
 sys.path.append('../../../')
 from app.entity.client import Client
-from app.config import config
 from app.config.config import *
-from app.util import data_utils, message_utils, rl_utils
+from app.util import data_utils, message_utils
 from app.config.logger import fed_logger
 from app.util.energy_estimation import *
 
@@ -37,11 +35,10 @@ def run(options_ins):
     edge_based = options_ins.get('edgebased')
 
     init(os.getpid())
-    client = Client(server_addr=config.CLIENT_MAP[ip_address],
-                    server_port=config.EDGESERVER_PORT[config.CLIENT_MAP[ip_address]],
+    client = Client(server=config.CLIENT_MAP[config.CLIENTS_INDEX[index]],
                     datalen=datalen, model_name=options_ins.get('model'),
                     dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
-                    offload=offload)
+                    )
 
     preTrain(client)
 
@@ -131,7 +128,6 @@ def preTrain(client):
     batch_num = data_size / config.B
 
     for i in range(5):
-
         fed_logger.info("Getting params...")
         client.edge_global_weights()
         fed_logger.info("test network")
