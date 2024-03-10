@@ -38,7 +38,6 @@ def run(options):
             fed_logger.info('====================================>')
             fed_logger.info(f'==> Episode {r} Start')
 
-
             fed_logger.info("sending global weights")
             server.edge_offloading_global_weights()
             s_time = time.time()
@@ -237,7 +236,7 @@ def run(options):
     server.scatter(msg)
 
 
-# this method return maxEnergy and classicFL training Time for reward tuning
+# this method return classicFL training Time and energy for reward tuning
 def preTrain(server, options) -> tuple[float, float]:
     classicFLTrainingTime = 0
     energyArray = []
@@ -252,7 +251,7 @@ def preTrain(server, options) -> tuple[float, float]:
         #     splittingArray = list()
         #     for char in splitting:
         #         splittingArray.append(int(char))
-        splittingArray = [6, 6]
+        splittingArray = [config.model_len - 1, config.model_len - 1]
         server.split_layers = [splittingArray * config.K]
 
         s_time = time.time()
@@ -305,14 +304,11 @@ def preTrain(server, options) -> tuple[float, float]:
         fed_logger.info(f"state: {state}")
         fed_logger.info(f"Energy of Action {offloading} : {state[0]}")
         fed_logger.info(f"Training Time of Action {offloading} : {state[1]}")
-
-        if offloading == [[config.model_len - 1, config.model_len - 1] * config.K]:
-            fed_logger.info("====================================>")
-            fed_logger.info("Classic FL Energy ")
-            fed_logger.info(f"Energy : {state[0]}")
-            fed_logger.info("Classic FL Training Time ")
-            fed_logger.info(f"TrainingTime : {state[1]}")
-            classicFLTrainingTime = state[1]
+        fed_logger.info("====================================>")
+        fed_logger.info("Classic FL Energy ")
+        fed_logger.info(f"Energy : {state[0]}")
+        fed_logger.info("Classic FL Training Time ")
+        fed_logger.info(f"TrainingTime : {state[1]}")
 
         energyArray.append(state[0])
         trainingTimeArray.append(state[1])
@@ -322,6 +318,7 @@ def preTrain(server, options) -> tuple[float, float]:
     for i in range(5):
         fed_logger.info(f"Try {i + 1}/5 :")
         fed_logger.info(f"==> classic-fl Energy : {energyArray[i]}")
+        fed_logger.info(f"==> classic-fl Training Time : {trainingTimeArray[i]}")
     fed_logger.info("====================================>")
 
     rl_utils.draw_hist(title='Energy',
@@ -342,10 +339,10 @@ def preTrain(server, options) -> tuple[float, float]:
     # fed_logger.info(f"==> Min Energy Splitting : {minEnergySplitting}")
     # fed_logger.info(f"==> Min Energy : {minEnergy}")
     fed_logger.info(f"==> Classic FL Energy : {sum(energyArray) / len(energyArray)}")
-    fed_logger.info(f"==> Classic FL Training Timme : {classicFLTrainingTime}")
+    fed_logger.info(f"==> Classic FL Training Timme : {sum(trainingTimeArray)/len(trainingTimeArray)}")
     fed_logger.info("====================================>")
 
-    return classicFLTrainingTime, sum(energyArray) / len(energyArray)
+    return sum(trainingTimeArray)/len(trainingTimeArray), sum(energyArray) / len(energyArray)
 
 
 def rl_flow(server, options, r, LR):

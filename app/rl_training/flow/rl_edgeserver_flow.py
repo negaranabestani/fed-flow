@@ -21,7 +21,7 @@ def run(options_ins):
 
     res = {}
     res['trianing_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
-    client_ips = config.EDGE_MAP[edge_server.ip]
+    client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
 
     preTrain(edge_server, options_ins, client_ips)
 
