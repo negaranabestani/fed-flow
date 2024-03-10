@@ -17,7 +17,7 @@ def run(options_ins):
     edge_server = FedEdgeServer(options_ins.get('model'),options_ins.get('dataset'),offload=options_ins.get('offload'))
     # fed_logger.info("start mode: " + str(options_ins.values()))
 
-    edge_server.initialize(config.split_layer, LR, config.EDGE_MAP[edge_server.ip])
+    edge_server.initialize(config.split_layer, LR, config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]])
 
     res = {}
     res['trianing_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
