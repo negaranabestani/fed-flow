@@ -15,7 +15,7 @@ services:
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py -o True -s random_splitting -e True"
+    entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_server_runner.py -o True -s edge_based_rl_splitting -e True"
   broker:
     volumes:
       - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
@@ -41,7 +41,7 @@ services:
     depends_on:
       - server
       - broker
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -i 0 -o True -s random_splitting -e True"
+    entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_edgeserver_runner.py -o True -i 0 -s edge_based_rl_splitting -e True"
   client1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
@@ -54,8 +54,7 @@ services:
     depends_on:
       - edge1
       - broker
-    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s random_splitting -e True & wait -n"
-
+    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/rl_training/runner/rl_client_runner.py -i 0 -o True -s random_splitting -e True & wait -n"
 #  client2:
 #    volumes:
 #      - ./config.py:/fed-flow/app/config/config.py

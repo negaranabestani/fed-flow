@@ -130,7 +130,7 @@ class Communicator(object):
                                     routing_key=config.cluster + "." + msg[0] + "." + exchange)
             self.channel.basic_publish(exchange=config.cluster + "." + exchange,
                                        routing_key=config.cluster + "." + msg[0] + "." + exchange,
-                                       body=bb)
+                                       body=bb,mandatory=True)
             self.close_connection(self.channel, self.connection)
         except Exception as e:
             # fed_logger.error(e)
