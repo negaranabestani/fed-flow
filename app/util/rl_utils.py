@@ -150,10 +150,10 @@ def createAgent(agentType, fraction, timestepNum, saveSummariesPath, environment
         raise Exception('Invalid config select from [ppo, ac, tensorforce, random]')
 
 
-def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[int, int]:
+def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[float, float]:
     """ It returns the offloading points for the given action ( op1 , op2 )"""
-    op1: int
-    op2: int  # Offloading points op1, op2
+    op1: float
+    op2: float  # Offloading points op1, op2
     workLoad = []
     model_state_flops = []
 

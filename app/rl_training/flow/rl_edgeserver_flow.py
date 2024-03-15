@@ -90,13 +90,12 @@ def run(options_ins):
 
             for i in range(len(client_ips)):
                 threads[client_ips[i]].join()
-
+            edge_server.energy(client_ips)
             if r > 49:
                 LR = config.LR * 0.1
-            edge_server.energy(client_ips)
 
-    msg = edge_server.recv_msg(edge_server.central_server_communicator.sock, message_utils.finish)
-    edge_server.scatter(msg)
+    # msg = edge_server.recv_msg(edge_server.central_server_communicator.sock, message_utils.finish)
+    # edge_server.scatter(msg)
 
 
 def preTrain(edge_server, options, client_ips):
@@ -126,5 +125,4 @@ def preTrain(edge_server, options, client_ips):
 
         for i in range(len(client_ips)):
             threads[client_ips[i]].join()
-
         edge_server.energy(client_ips)

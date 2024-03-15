@@ -40,7 +40,7 @@ services:
     depends_on:
       - server
       - broker
-    entrypoint: bash -c bash -c "python3 /fed-flow/app/rl_training/runner/rl_edgeserver_runner.py -o True -i 0 -s edge_based_rl_splitting -e True"
+    entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_edgeserver_runner.py -o True -i 0 -s edge_based_rl_splitting -e True"
   client1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
@@ -53,4 +53,4 @@ services:
     depends_on:
       - edge1
       - broker
-    entrypoint: bash -c bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/rl_training/runner/rl_client_runner.py -i 0 -o True -s random_splitting -e True & wait -n"
+    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/rl_training/runner/rl_client_runner.py -i 0 -o True -s random_splitting -e True & wait -n"

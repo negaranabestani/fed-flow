@@ -48,14 +48,8 @@ def run(options):
             # fed_logger.info("test edge servers network")
             # server.test_network(config.EDGE_SERVER_LIST)
 
-            fed_logger.info("preparing state...")
-            server.offloading = server.get_offloading(server.split_layers)
-
             fed_logger.info("clustering")
             server.cluster(options)
-
-            fed_logger.info("getting state")
-            offloading = server.split_layers
 
             fed_logger.info("splitting")
             randActions = np.random.uniform(low=0.0, high=1.0, size=(config.K * 2))
@@ -64,7 +58,14 @@ def run(options):
                 actions.append([rl_utils.actionToLayerEdgeBase([randActions[i], randActions[i + 1]])[0],
                                 rl_utils.actionToLayerEdgeBase([randActions[i], randActions[i + 1]])[1]])
 
-            server.split_layers = actions
+            server.split_layers = [[3,4]]
+            # fed_logger.info("preparing state...")
+            server.offloading = server.get_offloading(server.split_layers)
+
+            # fed_logger.info("getting state")
+            offloading = server.split_layers
+
+            fed_logger.info(f'ACTION : {actions}')
             server.split_layer()
 
             fed_logger.info("initializing server")
@@ -106,23 +107,33 @@ def run(options):
             fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
             for timestep in range(config.max_timesteps):
+                fed_logger.info('====================================>')
+                fed_logger.info(f'==> Timestep {timestep} Start')
+
                 floatAction = agent.act(states=state, evaluation=False)
                 actions = []
                 for i in range(0, len(floatAction), 2):
                     actions.append([rl_utils.actionToLayerEdgeBase([floatAction[i], floatAction[i + 1]])[0],
                                     rl_utils.actionToLayerEdgeBase([floatAction[i], floatAction[i + 1]])[1]])
 
+                fed_logger.info(f'ACTION : {actions}')
                 actionList.append(actions)
-                server.split_layers = actions
-
-                fed_logger.info('====================================>')
-                fed_logger.info(f'==> Timestep {timestep} Start')
+                server.split_layers = [[1,3]]
 
                 s_time = time.time()
                 energy_tt_list = rl_flow(server, options, r, LR)
 
                 e_time = time.time()
                 training_time = e_time - s_time
+
+                fed_logger.info("preparing state...")
+                server.offloading = server.get_offloading(server.split_layers)
+
+                fed_logger.info("clustering")
+                server.cluster(options)
+
+                fed_logger.info("getting state")
+                offloading = server.split_layers
 
                 state = server.edge_based_state(offloading, energy_tt_list, training_time)
 
@@ -339,10 +350,10 @@ def preTrain(server, options) -> tuple[float, float]:
     # fed_logger.info(f"==> Min Energy Splitting : {minEnergySplitting}")
     # fed_logger.info(f"==> Min Energy : {minEnergy}")
     fed_logger.info(f"==> Classic FL Energy : {sum(energyArray) / len(energyArray)}")
-    fed_logger.info(f"==> Classic FL Training Timme : {sum(trainingTimeArray)/len(trainingTimeArray)}")
+    fed_logger.info(f"==> Classic FL Training Timme : {sum(trainingTimeArray) / len(trainingTimeArray)}")
     fed_logger.info("====================================>")
 
-    return sum(trainingTimeArray)/len(trainingTimeArray), sum(energyArray) / len(energyArray)
+    return sum(trainingTimeArray) / len(trainingTimeArray), sum(energyArray) / len(energyArray)
 
 
 def rl_flow(server, options, r, LR):
@@ -385,3 +396,4 @@ def rl_flow(server, options, r, LR):
     server.call_aggregation(options, local_weights)
 
     energy_tt_list = server.e_energy_tt(config.CLIENTS_LIST)
+    return energy_tt_list
