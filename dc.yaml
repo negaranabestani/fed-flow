@@ -17,8 +17,6 @@ services:
     working_dir: /fed-flow/app/fl_training/runner
     entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_server_runner.py -o True -s edge_based_rl_splitting -e True"
   broker:
-    volumes:
-      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
     image: rabbitmq:3.13-management
     ports:
       - "5672:5672"

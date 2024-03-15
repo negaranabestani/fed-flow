@@ -121,21 +121,26 @@ class Communicator(object):
 
         bb = pack(msg, is_weight)
         self.open_connection(url)
-        fed_logger.info(Fore.YELLOW + f"published {msg[0]}")
-        try:
-            self.channel.exchange_declare(exchange=config.cluster + "." + exchange, durable=True, exchange_type='topic')
-            self.channel.queue_declare(queue=config.cluster + "." + msg[0] + "." + exchange)
-            self.channel.queue_bind(exchange=config.cluster + "." + exchange,
-                                    queue=config.cluster + "." + msg[0] + "." + exchange,
-                                    routing_key=config.cluster + "." + msg[0] + "." + exchange)
-            self.channel.basic_publish(exchange=config.cluster + "." + exchange,
-                                       routing_key=config.cluster + "." + msg[0] + "." + exchange,
-                                       body=bb,mandatory=True)
-            self.close_connection(self.channel, self.connection)
-        except Exception as e:
-            # fed_logger.error(e)
-            self.close_connection(self.channel, self.connection)
-            self.send_msg(exchange, msg, is_weight, url)
+        empty_queue = 0
+        while empty_queue == 0:
+            try:
+                self.channel.exchange_declare(exchange=config.cluster + "." + exchange, durable=True,
+                                              exchange_type='topic')
+                self.channel.queue_declare(queue=config.cluster + "." + msg[0] + "." + exchange)
+                queue = self.channel.queue_bind(exchange=config.cluster + "." + exchange,
+                                                queue=config.cluster + "." + msg[0] + "." + exchange,
+                                                routing_key=config.cluster + "." + msg[0] + "." + exchange)
+                self.channel.confirm_delivery()
+                self.channel.basic_publish(exchange=config.cluster + "." + exchange,
+                                           routing_key=config.cluster + "." + msg[0] + "." + exchange,
+                                           body=bb, mandatory=True)
+                fed_logger.info(Fore.YELLOW + f"published {msg[0]}")
+                empty_queue = queue.method.message_count
+                self.close_connection(self.channel, self.connection)
+            except Exception as e:
+                fed_logger.error(Fore.RED + str(e))
+                self.close_connection(self.channel, self.connection)
+                self.send_msg(exchange, msg, is_weight, url)
 
     # @retry(pika.exceptions.AMQPConnectionError, delay=5, jitter=(1, 3))
     def recv_msg(self, exchange, expect_msg_type=None, is_weight=False, url=None):
