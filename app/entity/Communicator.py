@@ -161,6 +161,7 @@ class Communicator(object):
                                             routing_key=config.cluster + "." + expect_msg_type + "." + exchange)
 
                     fed_logger.info(Fore.YELLOW + f"loop {expect_msg_type}")
+
                     for method_frame, properties, body in self.channel.consume(queue=
                                                                                config.cluster + "." + expect_msg_type + "." + exchange
                                                                                ):
