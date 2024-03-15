@@ -14,17 +14,14 @@ def run(options_ins):
     LR = config.LR
     ip_address = socket.gethostname()
     # fed_logger.info('Preparing Sever.')
-    edge_server = FedEdgeServer(ip_address, config.EDGESERVER_PORT[ip_address], config.SERVER_ADDR,
-                                config.SERVER_PORT, options_ins.get('model'),
-                                options_ins.get('dataset'),
-                                offload=options_ins.get('offload'))
+    edge_server = FedEdgeServer(options_ins.get('model'),options_ins.get('dataset'),offload=options_ins.get('offload'))
     # fed_logger.info("start mode: " + str(options_ins.values()))
 
-    edge_server.initialize(config.split_layer, LR, config.EDGE_MAP[edge_server.ip])
+    edge_server.initialize(config.split_layer, LR, config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]])
 
     res = {}
     res['trianing_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
-    client_ips = config.EDGE_MAP[edge_server.ip]
+    client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
 
     preTrain(edge_server, options_ins, client_ips)
 
@@ -93,13 +90,12 @@ def run(options_ins):
 
             for i in range(len(client_ips)):
                 threads[client_ips[i]].join()
-
+            edge_server.energy(client_ips)
             if r > 49:
                 LR = config.LR * 0.1
-            edge_server.energy(client_ips)
 
-    msg = edge_server.recv_msg(edge_server.central_server_communicator.sock, message_utils.finish)
-    edge_server.scatter(msg)
+    # msg = edge_server.recv_msg(edge_server.central_server_communicator.sock, message_utils.finish)
+    # edge_server.scatter(msg)
 
 
 def preTrain(edge_server, options, client_ips):
@@ -129,5 +125,4 @@ def preTrain(edge_server, options, client_ips):
 
         for i in range(len(client_ips)):
             threads[client_ips[i]].join()
-
         edge_server.energy(client_ips)
