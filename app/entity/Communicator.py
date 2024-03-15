@@ -134,13 +134,14 @@ class Communicator(object):
                 self.channel.basic_publish(exchange=config.cluster + "." + exchange,
                                            routing_key=config.cluster + "." + msg[0] + "." + exchange,
                                            body=bb, mandatory=True)
-                fed_logger.info(Fore.YELLOW + f"published {msg[0]}")
+
                 empty_queue = queue.method.message_count
                 self.close_connection(self.channel, self.connection)
             except Exception as e:
                 fed_logger.error(Fore.RED + str(e))
                 self.close_connection(self.channel, self.connection)
                 self.send_msg(exchange, msg, is_weight, url)
+        fed_logger.info(Fore.YELLOW + f"published {msg[0]}")
 
     # @retry(pika.exceptions.AMQPConnectionError, delay=5, jitter=(1, 3))
     def recv_msg(self, exchange, expect_msg_type=None, is_weight=False, url=None):
