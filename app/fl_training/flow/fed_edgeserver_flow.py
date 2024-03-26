@@ -18,8 +18,9 @@ def run_offload(server: FedEdgeServerInterface, LR):
     res['trianing_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
     client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
     for r in range(config.R):
+        config.current_round = r
         fed_logger.info('====================================>')
-        fed_logger.info('==> Round {:} Start'.format(r))
+        fed_logger.info('==> Round {:} Start'.format(config.current_round))
         fed_logger.info("receiving global weights")
         server.global_weights(client_ips)
         # fed_logger.info("test clients network")
@@ -51,6 +52,7 @@ def run_no_offload(server: FedEdgeServerInterface, LR):
     res['trianing_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
     client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
     for r in range(config.R):
+        config.current_round = r
         fed_logger.info('====================================>')
         fed_logger.info('==> Round {:} Start'.format(r))
         fed_logger.info("receiving global weights")

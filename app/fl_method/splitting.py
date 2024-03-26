@@ -97,7 +97,7 @@ def randomSplitting(state, labels):
     return splittingArray
     # split_list = []
     # for i in range(config.K):
-    #     split_list.append([1, 1])
+    #     split_list.append([2, 6])
     # return split_list
 
 
