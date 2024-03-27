@@ -255,7 +255,6 @@ def preTrain(server, options) -> tuple[float, float]:
     fed_logger.info(f'==> Pre Training Started')
 
     for j in range(5):
-        config.current_round=j
         fed_logger.info(f"Try {j + 1}/5")
         fed_logger.info('====================================>')
         # for splitting in splittingLayer:
