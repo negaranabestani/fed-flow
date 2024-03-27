@@ -11,7 +11,7 @@ from colorama import Fore
 from app.config import config
 from app.config.logger import fed_logger
 
-logging.getLogger("pika").setLevel(logging.ERROR)
+logging.getLogger("pika").setLevel(logging.FATAL)
 
 
 def call_back_recv_msg(ch, method, properties, body):
@@ -51,6 +51,7 @@ class Communicator(object):
         self.channel = None
         self.url = None
         self.should_close = False
+        self.send_bug = False
 
     def close_connection(self, ch, c):
         self.should_close = True
@@ -107,7 +108,7 @@ class Communicator(object):
                                                                                     password=config.mq_pass)))
 
 
-        except Exception:
+        except Exception as e:
             pass
 
     def on_connection_open(self, _unused_connection):
@@ -173,9 +174,12 @@ class Communicator(object):
                 # if q2 > 0:
                 # fed_logger.info(Fore.CYAN + f" {msg[0]},{q2}")
                 fed_logger.info(Fore.GREEN + f"published {msg[0]}")
+                if self.send_bug:
+                    fed_logger.info(Fore.RED + f"published {msg[0]}")
                 return
 
             except Exception as e:
+                self.send_bug = True
                 fed_logger.error(Fore.RED + f"{e}")
                 # self.close_connection(self.channel, self.connection)
                 continue

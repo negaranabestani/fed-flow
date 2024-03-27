@@ -33,7 +33,6 @@ def run(options):
         actionList = []
 
         classicFlTrainingTime, cl_energy = preTrain(server, options)
-
         for r in range(config.max_episodes):
             fed_logger.info('====================================>')
             fed_logger.info(f'==> Episode {r} Start')
@@ -66,7 +65,7 @@ def run(options):
             offloading = server.split_layers
 
             fed_logger.info(f'ACTION : {actions}')
-            server.split_layer()
+            server.edge_split_layer()
 
             fed_logger.info("initializing server")
             server.initialize(server.split_layers, LR)
@@ -256,6 +255,7 @@ def preTrain(server, options) -> tuple[float, float]:
     fed_logger.info(f'==> Pre Training Started')
 
     for j in range(5):
+        config.current_round=j
         fed_logger.info(f"Try {j + 1}/5")
         fed_logger.info('====================================>')
         # for splitting in splittingLayer:
@@ -287,7 +287,7 @@ def preTrain(server, options) -> tuple[float, float]:
 
         # fed_logger.info("splitting")
         # server.split(state, options)
-        server.split_layer()
+        server.edge_split_layer()
 
         # fed_logger.info("initializing server")
         server.initialize(server.split_layers, 0.1)
@@ -376,7 +376,7 @@ def rl_flow(server, options, r, LR):
 
     # fed_logger.info("splitting")
     # server.split(state, options)
-    server.split_layer()
+    server.edge_split_layer()
 
     if r > 49:
         LR = config.LR * 0.1

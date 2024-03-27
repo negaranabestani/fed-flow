@@ -53,7 +53,7 @@ def run(options_ins):
         # client.test_network()
 
         # fed_logger.info("receiving splitting info")
-        client.split_layer()
+        client.edge_split_layer()
         st = time.time()
 
         # fed_logger.info("initializing client")
@@ -88,7 +88,7 @@ def run(options_ins):
             # client.test_network()
 
             # fed_logger.info("receiving splitting info")
-            client.split_layer()
+            client.edge_split_layer()
             st = time.time()
 
             # fed_logger.info("initializing client")
@@ -132,7 +132,7 @@ def preTrain(client):
         client.edge_global_weights()
         fed_logger.info("test network")
         # client.test_network()
-        client.split_layer()
+        client.edge_split_layer()
         st = time.time()
 
         computation_start()
