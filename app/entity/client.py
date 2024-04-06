@@ -94,7 +94,7 @@ class Client(FedClientInterface):
         i = 0
         if self.split_layers[config.index][0] == model_utils.get_unit_model_len() - 1:
             fed_logger.info("no offloding training start----------------------------")
-            flag = [f'{message_utils.local_iteration_flag_client_to_edge()}_{i}', False]
+            flag = [f'{message_utils.local_iteration_flag_client_to_edge()}_{i}_{socket.gethostname()}', False]
             start_transmission()
             self.send_msg(config.CLIENTS_INDEX[config.index], flag)
             end_transmission(data_utils.sizeofmessage(flag))
@@ -112,7 +112,7 @@ class Client(FedClientInterface):
         if self.split_layers[config.index][0] < model_utils.get_unit_model_len() - 1:
             # flag = [message_utils.local_iteration_flag_client_to_edge(), True]
             fed_logger.info(f"offloding training start {self.split_layers}----------------------------")
-            flag = [f'{message_utils.local_iteration_flag_client_to_edge()}_{i}', True]
+            flag = [f'{message_utils.local_iteration_flag_client_to_edge()}_{i}_{socket.gethostname()}', True]
             start_transmission()
             self.send_msg(config.CLIENTS_INDEX[config.index], flag)
             end_transmission(data_utils.sizeofmessage(flag))
@@ -127,13 +127,13 @@ class Client(FedClientInterface):
                 outputs = self.net(inputs)
                 computation_end()
                 # fed_logger.info("sending local activations")
-                flag = [f'{message_utils.local_iteration_flag_client_to_edge()}_{i}', True]
+                flag = [f'{message_utils.local_iteration_flag_client_to_edge()}_{i}_{socket.gethostname()}', True]
                 start_transmission()
                 self.send_msg(config.CLIENTS_INDEX[config.index], flag)
                 end_transmission(data_utils.sizeofmessage(flag))
 
 
-                msg = [f'{message_utils.local_activations_client_to_edge()}_{i}', outputs.cpu(), targets.cpu()]
+                msg = [f'{message_utils.local_activations_client_to_edge()}_{i}_{socket.gethostname()}', outputs.cpu(), targets.cpu()]
                 # fed_logger.info(f"{msg[1], msg[2]}")
                 start_transmission()
                 self.send_msg(exchange=config.CLIENTS_INDEX[config.index], msg=msg, is_weight=True)
@@ -154,7 +154,7 @@ class Client(FedClientInterface):
                     self.optimizer.step()
                 computation_end()
                 i += 1
-            flag = [f'{message_utils.local_iteration_flag_client_to_edge()}_{i}', False]
+            flag = [f'{message_utils.local_iteration_flag_client_to_edge()}_{i}_{socket.gethostname()}', False]
             start_transmission()
             self.send_msg(config.CLIENTS_INDEX[config.index], flag)
             end_transmission(data_utils.sizeofmessage(flag))

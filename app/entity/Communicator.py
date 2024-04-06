@@ -62,8 +62,8 @@ class Communicator(object):
         while not (c.is_closed and ch.close):
             pass
         self.should_close = False
-        self.connection = None
-        self.channel = None
+        # self.connection = None
+        # self.channel = None
 
     def open_connection(self, url=None):
         fed_logger.info("connecting")
@@ -78,19 +78,22 @@ class Communicator(object):
         #     url = config.mq_host + url + ':5672/%2F'
         # url = config.mq_url
         # fed_logger.info(Fore.RED + f"{url}")
-        while self.connection is None:
-            self.connect(url)
+        connection = None
+        while connection is None:
+            connection = self.connect(url)
 
-        while self.channel is None:
+        channel = None
+        while channel is None:
             try:
-                self.channel = self.connection.channel()
-                self.channel.basic_recover(requeue=True)
-                self.channel.confirm_delivery()
+                channel = connection.channel()
+                channel.basic_recover(requeue=True)
+                channel.confirm_delivery()
             except Exception:
                 continue
         # self.connection = self.connect(url)
         # self.connection.ioloop.start()
         fed_logger.info("connection established")
+        return channel, connection
 
     def connect(self, url):
         try:
@@ -102,12 +105,10 @@ class Communicator(object):
             #                                                                             username=config.mq_user,
             #                                                                             password=config.mq_pass))
             #                                    )
-            self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=url, port=config.mq_port,
-                                                                                credentials=pika.PlainCredentials(
-                                                                                    username=config.mq_user,
-                                                                                    password=config.mq_pass)))
-
-
+            return pika.BlockingConnection(pika.ConnectionParameters(host=url, port=config.mq_port,
+                                                                     credentials=pika.PlainCredentials(
+                                                                         username=config.mq_user,
+                                                                         password=config.mq_pass)))
         except Exception as e:
             pass
 
@@ -116,35 +117,36 @@ class Communicator(object):
         self.channel = self.connection.channel()
         fed_logger.info("connected")
 
-    def reconnect(self, _unused_connection: pika.BlockingConnection):
+    def reconnect(self, _unused_connection: pika.BlockingConnection, channel):
         if _unused_connection is not None and not self.should_close and (_unused_connection.is_closed):
             self.connection = None
             self.channel = None
-            self.open_connection(self.url)
-        elif _unused_connection is not None and not (_unused_connection.is_closed) and self.channel.close:
-            self.channel = self.connection.channel()
-            self.channel.confirm_delivery()
+            return self.open_connection(self.url)
+        elif _unused_connection is not None and not (_unused_connection.is_closed) and channel.close:
+            channel = _unused_connection.channel()
+            channel.confirm_delivery()
+            return channel, _unused_connection
         else:
-            self.open_connection(self.url)
+            return self.open_connection(self.url)
 
-    def send_queue(self, exchange, msg):
+    def send_queue(self, exchange, msg, channel):
         queue = None
         while queue is None:
             try:
-                self.channel.exchange_declare(exchange=config.cluster + "." + exchange, durable=True,
-                                              exchange_type='topic')
-                queue = self.channel.queue_declare(queue=config.cluster + "." + msg[0] + "." + exchange)
-                self.channel.queue_bind(exchange=config.cluster + "." + exchange,
-                                        queue=config.cluster + "." + msg[0] + "." + exchange,
-                                        routing_key=config.cluster + "." + msg[0] + "." + exchange)
+                channel.exchange_declare(exchange=config.cluster + "." + exchange, durable=True,
+                                         exchange_type='topic')
+                queue = channel.queue_declare(queue=config.cluster + "." + msg[0] + "." + exchange)
+                channel.queue_bind(exchange=config.cluster + "." + exchange,
+                                   queue=config.cluster + "." + msg[0] + "." + exchange,
+                                   routing_key=config.cluster + "." + msg[0] + "." + exchange)
             except Exception:
                 continue
         return queue
 
     def send_msg(self, exchange, msg, is_weight=False, url=None):
         bb = pack(msg, is_weight)
-        self.open_connection(url)
-        queue = self.send_queue(exchange, msg)
+        channel, connection = self.open_connection(url)
+        queue = self.send_queue(exchange, msg, channel)
         # q2 = queue.method.message_count
         # if not msg[0].__contains__("MSG_LOCAL_ITERATION_FLAG") and q2 == 0:
         #     self.channel.basic_publish(exchange=config.cluster + "." + exchange,
@@ -156,7 +158,7 @@ class Communicator(object):
         #                                body=bb, mandatory=True)
         while True:
             try:
-                self.reconnect(self.connection)
+                channel, connection = self.reconnect(connection, channel)
                 fed_logger.info(Fore.GREEN + f"publishing {msg[0]}")
                 # q2 = queue.method.message_count
                 # if not msg[0].__contains__("MSG_LOCAL_ITERATION_FLAG") and q2 == 0:
@@ -164,13 +166,13 @@ class Communicator(object):
                 #                                routing_key=config.cluster + "." + msg[0] + "." + exchange,
                 #                                body=bb, mandatory=True)
                 # elif msg[0].__contains__("MSG_LOCAL_ITERATION_FLAG"):
-                self.channel.basic_publish(exchange=config.cluster + "." + exchange,
-                                           routing_key=config.cluster + "." + msg[0] + "." + exchange,
-                                           body=bb, mandatory=True, properties=pika.BasicProperties(
+                channel.basic_publish(exchange=config.cluster + "." + exchange,
+                                      routing_key=config.cluster + "." + msg[0] + "." + exchange,
+                                      body=bb, mandatory=True, properties=pika.BasicProperties(
                         delivery_mode=pika.DeliveryMode.Transient))
                 # q2 = queue.method.message_count
                 # fed_logger.info(Fore.MAGENTA + f" {q1},{q2}")
-                self.close_connection(self.channel, self.connection)
+                self.close_connection(channel, connection)
                 # if q2 > 0:
                 # fed_logger.info(Fore.CYAN + f" {msg[0]},{q2}")
                 fed_logger.info(Fore.GREEN + f"published {msg[0]}")
@@ -186,38 +188,38 @@ class Communicator(object):
                 # self.send_msg(exchange, msg, is_weight, url)
 
     def recv_msg(self, exchange, expect_msg_type: str = None, is_weight=False, url=None):
-        self.open_connection(url)
+        channel, connection = self.open_connection(url)
         fed_logger.info(Fore.YELLOW + f"receiving {expect_msg_type}")
         res = None
 
         while True:
             try:
-                self.reconnect(self.connection)
-                queue = self.channel.queue_declare(queue=config.cluster + "." + expect_msg_type + "." + exchange)
-                self.channel.exchange_declare(exchange=config.cluster + "." + exchange, durable=True,
-                                              exchange_type='topic')
-                self.channel.queue_bind(exchange=config.cluster + "." + exchange,
-                                        queue=config.cluster + "." + expect_msg_type + "." + exchange,
-                                        routing_key=config.cluster + "." + expect_msg_type + "." + exchange)
+                channel, connection = self.reconnect(connection, channel)
+                queue = channel.queue_declare(queue=config.cluster + "." + expect_msg_type + "." + exchange)
+                channel.exchange_declare(exchange=config.cluster + "." + exchange, durable=True,
+                                         exchange_type='topic')
+                channel.queue_bind(exchange=config.cluster + "." + exchange,
+                                   queue=config.cluster + "." + expect_msg_type + "." + exchange,
+                                   routing_key=config.cluster + "." + expect_msg_type + "." + exchange)
 
                 fed_logger.info(Fore.YELLOW + f"loop {expect_msg_type}")
                 # q2 = queue.method.message_count
                 # fed_logger.info(Fore.MAGENTA + f"{expect_msg_type},{q2}")
 
-                for method_frame, properties, body in self.channel.consume(queue=
-                                                                           config.cluster + "." + expect_msg_type + "." + exchange
-                                                                           ):
+                for method_frame, properties, body in channel.consume(queue=
+                                                                      config.cluster + "." + expect_msg_type + "." + exchange
+                                                                      ):
                     # q2 = queue.method.message_count
                     # fed_logger.info(Fore.MAGENTA + f"{expect_msg_type},{q2}")
                     msg = [expect_msg_type]
                     res = unpack(body, is_weight)
                     msg.extend(res)
-                    self.channel.stop_consuming()
-                    self.channel.cancel()
-                    self.channel.basic_ack(method_frame.delivery_tag)
+                    channel.stop_consuming()
+                    channel.cancel()
+                    channel.basic_ack(method_frame.delivery_tag)
                     # if not expect_msg_type.__contains__("MSG_LOCAL_ITERATION_FLAG"):
-                    self.channel.queue_delete(queue=config.cluster + "." + expect_msg_type + "." + exchange)
-                    self.close_connection(self.channel, self.connection)
+                    channel.queue_delete(queue=config.cluster + "." + expect_msg_type + "." + exchange)
+                    self.close_connection(channel, connection)
                     fed_logger.info(Fore.CYAN + f"received {msg[0]},{type(msg[1])},{is_weight}")
                     return msg
             except Exception as e:
@@ -225,7 +227,7 @@ class Communicator(object):
                 fed_logger.info(Fore.RED + f"revived {expect_msg_type}")
                 if res is None:
                     continue
-                self.close_connection(self.channel, self.connection)
+                self.close_connection(channel, connection)
                 msg = [expect_msg_type]
                 msg.extend(res)
                 fed_logger.info(Fore.CYAN + f"received {msg[0]},{type(msg[1])},{is_weight}")

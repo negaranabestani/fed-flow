@@ -41,7 +41,7 @@ class FedEdgeServer(FedEdgeServerInterface):
     def forward_propagation(self, client_ip):
         i = 0
         flag = self.recv_msg(client_ip,
-                             f'{message_utils.local_iteration_flag_client_to_edge()}_{i}')[1]
+                             f'{message_utils.local_iteration_flag_client_to_edge()}_{i}_{client_ip}')[1]
         if self.split_layers[config.CLIENTS_CONFIG.get(client_ip)][1] < model_utils.get_unit_model_len() - 1:
             flmsg = [f'{message_utils.local_iteration_flag_edge_to_server()}_{i}_{client_ip}', flag]
             self.send_msg(config.EDGE_SERVER_CONFIG[config.index], flmsg)
@@ -53,7 +53,7 @@ class FedEdgeServer(FedEdgeServerInterface):
         while flag:
             if self.split_layers[config.CLIENTS_CONFIG.get(client_ip)][0] < model_utils.get_unit_model_len() - 1:
                 flag = self.recv_msg(client_ip,
-                                     f'{message_utils.local_iteration_flag_client_to_edge()}_{i}')[1]
+                                     f'{message_utils.local_iteration_flag_client_to_edge()}_{i}_{client_ip}')[1]
 
                 if not flag:
                     flmsg = [f'{message_utils.local_iteration_flag_edge_to_server()}_{i}_{client_ip}', flag]
@@ -61,11 +61,10 @@ class FedEdgeServer(FedEdgeServerInterface):
                     break
                 # fed_logger.info(client_ip + " receiving local activations")
                 msg = self.recv_msg(exchange=client_ip,
-                                    expect_msg_type=f'{message_utils.local_activations_client_to_edge()}_{i}',
+                                    expect_msg_type=f'{message_utils.local_activations_client_to_edge()}_{i}_{client_ip}',
                                     is_weight=True)
                 smashed_layers = msg[1]
                 labels = msg[2]
-
 
                 # fed_logger.info(client_ip + " training model forward")
                 inputs, targets = smashed_layers.to(self.device), labels.to(self.device)
