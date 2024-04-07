@@ -67,10 +67,10 @@ class Communicator(object):
 
     def open_connection(self, url=None):
         fed_logger.info("connecting")
-        # if url is None:
-        #     url = config.mq_host
-        url = config.mq_host
-        self.url = url
+        if url is None:
+            url = config.mq_host
+        # url = config.mq_host
+        # self.url = url
 
         # url = config.mq_host
 

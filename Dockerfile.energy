@@ -1,4 +1,4 @@
-FROM docker-reg.ir/fed-flow:base
+FROM fed-flow:base
 COPY app /fed-flow/app
 COPY energy-estimation /fed-flow/energy
 WORKDIR /fed-flow/
