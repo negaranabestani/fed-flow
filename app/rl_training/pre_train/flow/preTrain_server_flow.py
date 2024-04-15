@@ -3,9 +3,10 @@ import time
 
 sys.path.append('../../../../')
 from app.config import config
-from app.util import message_utils, model_utils
+from app.util import model_utils
 from app.entity.server import FedServer
 from app.config.logger import fed_logger
+import numpy as np
 
 
 def run(options):
@@ -21,22 +22,23 @@ def run(options):
         server.initialize(config.split_layer, LR)
         training_time = 0
         energy = 0
-        energyOfLayers = [[0]*model_utils.get_unit_model_len()]*config.K
-        ttOfLayers = [[0]*model_utils.get_unit_model_len()]*config.K
+
+        energyOfLayers = np.zeros((config.K, model_utils.get_unit_model_len()))
+        ttOfLayers = np.zeros((config.K, model_utils.get_unit_model_len()))
         fed_logger.info(energyOfLayers)
         x = []
 
         for layer in range(model_utils.get_unit_model_len()):
             fed_logger.info('====================================>')
             fed_logger.info(f'==> Energy Calculation of Layer {layer} Started.')
-            for i in range(1):
+            for i in range(5):
                 actions = [[layer, layer]] * config.K
-                fed_logger.info(f"Actions: {actions}")
+                fed_logger.info("=======================================================")
                 fed_logger.info(f"Try {i + 1} for Layer {layer}")
+                fed_logger.info(f"Actions: {actions}")
                 server.split_layers = actions
                 s_time = time.time()
                 energy_tt_list = rl_flow(server, options, LR)
-                fed_logger.info(f"ETT: {energy_tt_list}")
                 for j in range(config.K):
                     energyOfLayers[j][layer] += energy_tt_list[j][0]
                     ttOfLayers[j][layer] += energy_tt_list[j][1]
@@ -46,8 +48,8 @@ def run(options):
                 fed_logger.info("clustering")
                 server.cluster(options)
             for j in range(config.K):
-                energyOfLayers[j][layer] /= 1
-                ttOfLayers[j][layer] /= 1
+                energyOfLayers[j][layer] /= 5
+                ttOfLayers[j][layer] /= 5
 
         fed_logger.info("=======================================================")
         fed_logger.info("Pre Train Ended.")

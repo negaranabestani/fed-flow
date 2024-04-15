@@ -21,7 +21,7 @@ def run(options_ins):
     client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
 
     for layer in range(model_utils.get_unit_model_len()):
-        for i in range(1):
+        for i in range(5):
             # fed_logger.info('====================================>')
             # fed_logger.info('==> Round {:} Start'.format(r))
             #
