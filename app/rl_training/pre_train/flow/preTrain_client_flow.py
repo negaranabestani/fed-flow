@@ -39,7 +39,7 @@ def run(options_ins):
                     dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based)
 
     for layer in range(model_utils.get_unit_model_len()):
-        for i in range(1):
+        for i in range(5):
             client.edge_global_weights()
             client.edge_split_layer()
             st = time.time()
@@ -59,4 +59,4 @@ def run(options_ins):
             et = time.time()
             tt = et - st
             comp_e, tr_e = comp_tr_energy()
-            client.energy_tt(float(comp_e) / batch_num, tt)
+            client.energy_tt(float(comp_e), tt)
