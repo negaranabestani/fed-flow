@@ -30,6 +30,15 @@ def parse_argument(parser: argparse.ArgumentParser()):
                             default=options.get(op)[1])
     args = parser.parse_args()
     option = vars(args)
+    if option.get("edgebased") == 'True':
+        option["edgebased"] = True
+    else:
+        option["edgebased"] = False
+
+    if option.get("offload") == 'True':
+        option["offload"] = True
+    else:
+        option["offload"] = False
     config.dataset_name = option.get('dataset')
     config.model_name = option.get('model')
     config.index = int(option.get('index'))

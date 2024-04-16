@@ -50,7 +50,7 @@ def none(state, labels):
 def no_edge_fake(state, labels):
     split_list = []
     for i in range(config.K):
-        split_list.append(3)
+        split_list.append(random.randint(1, config.model_len - 1))
     return split_list
 
 
@@ -60,7 +60,7 @@ def fake(state, labels):
     """
     split_list = []
     for i in range(config.K):
-        split_list.append([3, 5])
+        split_list.append([3, 4])
     return split_list
 
 
@@ -95,6 +95,10 @@ def randomSplitting(state, labels):
         op2 = random.randint(op1, config.model_len - 1)
         splittingArray.append([op1, op2])
     return splittingArray
+    # split_list = []
+    # for i in range(config.K):
+    #     split_list.append([2, 6])
+    # return split_list
 
 
 # FedMec: which empirically deploys the convolutional layers of a DNN on the device-side while

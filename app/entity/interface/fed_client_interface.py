@@ -3,19 +3,19 @@ from abc import ABC, abstractmethod
 import torch
 from torch import nn, optim
 
-from app.config.logger import fed_logger
 from app.entity.Communicator import Communicator
 from app.util import model_utils
 
 
 class FedClientInterface(ABC, Communicator):
-    def __init__(self, server_addr, server_port, datalen, model_name, dataset,
-                 train_loader, LR, edge_based, offload):
+    def __init__(self, server, datalen, model_name, dataset,
+                 train_loader, LR, edge_based):
         super(FedClientInterface, self).__init__()
         self.datalen = datalen
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model_name = model_name
         self.edge_based = edge_based
+        self.server_id = server
         self.dataset = dataset
         self.train_loader = train_loader
         self.split_layers = None
@@ -26,9 +26,6 @@ class FedClientInterface(ABC, Communicator):
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
                                    momentum=0.9)
-
-        fed_logger.info('Connecting to Server.')
-        self.sock.connect((server_addr, server_port))
 
     @abstractmethod
     def initialize(self, split_layer, LR):
@@ -52,6 +49,9 @@ class FedClientInterface(ABC, Communicator):
         """
         pass
 
+    @abstractmethod
+    def edge_split_layer(self):
+        pass
     @abstractmethod
     def split_layer(self):
         """

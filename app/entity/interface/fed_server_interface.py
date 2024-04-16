@@ -1,5 +1,4 @@
 import multiprocessing
-import socket
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -10,20 +9,16 @@ from app.config import config
 from app.config.logger import fed_logger
 from app.entity.Communicator import Communicator
 from app.fl_method import fl_method_parser
-from app.util import data_utils, model_utils, message_utils
+from app.util import data_utils, model_utils
 
 
 class FedServerInterface(ABC, Communicator):
-    def __init__(self, ip_address, port, model_name, dataset, offload, edge_based):
+    def __init__(self, model_name, dataset, offload, edge_based):
         super(FedServerInterface, self).__init__()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.port = port
         self.offload = offload
         self.edge_based = edge_based
         self.model_name = model_name
-        self.sock.bind((ip_address, self.port))
-        self.socks = {}
-        self.edge_socks = {}
         self.group_labels = None
         self.criterion = None
         self.split_layers = None
@@ -36,36 +31,6 @@ class FedServerInterface(ABC, Communicator):
         self.offloading = None
         self.tt_start = {}
         self.tt_end = {}
-        i = 0
-
-        fed_logger.info("Server Connection devices")
-        while len(self.edge_socks) < config.S:
-            self.sock.listen(5)
-            fed_logger.info("Waiting For Incoming Connections.")
-            (edge_sock, (ip, port)) = self.sock.accept()
-            fed_logger.info('Got connection from ' + str(ip))
-            fed_logger.info(edge_sock)
-            self.edge_socks[str(ip)] = edge_sock
-
-        if edge_based:
-            msg = [message_utils.start_server_client_connection_sockets_edge_to_server, True]
-            self.scatter(msg)
-            fed_logger.info("Edge server clients connection")
-            while len(self.socks) < config.K:
-                self.sock.listen(5)
-                fed_logger.info("Waiting For Incoming Connections.")
-                (edge_sock, (ip, port)) = self.sock.accept()
-                fed_logger.info('Got connection from ' + str(ip))
-                fed_logger.info(edge_sock)
-                self.socks[i] = edge_sock
-                i += 1
-
-            temp_socks = {}
-            fed_logger.info('Initialize server sockets of clients')
-            for sock in self.socks.values():
-                client_ip = self.recv_msg(sock, message_utils.init_server_sockets_edge_to_server)[1]
-                temp_socks[socket.gethostbyname(client_ip)] = sock
-            self.socks = temp_socks
 
         self.uninet = model_utils.get_model('Unit', None, self.device, self.edge_based)
 
@@ -97,6 +62,10 @@ class FedServerInterface(ABC, Communicator):
         """
         receive client network speed
         """
+        pass
+
+    @abstractmethod
+    def edge_split_layer(self):
         pass
 
     @abstractmethod
@@ -153,9 +122,13 @@ class FedServerInterface(ABC, Communicator):
     def split(self, state, options: dict):
         pass
 
-    def scatter(self, msg):
-        for i in self.edge_socks.values():
-            self.send_msg(i, msg)
+    def scatter(self, msg, is_weight=False):
+        list1 = config.CLIENTS_LIST
+        if self.edge_based:
+            list1 = config.EDGE_SERVER_LIST
+
+        for i in list1:
+            self.send_msg(i, msg, is_weight, i)
 
     def concat_norm(self, ttpi, offloading):
         ttpi_order = []

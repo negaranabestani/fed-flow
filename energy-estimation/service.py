@@ -35,6 +35,7 @@ async def root():
 async def computation_start():
     x = threading.Thread(target=system_utils.computation_start, args=(config.process,))
     x.start()
+    # energy_logger.info("computation started")
     # asyncio.create_task(system_utils.computation_start(config.process))
 
 
@@ -50,6 +51,7 @@ async def start_transmission():
 
 @app.get("/end-transmission/{bits}")
 async def end_transmission(bits):
+    # energy_logger.info(Fore.RED + f"{int(bits)}")
     system_utils.end_transmission(config.process, int(bits))
 
 
@@ -63,6 +65,9 @@ async def energy():
         Fore.MAGENTA + f"energy-conputation: {comp}, energy-trasmission: {tr}")
     ene = comp + tr
     config.process.comp_time = 0
+    config.process.cpu_u_count = 0
+    config.process.end_comp = False
+    config.process.cpu_utilization = 0
     config.process.transmission_time = 0
     return ene
 

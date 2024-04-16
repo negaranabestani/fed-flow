@@ -1,12 +1,12 @@
 import os
+import random
+
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
 
-from tensorforce import Environment
-from app.model.entity.rl_model import NoSplitting, TRPO, AC, TensorforceAgent, RandomAgent
 import app.util.model_utils as model_utils
-from app.config.logger import fed_logger
+from app.model.entity.rl_model import NoSplitting, TRPO, AC, TensorforceAgent, RandomAgent
 
 
 def draw_graph(figSizeX, figSizeY, x, y, title, xlabel, ylabel, savePath, pictureName, saveFig=True):
@@ -47,8 +47,8 @@ def draw_scatter(x, y, title, xlabel, ylabel, savePath, pictureName, saveFig=Tru
         if not os.path.exists(savePath):
             os.makedirs(savePath)
         plt.savefig(os.path.join(savePath, pictureName))
-    plt.close()
     # plt.show()
+    plt.close()
 
 
 def draw_3dGraph(x, y, z, xlabel, ylabel, zlabel):
@@ -78,11 +78,16 @@ def tanhActivation(x: float) -> float:
     return np.tanh(x)
 
 
-def normalizeReward(maxAmount, minAmount, x):
-    P = [maxAmount, 0]
-    Q = [minAmount, 1]
+def normalizeReward_linear(maxAmount, minAmount, x, minNormalized, maxNormalized):
+    P = [maxAmount, minNormalized]
+    Q = [minAmount, maxNormalized]
     lineGradient = (P[1] - Q[1]) / (P[0] - Q[0])
     y = lineGradient * (x - Q[0]) + Q[1]
+    return y
+
+
+def normalizeReward_tan(x, turning_point):
+    y = max(min(-pow(x - turning_point, 3) / pow(turning_point, 3), 1), -1)
     return y
 
 
@@ -102,12 +107,29 @@ def allPossibleSplitting(modelLen, deviceNumber):
         convert_To_Len_th_base(i, arr, modelLen, deviceNumber, allPossible)
     result = list()
     for item in allPossible:
+        temp = []
         isOk = True
         for j in range(0, len(item) - 1, 2):
             if int(item[j]) > int(item[j + 1]):
                 isOk = False
         if isOk:
-            result.append(item)
+            for i in range(0, len(item), 2):
+                temp.append([int(item[i]), int(item[i + 1])])
+        if len(temp) != 0:
+            result.append(temp)
+    return result
+
+
+def randomSelectionSplitting(modelLen, deviceNumber) -> list[list[int]]:
+    splittingForOneDevice = []
+    for i in range(0, modelLen):
+        for j in range(0, i + 1):
+            splittingForOneDevice.append([j, i])
+
+    result = []
+    for i in range(deviceNumber):
+        rand = random.randint(0, len(splittingForOneDevice) - 1)
+        result.append(splittingForOneDevice[rand])
     return result
 
 
@@ -128,10 +150,10 @@ def createAgent(agentType, fraction, timestepNum, saveSummariesPath, environment
         raise Exception('Invalid config select from [ppo, ac, tensorforce, random]')
 
 
-def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[int, int]:
+def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[float, float]:
     """ It returns the offloading points for the given action ( op1 , op2 )"""
-    op1: int
-    op2: int  # Offloading points op1, op2
+    op1: float
+    op2: float  # Offloading points op1, op2
     workLoad = []
     model_state_flops = []
 
@@ -158,28 +180,38 @@ def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[int, int]:
     return op1, op2
 
 
-def rewardFun(fraction, energy, trainingTime, rewardTuningParam):
-    rewardOfEnergy = normalizeReward(maxAmount=rewardTuningParam[1], minAmount=rewardTuningParam[0],
-                                     x=energy)
-    rewardOfTrainingTime = normalizeReward(maxAmount=rewardTuningParam[2], minAmount=rewardTuningParam[3],
-                                           x=trainingTime)
+def rewardFun(fraction, energy, trainingTime, classicFlTrainingTime, maxEnergy, minEnergy):
+    rewardOfEnergy = normalizeReward_linear(maxAmount=maxEnergy,
+                                            minAmount=minEnergy,
+                                            x=energy,
+                                            minNormalized=-1,
+                                            maxNormalized=1)
+    rewardOfTrainingTime = trainingTime
+    rewardOfTrainingTime -= classicFlTrainingTime
+    rewardOfTrainingTime /= 100
+    rewardOfTrainingTime *= -1
+    rewardOfTrainingTime = min(max(rewardOfTrainingTime, -1), 1)
 
     if fraction <= 1:
         reward = (fraction * rewardOfEnergy) + ((1 - fraction) * rewardOfTrainingTime)
-
     else:
         raise Exception("Fraction must be less than 1")
+    return reward
 
-    # logger.info("-------------------------------------------")
-    # logger.info(f"Offloading layer : {offloadingPointsList} \n")
-    # logger.info(f"Avg Energy : {averageEnergyConsumption} \n")
-    # logger.info(f"Training time : {maxTrainingTime} \n")
-    # logger.info(f"Reward of this action : {reward} \n")
-    # logger.info(f"Reward of energy : {self.fraction * rewardOfEnergy} \n")
-    # logger.info(f"Reward of training time : {(1 - self.fraction) * rewardOfTrainingTime} \n")
-    # logger.info(f"IOTs Capacities : {iotDeviceCapacity} \n")
-    # logger.info(f"Edges Capacities : {edgeCapacity} \n")
-    # logger.info(f"Cloud Capacities : {cloudCapacity} \n")
-    # newState.extend(edgeCapacity)
-    # newState.append(cloudCapacity)
+
+def rewardFunTan(fraction, energy, trainingTime, classicFlTrainingTime, classic_Fl_Energy):
+    rewardOfEnergy = normalizeReward_tan(
+        x=energy,
+        turning_point=classic_Fl_Energy
+    )
+    rewardOfTrainingTime = trainingTime
+    rewardOfTrainingTime -= classicFlTrainingTime
+    rewardOfTrainingTime /= 100
+    rewardOfTrainingTime *= -1
+    rewardOfTrainingTime = min(max(rewardOfTrainingTime, -1), 1)
+
+    if fraction <= 1:
+        reward = (fraction * rewardOfEnergy) + ((1 - fraction) * rewardOfTrainingTime)
+    else:
+        raise Exception("Fraction must be less than 1")
     return reward

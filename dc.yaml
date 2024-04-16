@@ -3,16 +3,18 @@ services:
   server:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: fed-flow:test
+      - ./../../../Graphs(testbed):/Graphs
+      - ./../../../agent:/app/agent
+    image: negaranabestani/fed-flow:rabbitmq
     ports:
       - "5002:5002"
     hostname: server
     deploy:
       resources:
         limits:
-          cpus: '3'
+          cpus: '6'
         reservations:
-          cpus: '3'
+          cpus: '6'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
@@ -37,10 +39,11 @@ services:
     depends_on:
       - server
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -i 0 -o True -s random_splitting -e True"
+
   client1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: fed-flow:test
+    image: docker-reg.ir/fed-flow:rabbitmq
     hostname: client1
     deploy:
       resources:
@@ -108,4 +111,3 @@ services:
     depends_on:
       - edge1
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 3 -o True -s random_splitting -e True & python3 /fed-flow/energy/service.py & wait -n"
-

@@ -3,57 +3,54 @@ services:
   server:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: fed-flow:test
-    deploy:
-      resources:
-        limits:
-          cpus: '3'
-        reservations:
-          cpus: '3'
-      restart_policy:
-        condition: on-failure
+      - ./../../../Graphs:/Graphs
+      - ./../../../agent:/app/agent
+    image: docker-reg.ir/fed-flow:rabbitmq
     ports:
       - "5002:5002"
     hostname: server
+    depends_on:
+      - broker
+    deploy:
+      restart_policy:
+        condition: on-failure
     working_dir: /fed-flow/app/rl_training/runner
     entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_server_runner.py -o True -s edge_based_rl_splitting -e True"
-    volumes:
-      - ./../../../Graphs:/Graphs
+  broker:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=password
+    hostname: broker
 
   edge1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: fed-flow:test
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-        reservations:
-          cpus: '2'
-      restart_policy:
-        condition: on-failure
+    image: docker-reg.ir/fed-flow:rabbitmq
     ports:
       - "5001:5001"
     hostname: edge1
+    deploy:
+      restart_policy:
+        condition: on-failure
     working_dir: /fed-flow/app/rl_training/runner
     depends_on:
       - server
-    entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_edgeserver_runner.py -i 0 -o True -s edge_based_rl_splitting -e True"
-
+      - broker
+    entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_edgeserver_runner.py -o True -i 0 -s edge_based_rl_splitting -e True"
   client1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: fed-flow:test
+    image: docker-reg.ir/fed-flow:rabbitmq
+    hostname: client1
     deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-        reservations:
-          cpus: '0.5'
       restart_policy:
         condition: on-failure
-    hostname: client1
     working_dir: /fed-flow/app/rl_training/runner
     depends_on:
       - edge1
-    entrypoint: bash -c "python3 /fed-flow/app/rl_training/runner/rl_client_runner.py -i 0 -o True -s edge_based_rl_splitting -e True"
+      - broker
+    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/rl_training/runner/rl_client_runner.py -i 0 -o True -s random_splitting -e True & wait -n"
