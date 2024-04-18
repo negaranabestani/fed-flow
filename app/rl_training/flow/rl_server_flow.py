@@ -325,7 +325,7 @@ def preTrain(server, options) -> tuple[float, float]:
 
     fed_logger.info("====================================>")
     fed_logger.info(f"Tries Finished.")
-    for i in range(5):
+    for i in range(10):
         fed_logger.info(f"Try {i + 1}/5 :")
         fed_logger.info(f"==> classic-fl Energy : {energyArray[i]}")
         fed_logger.info(f"==> classic-fl Training Time : {trainingTimeArray[i]}")

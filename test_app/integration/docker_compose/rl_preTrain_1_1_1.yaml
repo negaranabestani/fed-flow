@@ -20,7 +20,7 @@ services:
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/rl_training/pre_train/runner
-    entrypoint: bash -c "python3 /fed-flow/app/rl_training/pre_train/runner/preTrain_server_runner.py -o True -s random_splitting -e True"
+    entrypoint: bash -c "python3 /fed-flow/app/rl_training/pre_train/runner/preTrain_server_runner.py -o True -s random_splitting -e True "
   broker:
     image: rabbitmq:3.13-management
     ports:
@@ -41,16 +41,16 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2'
+          cpus: '1'
         reservations:
-          cpus: '2'
+          cpus: '1'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/rl_training/pre_train/runner
     depends_on:
       - server
       - broker
-    entrypoint: bash -c "python3 /fed-flow/app/rl_training/pre_train/runner/preTrain_edge_runner.py -i 0 -o True -s random_splitting -e True"
+    entrypoint: bash -c "python3 /fed-flow/app/rl_training/pre_train/runner/preTrain_edge_runner.py -i 0 -o True -s random_splitting -e True & python3 /fed-flow/energy/service.py & wait -n"
   client1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
@@ -69,21 +69,3 @@ services:
       - edge1
       - broker
     entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/rl_training/pre_train/runner/preTrain_client_runner.py -i 0 -o True -s random_splitting -e True & wait -n"
-  client2:
-    volumes:
-      - ./config.py:/fed-flow/app/config/config.py
-    image: negaranabestani/fed-flow:rabbitmq
-    hostname: client2
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-        reservations:
-          cpus: '0.5'
-      restart_policy:
-        condition: on-failure
-    working_dir: /fed-flow/app/rl_training/pre_train/runner
-    depends_on:
-      - edge1
-      - broker
-    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/rl_training/pre_train/runner/preTrain_client_runner.py -i 1 -o True -s random_splitting -e True & wait -n"

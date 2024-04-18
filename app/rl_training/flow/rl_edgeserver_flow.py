@@ -102,7 +102,7 @@ def preTrain(edge_server, options, client_ips):
     # splittingArray = [6, 6]
     # edge_server.split_layers = [splittingArray * config.K]
 
-    for i in range(5):
+    for i in range(10):
 
         fed_logger.info("receiving global weights")
         edge_server.global_weights(client_ips)

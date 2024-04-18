@@ -4,11 +4,14 @@ import socket
 import sys
 import time
 
+from colorama import Fore
+
 sys.path.append('../../../')
 from app.entity.client import Client
 from app.config.config import *
-from app.util import data_utils, message_utils, model_utils
+from app.util import data_utils, model_utils
 from app.util.energy_estimation import *
+from app.config.logger import fed_logger
 
 
 def run(options_ins):
@@ -38,8 +41,10 @@ def run(options_ins):
                     datalen=datalen, model_name=options_ins.get('model'),
                     dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based)
 
-    for layer in range(model_utils.get_unit_model_len()):
-        for i in range(5):
+    energyOfLayers0 = 0
+
+    for layer in range(model_utils.get_unit_model_len() - 1):
+        for i in range(10):
             client.edge_global_weights()
             client.edge_split_layer()
             st = time.time()
@@ -60,3 +65,7 @@ def run(options_ins):
             tt = et - st
             comp_e, tr_e = comp_tr_energy()
             client.energy_tt(float(comp_e), tt)
+            if layer == 0:
+                energyOfLayers0 += float(comp_e)
+    energyOfLayers0 /= 10
+    fed_logger.info(Fore.RED + f"Energy of Layer 0: {energyOfLayers0}")
