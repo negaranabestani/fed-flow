@@ -44,7 +44,7 @@ B = 100  # Batch size
 
 # RL training configration
 max_episodes = 2000  # max training episodes
-max_timesteps = 50  # max timesteps in one episode
+max_timesteps = 10  # max timesteps in one episode
 exploration_times = 20  # exploration times without std decay
 n_latent_var = 64  # number of variables in hidden layer
 action_std = 0.5  # constant std for action distribution (Multivariate Normal)
