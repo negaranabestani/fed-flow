@@ -1,15 +1,17 @@
+import os
 import socket
 import sys
 import threading
-import os
+
+import numpy as np
+from colorama import Fore
 
 from app.util import model_utils
-from colorama import Fore
-import numpy as np
+
 sys.path.append('../../../../')
 from app.config import config
 from app.entity.edge_server import FedEdgeServer
-from app.util import message_utils, energy_estimation
+from app.util import energy_estimation
 from app.config.logger import fed_logger
 
 
@@ -21,14 +23,14 @@ def run(options_ins):
                                 offload=options_ins.get('offload'))
     # fed_logger.info("start mode: " + str(options_ins.values()))
 
-    energyOfLayers = np.zeros((model_utils.get_unit_model_len()))
+    energyOfLayers = np.zeros((model_utils.get_unit_model_len(), 10))
 
     edge_server.initialize(config.split_layer, LR, config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]])
     client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
     energy_estimation.init(os.getpid())
 
-    for layer in range(model_utils.get_unit_model_len()-1):
-        for i in range(10):
+    for layer in range(model_utils.get_unit_model_len() - 1):
+        for j in range(10):
             # fed_logger.info('====================================>')
             # fed_logger.info('==> Round {:} Start'.format(r))
             #
@@ -60,11 +62,11 @@ def run(options_ins):
             for i in range(len(client_ips)):
                 threads[client_ips[i]].join()
             edge_server.energy(client_ips)
-            energy = float(energy_estimation.energy())
-            # energy /= batch_num
-            fed_logger.info(Fore.LIGHTBLUE_EX + f"Energy : {energy}")
-            energyOfLayers[layer+1] += energy
-        energyOfLayers[layer+1] /= 10
+            comp_e, tr_e = energy_estimation.comp_tr_energy()
+
+            fed_logger.info(Fore.LIGHTBLUE_EX + f"Computation Energy : {comp_e}")
+            energyOfLayers[layer + 1][j] = comp_e
+        #energyOfLayers[layer + 1] /= 10
     fed_logger.info("=======================================================")
     fed_logger.info("Pre Train Ended.")
     fed_logger.info(f"Energy consumption of layer 0 to {model_utils.get_unit_model_len()} is:")

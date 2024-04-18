@@ -41,7 +41,7 @@ def run(options_ins):
                     datalen=datalen, model_name=options_ins.get('model'),
                     dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based)
 
-    energyOfLayers0 = 0
+    energyOfLayers0 = []
 
     for layer in range(model_utils.get_unit_model_len() - 1):
         for i in range(10):
@@ -66,6 +66,5 @@ def run(options_ins):
             comp_e, tr_e = comp_tr_energy()
             client.energy_tt(float(comp_e), tt)
             if layer == 0:
-                energyOfLayers0 += float(comp_e)
-    energyOfLayers0 /= 10
+                energyOfLayers0.append(float(comp_e))
     fed_logger.info(Fore.RED + f"Energy of Layer 0: {energyOfLayers0}")
