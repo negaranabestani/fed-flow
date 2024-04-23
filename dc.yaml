@@ -5,7 +5,7 @@ services:
       - ./config.py:/fed-flow/app/config/config.py
       - ./../../../Graphs:/Graphs
       - ./../../../agent:/app/agent
-    image: fed-flow:test
+    image: negaranabestani/fed-flow:tcp
     deploy:
       resources:
         limits:
@@ -22,7 +22,7 @@ services:
   edge1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: fed-flow:test
+    image: negaranabestani/fed-flow:tcp
     deploy:
       resources:
         limits:
@@ -42,7 +42,7 @@ services:
   client1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: fed-flow:test
+    image: negaranabestani/fed-flow:tcp
     deploy:
       resources:
         limits:
