@@ -24,20 +24,19 @@ def run_edge_based(client: FedClientInterface, LR):
     mn: int = int((N / K) * index)
     data_size = mx - mn
     batch_num = data_size / config.B
-    final=[]
+    # final=[]
     for r in range(config.R):
         config.current_round=r
         fed_logger.info('====================================>')
         fed_logger.info('ROUND: {} START'.format(r))
-
         fed_logger.info("receiving global weights")
         client.edge_global_weights()
         st = time.time()
-        fed_logger.info("test network")
-        sss=time.time()
-        client.test_network()
-        sse=time.time()
-        fed_logger.info(f"test network{sse-sss}")
+        # fed_logger.info("test network")
+        # sss=time.time()
+        # client.test_network()
+        # sse=time.time()
+        # fed_logger.info(f"test network{sse-sss}")
         fed_logger.info("receiving splitting info")
         client.edge_split_layer()
         fed_logger.info("initializing client")
@@ -59,11 +58,11 @@ def run_edge_based(client: FedClientInterface, LR):
         # energy /= batch_num
         fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}")
         client.energy_tt(energy, tt)
-        final.append(energy)
+        # final.append(energy)
 
         if r > 49:
             LR = config.LR * 0.1
-    fed_logger.info(f"test network{final}")
+    # fed_logger.info(f"test network{final}")
 
 
 def run_no_offload_edge(client: FedClientInterface, LR):

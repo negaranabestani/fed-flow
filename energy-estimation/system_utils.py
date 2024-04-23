@@ -36,6 +36,7 @@ def start_transmission(process):
 
 
 def end_transmission(process, bits):
+    # energy_logger.info(Fore.MAGENTA+f"{bits}")
     process.end_tr_time = time.time()
     if config.simulate_network == True:
         # energy_logger.info(f"simnet:{config.simulate_network}")

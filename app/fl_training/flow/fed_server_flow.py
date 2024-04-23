@@ -44,7 +44,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
     server.initialize(config.split_layer, LR)
     training_time = 0
     energy_tt_list = []
-    split_list = [[[0, 1]], [[1, 2]], [[2, 3]], [[3, 4]], [[4, 5]], [[5, 6]]]
+    # split_list = [[[0, 1]], [[1, 2]], [[2, 3]], [[3, 4]], [[4, 5]], [[5, 6]]]
 
     for c in config.CLIENTS_LIST:
         energy_tt_list.append([0, 0])
@@ -77,8 +77,8 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
         fed_logger.info("state: " + str(state))
 
         fed_logger.info("splitting")
-        # server.split(state, options)
-        server.split_layers = split_list[r]
+        server.split(state, options)
+        # server.split_layers = split_list[r]
         server.edge_split_layer()
 
         if r > 49:
