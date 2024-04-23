@@ -4,9 +4,10 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
+from tensorforce import Agent
 
 import app.util.model_utils as model_utils
-from app.model.entity.rl_model import NoSplitting, TRPO, AC, TensorforceAgent, RandomAgent
+from app.model.entity.rl_model import NoSplitting, TRPO, AC, TensorforceAgent, RandomAgent, TF_PPO
 
 
 def draw_graph(figSizeX, figSizeY, x, y, title, xlabel, ylabel, savePath, pictureName, saveFig=True):
@@ -146,6 +147,8 @@ def createAgent(agentType, fraction, timestepNum, saveSummariesPath, environment
         return RandomAgent.RandomAgent(environment=environment)
     elif agentType == 'noSplitting':
         return NoSplitting.NoSplitting(environment=environment)
+    elif agentType == 'tf_ppo':
+        return Agent.load(directory='/fed-flow/app/agent/ppo_1_1_1_agent')
     else:
         raise Exception('Invalid config select from [ppo, ac, tensorforce, random]')
 
@@ -165,7 +168,7 @@ def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[float, float]:
     model_flops_list = np.array(model_state_flops)
     model_flops_list = model_flops_list / totalWorkLoad
     idx = np.where(np.abs(model_flops_list - splitDecision[0]) == np.abs(model_flops_list - splitDecision[0]).min())
-    op1 = idx[0][-1]
+    op1 = int(idx[0][-1])
 
     op2_totalWorkload = sum(workLoad[op1:])
     model_state_flops = []
@@ -175,7 +178,7 @@ def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[float, float]:
     model_flops_list = model_flops_list / op2_totalWorkload
 
     idx = np.where(np.abs(model_flops_list - splitDecision[1]) == np.abs(model_flops_list - splitDecision[1]).min())
-    op2 = idx[0][-1] + op1
+    op2 = int(idx[0][-1]) + op1
 
     return op1, op2
 

@@ -23,7 +23,8 @@ def run(options_ins):
                                 offload=options_ins.get('offload'))
     # fed_logger.info("start mode: " + str(options_ins.values()))
 
-    energyOfLayers = np.zeros((model_utils.get_unit_model_len(), 10))
+    compEnergyOfLayers = np.zeros((model_utils.get_unit_model_len(), 10))
+    compTTOfLayers = np.zeros((model_utils.get_unit_model_len(), 10))
 
     edge_server.initialize(config.split_layer, LR, config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]])
     client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
@@ -62,12 +63,15 @@ def run(options_ins):
             for i in range(len(client_ips)):
                 threads[client_ips[i]].join()
             edge_server.energy(client_ips)
-            comp_e, tr_e = energy_estimation.comp_tr_energy()
+
+            comp_e, tr_e, comp_time, tr_time = energy_estimation.energy_and_time_comp_tr()
 
             fed_logger.info(Fore.LIGHTBLUE_EX + f"Computation Energy : {comp_e}")
-            energyOfLayers[layer + 1][j] = comp_e
-        #energyOfLayers[layer + 1] /= 10
+            compEnergyOfLayers[layer + 1][j] = comp_e
+            compTTOfLayers[layer+1][j] = comp_time
     fed_logger.info("=======================================================")
     fed_logger.info("Pre Train Ended.")
     fed_logger.info(f"Energy consumption of layer 0 to {model_utils.get_unit_model_len()} is:")
-    fed_logger.info(energyOfLayers)
+    fed_logger.info(compEnergyOfLayers)
+    fed_logger.info(f"Training time of layer 0 to {model_utils.get_unit_model_len()} is:")
+    fed_logger.info(compTTOfLayers)

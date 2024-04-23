@@ -42,7 +42,7 @@ def run(options_ins):
                     dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based)
 
     energyOfLayers0 = []
-
+    ttOfLayer0 = []
     for layer in range(model_utils.get_unit_model_len() - 1):
         for i in range(10):
             client.edge_global_weights()
@@ -63,8 +63,11 @@ def run(options_ins):
             end_transmission(sys.getsizeof(msg) * 8)
             et = time.time()
             tt = et - st
-            comp_e, tr_e = comp_tr_energy()
+            comp_e, tr_e, comp_time, tr_time = energy_and_time_comp_tr()
             client.energy_tt(float(comp_e), tt)
             if layer == 0:
                 energyOfLayers0.append(float(comp_e))
+                ttOfLayer0.append(float(comp_time))
     fed_logger.info(Fore.RED + f"Energy of Layer 0: {energyOfLayers0}")
+    fed_logger.info(Fore.RED + f"TT of Layer 0: {ttOfLayer0}")
+
