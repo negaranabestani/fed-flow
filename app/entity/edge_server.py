@@ -8,7 +8,7 @@ from torch import optim, nn
 from app.config import config
 from app.config.logger import fed_logger
 from app.entity.interface.fed_edgeserver_interface import FedEdgeServerInterface
-from app.util import message_utils, model_utils
+from app.util import message_utils, model_utils, energy_estimation
 
 
 class FedEdgeServer(FedEdgeServerInterface):
@@ -67,13 +67,15 @@ class FedEdgeServer(FedEdgeServerInterface):
                 labels = msg[2]
 
                 # fed_logger.info(client_ip + " training model forward")
+
                 inputs, targets = smashed_layers.to(self.device), labels.to(self.device)
                 if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < \
                         self.split_layers[config.CLIENTS_CONFIG[client_ip]][1]:
+                    energy_estimation.computation_start()
                     if self.optimizers.keys().__contains__(client_ip):
                         self.optimizers[client_ip].zero_grad()
                     outputs = self.nets[client_ip](inputs)
-
+                    energy_estimation.computation_end()
                     # fed_logger.info(client_ip + " sending local activations")
                     if self.split_layers[config.CLIENTS_CONFIG[client_ip]][1] < model_utils.get_unit_model_len() - 1:
                         flmsg = [f'{message_utils.local_iteration_flag_edge_to_server()}_{i}_{client_ip}', flag]
@@ -87,15 +89,19 @@ class FedEdgeServer(FedEdgeServerInterface):
                                             is_weight=True)
                         gradients = msg[1].to(self.device)
                         # fed_logger.info(client_ip + " training model backward")
+                        energy_estimation.computation_start()
                         outputs.backward(gradients)
+                        energy_estimation.computation_end()
                         msg = [f'{message_utils.server_gradients_edge_to_client() + client_ip}_{i}', inputs.grad]
                         self.send_msg(exchange=client_ip, msg=msg, is_weight=True)
                     else:
+                        energy_estimation.computation_start()
                         outputs = self.nets[client_ip](inputs)
                         loss = self.criterion(outputs, targets)
                         loss.backward()
                         if self.optimizers.keys().__contains__(client_ip):
                             self.optimizers[client_ip].step()
+                        energy_estimation.computation_end()
                         msg = [f'{message_utils.server_gradients_edge_to_client() + client_ip}_{i}', inputs.grad]
                         self.send_msg(exchange=client_ip, msg=msg, is_weight=True)
                 else:
@@ -112,9 +118,6 @@ class FedEdgeServer(FedEdgeServerInterface):
                     msg = [f'{message_utils.server_gradients_edge_to_client() + client_ip}_{i}', msg[1]]
                     self.send_msg(exchange=client_ip, msg=msg, is_weight=True)
             i += 1
-
-            # fed_logger.info(client_ip + " sending gradients")
-
         fed_logger.info(str(client_ip) + ' offloading training end')
 
     def backward_propagation(self, outputs, client_ip, inputs):

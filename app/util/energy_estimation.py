@@ -1,10 +1,12 @@
 import warnings
-from app.config import config
 
 import requests
 
+from app.config import config
+
 URL = "http://127.0.0.1:8023"
 warnings.filterwarnings('ignore')
+
 
 def init(pid):
     session = requests.session()
@@ -41,3 +43,10 @@ def energy():
     session.trust_env = False
     result = session.get(url=URL + "/energy/")
     return result.text
+
+
+def comp_tr_energy():
+    session = requests.session()
+    session.trust_env = False
+    result = session.get(url=URL + "/energy/comp_tr/").text.split(",")
+    return float(result[0][1:]), float(result[1][:len(result[1]) - 1])

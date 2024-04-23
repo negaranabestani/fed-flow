@@ -1,13 +1,16 @@
 import logging
 import threading
+import warnings
 
+import uvicorn
 from colorama import Fore
 from fastapi import FastAPI
-import config, system_utils
-import uvicorn, warnings
-from process import Process
+
+import config
+import system_utils
 from config import energy_logger
 from log_filters import EndpointFilter
+from process import Process
 
 warnings.filterwarnings('ignore')
 
@@ -70,6 +73,23 @@ async def energy():
     config.process.cpu_utilization = 0
     config.process.transmission_time = 0
     return ene
+
+
+@app.get("/energy/comp_tr")
+async def energy_comp_tr():
+    energy_logger.info(
+        Fore.GREEN + f"computation: {config.process.comp_time}, transmission: {config.process.transmission_time}")
+    comp = system_utils.estimate_computation_energy(config.process)
+    tr = system_utils.estimate_communication_energy(config, config.process)
+    energy_logger.info(
+        Fore.MAGENTA + f"energy-computation: {comp}, energy-transmission: {tr}")
+    comp_tr = str(comp) + "," + str(tr)
+    config.process.comp_time = 0
+    config.process.cpu_u_count = 0
+    config.process.end_comp = False
+    config.process.cpu_utilization = 0
+    config.process.transmission_time = 0
+    return comp_tr
 
 
 @app.get("/get-cpu-utilization/{pid}")
