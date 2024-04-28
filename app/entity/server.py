@@ -314,9 +314,9 @@ class FedServer(FedServerInterface):
     def edge_based_state(self):
         state = []
         for i in self.client_bandwidth:
-            state.append(i)
+            state.append(self.client_bandwidth[i])
         for i in self.edge_bandwidth:
-            state.append(i)
+            state.append(self.edge_bandwidth[i])
         #
         # edge_offloading = []
         # server_offloading = 0
