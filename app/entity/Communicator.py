@@ -97,14 +97,6 @@ class Communicator(object):
 
     def connect(self, url):
         try:
-
-            # connection = pika.SelectConnection(on_close_callback=self.reconnect,
-            #                                    on_open_callback=self.on_connection_open,
-            #                                    parameters=pika.ConnectionParameters(host=url, port=config.mq_port,
-            #                                                                         credentials=pika.PlainCredentials(
-            #                                                                             username=config.mq_user,
-            #                                                                             password=config.mq_pass))
-            #                                    )
             return pika.BlockingConnection(pika.ConnectionParameters(host=url, port=config.mq_port,
                                                                      credentials=pika.PlainCredentials(
                                                                          username=config.mq_user,
@@ -148,6 +140,7 @@ class Communicator(object):
         channel, connection = self.open_connection(url)
         queue = self.send_queue(exchange, msg, channel)
         fed_logger.info(config.cluster + "." + msg[0] + "." + exchange)
+        published = False
         while True:
             try:
                 channel, connection = self.reconnect(connection, channel)
@@ -160,9 +153,12 @@ class Communicator(object):
                 fed_logger.info(Fore.GREEN + f"published {msg[0]}")
                 if self.send_bug:
                     fed_logger.info(Fore.RED + f"published {msg[0]}")
+                published = True
                 return
 
             except Exception as e:
+                if published:
+                    return
                 self.send_bug = True
                 fed_logger.error(Fore.RED + f"{e}")
                 continue
