@@ -227,9 +227,9 @@ class FedServer(FedServerInterface):
             url = connection_ip
         network_time_start = time.time()
         msg = [message_utils.test_server_network_from_server(), self.uninet.cpu().state_dict()]
-        self.send_msg(exchange=connection_ip, msg=msg, url=url)
+        self.send_msg(exchange=connection_ip, msg=msg, url=url,is_weight=True)
         fed_logger.info("server test network sent")
-        msg = self.recv_msg(exchange=connection_ip, expect_msg_type=message_utils.test_server_network_from_connection(), url=url)
+        msg = self.recv_msg(exchange=connection_ip, expect_msg_type=message_utils.test_server_network_from_connection(), url=url,is_weight=True)
         fed_logger.info("server test network received")
         network_time_end = time.time()
         self.edge_bandwidth[connection_ip] = data_utils.sizeofmessage(msg) / (network_time_end - network_time_start)

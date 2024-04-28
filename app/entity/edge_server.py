@@ -146,10 +146,10 @@ class FedEdgeServer(FedEdgeServerInterface):
         self.client_bandwidth[client_ip] = data_utils.sizeofmessage(msg)/(network_time_end - network_time_start)
 
     def test_server_network(self):
-        msg = self.recv_msg(config.EDGE_SERVER_CONFIG[config.index],
-                            message_utils.test_server_network_from_server())
+        msg = self.recv_msg(exchange=config.EDGE_SERVER_CONFIG[config.index],
+                           expect_msg_type= message_utils.test_server_network_from_server(),is_weight=True)
         msg = [message_utils.test_server_network_from_connection(), self.uninet.cpu().state_dict()]
-        self.send_msg(config.EDGE_SERVER_CONFIG[config.index], msg)
+        self.send_msg(exchange=config.EDGE_SERVER_CONFIG[config.index], msg=msg,is_weight=True)
 
     def client_network(self):
         """
