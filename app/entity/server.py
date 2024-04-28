@@ -187,25 +187,24 @@ class FedServer(FedServerInterface):
         w_local_list = []
         # fed_logger.info("aggregation start")
         for i in range(len(eweights)):
-            sp = self.split_layers[i]
-            if self.edge_based:
-                sp = self.split_layers[i][0]
-            if sp != (config.model_len - 1):
-                w_local = (
-                    model_utils.concat_weights(self.uninet.state_dict(), eweights[i],
-                                               self.nets[client_ips[i]].state_dict()),
-                    config.N / config.K)
-                w_local_list.append(w_local)
+            if self.offload:
+                sp = self.split_layers[i]
+                if self.edge_based:
+                    sp = self.split_layers[i][0]
+                if sp != (config.model_len - 1):
+                    w_local = (
+                        model_utils.concat_weights(self.uninet.state_dict(), eweights[i],
+                                                   self.nets[client_ips[i]].state_dict()),
+                        config.N / config.K)
+                    w_local_list.append(w_local)
+                else:
+                    w_local = (eweights[i], config.N / config.K)
             else:
                 w_local = (eweights[i], config.N / config.K)
-                # print("------------------------"+str(eweights[i]))
-                w_local_list.append(w_local)
+            w_local_list.append(w_local)
         zero_model = model_utils.zero_init(self.uninet).state_dict()
-        # fed_logger.info("calling aggregation method")
         aggregated_model = aggregate_method(zero_model, w_local_list, config.N)
-        # fed_logger.info("aggregation method end")
         self.uninet.load_state_dict(aggregated_model)
-        # fed_logger.info("aggregation end")
         return aggregated_model
 
     def test_network(self, connection_ips):
@@ -275,23 +274,17 @@ class FedServer(FedServerInterface):
         """
         energy_tt_list = []
         for edge in list(config.EDGE_SERVER_LIST):
-            # fed_logger.info(f"receiving {socket.gethostbyaddr(edge)[0]}")
             msg = self.recv_msg(exchange=edge,
                                 expect_msg_type=message_utils.energy_tt_edge_to_server(), url=edge)
             for i in range(len(config.EDGE_MAP[edge])):
                 energy_tt_list.append(msg[1][i])
-        # fed_logger.info("ettlist:" + str(energy_tt_list))
         return energy_tt_list
 
     def c_local_weights(self, client_ips):
         cweights = []
-        # msg = self.recv_msg(self.edge_socks[socket.gethostbyname(client_ips[0])],
-        #                     message_utils.local_iteration_flag_client_to_server)
-        # print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"+str(msg[1]))
         for i in range(len(client_ips)):
-            msg = self.recv_msg(config.CLIENT_MAP[client_ips[i]],
+            msg = self.recv_msg(client_ips[i],
                                 message_utils.local_weights_client_to_server(), True)
-            # fed_logger.info(f"cw received {client_ips[i]}")
             self.tt_end[client_ips[i]] = time.time()
             cweights.append(msg[1])
         return cweights

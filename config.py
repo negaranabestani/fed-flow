@@ -7,7 +7,7 @@ simnet = False
 dataset_name = ''
 home = sys.path[0].split('fed-flow')[0] + 'fed-flow' + "/app"
 dataset_path = home + '/dataset/data/'
-N = 600  # data length
+N = 100  # data length
 
 # Model configration
 model_cfg = {
@@ -19,7 +19,7 @@ model_cfg = {
              ('D', 128, 10, 1, 10, 128 * 10)]
 }
 
-N = 100  # data length
+# N = 100  # data length
 # mq_url = "sparrow.rmq.cloudamqp.com"
 mq_port = 5672
 mq_url = "amqp://user:password@broker:5672/%2F"
@@ -33,7 +33,7 @@ model_name = ''
 model_size = 1.28
 model_flops = 32.902
 total_flops = 8488192
-split_layer = [[6, 6]]  # Initial split layers
+split_layer = [6]  # Initial split layers
 model_len = 7
 
 # FL training configration

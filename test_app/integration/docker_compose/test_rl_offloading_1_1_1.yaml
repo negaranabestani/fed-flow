@@ -8,8 +8,8 @@ services:
     ports:
       - "5002:5002"
     hostname: server
-    depends_on:
-      - broker
+#    depends_on:
+#      - broker
     deploy:
       resources:
         limits:
@@ -64,7 +64,7 @@ services:
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
-    depends_on:
-      - edge1
-      - broker
+#    depends_on:
+#      - edge1
+#      - broker
     entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s edge_base_rl_splitting -e True & wait -n"

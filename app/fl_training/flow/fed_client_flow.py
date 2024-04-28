@@ -1,7 +1,6 @@
 import logging
 import multiprocessing
 import os
-import socket
 import sys
 import time
 import warnings
@@ -10,7 +9,7 @@ sys.path.append('../../../')
 from app.entity.client import Client
 from app.config import config
 from app.config.config import *
-from app.util import data_utils, message_utils, energy_estimation
+from app.util import data_utils, energy_estimation
 from app.config.logger import fed_logger
 from app.entity.interface.fed_client_interface import FedClientInterface
 from colorama import Fore
@@ -26,7 +25,7 @@ def run_edge_based(client: FedClientInterface, LR):
     batch_num = data_size / config.B
 
     for r in range(config.R):
-        config.current_round=r
+        config.current_round = r
         fed_logger.info('====================================>')
         fed_logger.info('ROUND: {} START'.format(r))
 
@@ -132,16 +131,21 @@ def run_no_edge(client: FedClientInterface, LR):
         fed_logger.info('====================================>')
         fed_logger.info('ROUND: {} START'.format(r))
         fed_logger.info("receiving global weights")
+        st = time.time()
         client.server_global_weights()
         fed_logger.info("start training")
         client.no_offloading_train()
         fed_logger.info("sending local weights")
         client.server_upload()
+        tt = time.time()
         fed_logger.info('ROUND: {} END'.format(r))
 
         fed_logger.info('==> Waiting for aggregration')
         if r > 49:
             LR = config.LR * 0.1
+
+        energy = float(energy_estimation.energy())
+        fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt - st}")
 
 
 def run(options_ins):
