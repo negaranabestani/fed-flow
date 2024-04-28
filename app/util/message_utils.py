@@ -64,8 +64,12 @@ def test_client_network():
     return f'{get_round()}_MSG_TEST_CLIENT_NETWORK'
 
 
-def test_server_network():
-    return f'{get_round()}_MSG_TEST_SERVER_NETWORK'
+def test_server_network_from_server():
+    return f'{get_round()}_MSG_TEST_SERVER_NETWORK_FROM_SERVER'
+
+
+def test_server_network_from_connection():
+    return f'{get_round()}_MSG_TEST_SERVER_NETWORK_FROM_CONNECTION'
 
 
 def test_network():

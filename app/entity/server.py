@@ -12,7 +12,7 @@ from app.entity.interface.fed_server_interface import FedServerInterface
 from app.fl_method import fl_method_parser
 
 sys.path.append('../../')
-from app.util import message_utils, model_utils
+from app.util import message_utils, model_utils, data_utils
 from app.config import config
 from app.config.logger import fed_logger
 
@@ -145,7 +145,7 @@ class FedServer(FedServerInterface):
                              f'{message_utils.local_iteration_flag_edge_to_server()}_{i}_{client_ip}',
                              url=config.CLIENT_MAP[client_ip])[1]
         i += 1
-        fed_logger.info(Fore.RED+f"{flag}")
+        fed_logger.info(Fore.RED + f"{flag}")
         if not flag:
             fed_logger.info(str(client_ip) + ' offloading training end')
             return 'Finish'
@@ -222,14 +222,17 @@ class FedServer(FedServerInterface):
             self.net_threads[connection_ips[i]].join()
 
     def _thread_network_testing(self, connection_ip):
+        url = None
+        if self.edge_based:
+            url = connection_ip
         network_time_start = time.time()
-        msg = [message_utils.test_network(), self.uninet.cpu().state_dict()]
-        self.send_msg(connection_ip, msg)
+        msg = [message_utils.test_server_network_from_server(), self.uninet.cpu().state_dict()]
+        self.send_msg(exchange=connection_ip, msg=msg, url=url)
         fed_logger.info("server test network sent")
-        msg = self.recv_msg(connection_ip, message_utils.test_network())
+        msg = self.recv_msg(exchange=connection_ip, expect_msg_type=message_utils.test_server_network_from_connection(), url=url)
         fed_logger.info("server test network received")
         network_time_end = time.time()
-        self.edge_bandwidth[connection_ip] = network_time_end - network_time_start
+        self.edge_bandwidth[connection_ip] = data_utils.sizeofmessage(msg) / (network_time_end - network_time_start)
 
     def client_network(self, edge_ips):
         """
@@ -237,7 +240,7 @@ class FedServer(FedServerInterface):
         """
 
         for i in edge_ips:
-            msg = self.recv_msg(i, message_utils.client_network())
+            msg = self.recv_msg(exchange=i, expect_msg_type=message_utils.client_network(), url=i)
             for k in msg[1].keys():
                 self.client_bandwidth[k] = msg[1][k]
 
@@ -307,31 +310,40 @@ class FedServer(FedServerInterface):
         self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(state, self.group_labels)
         fed_logger.info('Next Round OPs: ' + str(self.split_layers))
 
-    def edge_based_state(self, offloading, energy_tt_list, total_tt):
+    def edge_based_state(self):
         state = []
+        for i in self.client_bandwidth:
+            state.append(i)
+        for i in self.edge_bandwidth:
+            state.append(i)
+        #
+        # edge_offloading = []
+        # server_offloading = 0
+        # for i in range(len(config.EDGE_MAP)):
+        #     edge_offloading.append(0)
+        #     for j in range(len(config.EDGE_MAP.get((list(config.EDGE_MAP.keys()))[i]))):
+        #         split_key = config.CLIENTS_CONFIG.get(config.EDGE_MAP.get(list(config.EDGE_MAP.keys())[i])[j])
+        #         if self.split_layers[split_key][0] < self.split_layers[split_key][1]:
+        #             edge_offloading[i] += 1
+        #         if self.split_layers[split_key][1] < model_utils.get_unit_model_len() - 1:
+        #             server_offloading += 1
+        #     state.append(edge_offloading[i])
+        # state.append(server_offloading)
+
+        # for i in range(len(offloading)):
+        #     state.append(offloading[i][0])
+        #     state.append(offloading[i][1])
+        return state
+
+    def edge_based_reward_function_data(self, energy_tt_list, total_tt):
         energy = 0
+        data = []
         tt = []
         for et in energy_tt_list:
             energy += et[0]
             tt.append(et[1])
         energy /= len(energy_tt_list)
-        state.append(energy)
-        state.append(total_tt)
-        state.extend(tt)
-        edge_offloading = []
-        server_offloading = 0
-        for i in range(len(config.EDGE_MAP)):
-            edge_offloading.append(0)
-            for j in range(len(config.EDGE_MAP.get((list(config.EDGE_MAP.keys()))[i]))):
-                split_key = config.CLIENTS_CONFIG.get(config.EDGE_MAP.get(list(config.EDGE_MAP.keys())[i])[j])
-                if self.split_layers[split_key][0] < self.split_layers[split_key][1]:
-                    edge_offloading[i] += 1
-                if self.split_layers[split_key][1] < model_utils.get_unit_model_len() - 1:
-                    server_offloading += 1
-            state.append(edge_offloading[i])
-        state.append(server_offloading)
-
-        for i in range(len(offloading)):
-            state.append(offloading[i][0])
-            state.append(offloading[i][1])
-        return state
+        data.append(energy)
+        data.append(total_tt)
+        data.extend(tt)
+        return data
