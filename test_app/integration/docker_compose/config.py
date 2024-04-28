@@ -18,11 +18,11 @@ model_cfg = {
              ('D', 128, 10, 1, 10, 128 * 10)]
 }
 
-N = 10000  # data length
+N = 100  # data length
 # mq_url = "sparrow.rmq.cloudamqp.com"
 mq_port = 5672
 mq_url = "amqp://user:password@broker:5672/%2F"
-mq_host = "edge1"
+mq_host = "broker"
 mq_user = "user"
 mq_pass = "password"
 mq_vh = "/"
