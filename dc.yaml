@@ -9,8 +9,6 @@ services:
           cpus: '3'
       restart_policy:
         condition: on-failure
-    volumes:
-      - ./config.py:/fed-flow/app/config/config.py
     image: negaranabestani/fed-flow:rabbitmq
     hostname: server
     ports:
@@ -36,10 +34,7 @@ services:
           cpus: '1'
       restart_policy:
         condition: on-failure
-    volumes:
-      - ./config.py:/fed-flow/app/config/config.py
     image: negaranabestani/fed-flow:rabbitmq
     hostname: client1
     working_dir: /fed-flow/app/fl_training/runner
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 & python3 /fed-flow/energy/service.py & wait -n"
-

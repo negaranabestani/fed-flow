@@ -4,7 +4,7 @@ import time
 
 sys.path.append('../../../')
 from app.config import config
-from app.util import model_utils, message_utils, rl_utils
+from app.util import model_utils, message_utils
 from app.entity.server import FedServer
 from app.config.logger import fed_logger
 from app.entity.interface.fed_server_interface import FedServerInterface
@@ -32,9 +32,9 @@ def run_edge_based_no_offload(server: FedServerInterface, LR, options):
 
         # Recording each round training time, bandwidth and test_app accuracy
         training_time = e_time - s_time
-        # fed_logger.info("testing accuracy")
-        # test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
-        # res['test_acc_record'].append(test_acc)
+        fed_logger.info("testing accuracy")
+        test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
+        res['test_acc_record'].append(test_acc)
 
         fed_logger.info('Round Finish')
         fed_logger.info('==> Round Training Time: {:}'.format(training_time))
@@ -47,6 +47,8 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
     #all_splitting = rl_utils.allPossibleSplitting(7, 1)
     energy_x = []
     training_y = []
+    # split_list = [[[0, 1]], [[1, 2]], [[2, 3]], [[3, 4]], [[4, 5]], [[5, 6]]]
+
     for c in config.CLIENTS_LIST:
         energy_tt_list.append([0, 0])
     res = {}
@@ -54,7 +56,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
     for r in range(config.R):
         config.current_round = r
         fed_logger.info('====================================>')
-        fed_logger.info('==> Round {:} Start'.format(config.current_round))
+        fed_logger.info('==> Round {:} Start'.format(r))
 
         fed_logger.info("sending global weights")
         server.edge_offloading_global_weights()
@@ -74,14 +76,12 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
         fed_logger.info("getting state")
         offloading = server.split_layers
 
-        state = server.edge_based_state(offloading, energy_tt_list, training_time)
-        energy_x.append(state[0])
-        training_y.append(state[1])
+        state = server.edge_based_state()
         fed_logger.info("state: " + str(state))
 
         fed_logger.info("splitting")
-        # server.split_layers = all_splitting[r]
         server.split(state, options)
+        # server.split_layers = split_list[r]
         server.edge_split_layer()
 
         if r > 49:
@@ -112,14 +112,12 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
         with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
             pickle.dump(res, f)
 
-        # fed_logger.info("testing accuracy")
-        # test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
-        # res['test_acc_record'].append(test_acc)
+        fed_logger.info("testing accuracy")
+        test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
+        res['test_acc_record'].append(test_acc)
 
         fed_logger.info('Round Finish')
         fed_logger.info('==> Round Training Time: {:}'.format(training_time))
-        rl_utils.draw_scatter(energy_x, training_y, "e-t", "energy", "training time",
-                              "/Graphs", "e-t", True)
 
 
 def run_no_edge_offload(server: FedServerInterface, LR, options):
@@ -132,7 +130,6 @@ def run_no_edge_offload(server: FedServerInterface, LR, options):
         res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
 
         for r in range(config.R):
-            config.current_round = r
             fed_logger.info('====================================>')
             fed_logger.info('==> Round {:} Start'.format(r))
 
@@ -171,8 +168,8 @@ def run_no_edge_offload(server: FedServerInterface, LR, options):
             res['bandwidth_record'].append(server.bandwith())
             with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
                 pickle.dump(res, f)
-            # test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
-            # res['test_acc_record'].append(test_acc)
+            test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
+            res['test_acc_record'].append(test_acc)
 
             fed_logger.info('Round Finish')
             fed_logger.info('==> Round Training Time: {:}'.format(training_time))
@@ -183,7 +180,6 @@ def run_no_edge(server: FedServerInterface, options):
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
 
     for r in range(config.R):
-        config.current_round = r
         fed_logger.info('====================================>')
         fed_logger.info('==> Round {:} Start'.format(r))
 
@@ -205,8 +201,8 @@ def run_no_edge(server: FedServerInterface, options):
         res['bandwidth_record'].append(server.bandwith())
         with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
             pickle.dump(res, f)
-        # test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
-        # res['test_acc_record'].append(test_acc)
+        test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
+        res['test_acc_record'].append(test_acc)
 
         fed_logger.info('Round Finish')
         fed_logger.info('==> Round Training Time: {:}'.format(training_time))
@@ -234,5 +230,5 @@ def run(options_ins):
         server_ins = FedServer(options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)
         run_no_edge(server_ins, options_ins)
-    # msg = [message_utils.finish, True]
-    # server_ins.scatter(msg)
+    msg = [message_utils.finish, True]
+    server_ins.scatter(msg)

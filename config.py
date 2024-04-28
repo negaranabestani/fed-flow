@@ -8,7 +8,6 @@ dataset_name = ''
 home = sys.path[0].split('fed-flow')[0] + 'fed-flow' + "/app"
 dataset_path = home + '/dataset/data/'
 N = 100  # data length
-
 # Model configration
 model_cfg = {
     # (Type, in_channels, out_channels, kernel_size, out_size(c_out*h*w), flops(c_out*h*w*k*k*c_in))
@@ -19,11 +18,10 @@ model_cfg = {
              ('D', 128, 10, 1, 10, 128 * 10)]
 }
 
-# N = 100  # data length
 # mq_url = "sparrow.rmq.cloudamqp.com"
 mq_port = 5672
 mq_url = "amqp://user:password@broker:5672/%2F"
-mq_host = "broker"
+mq_host = "edge1"
 mq_user = "user"
 mq_pass = "password"
 mq_vh = "/"
@@ -37,8 +35,7 @@ split_layer = [6]  # Initial split layers
 model_len = 7
 
 # FL training configration
-
-R = 2000 * 50  # FL rounds
+R = 6  # FL rounds
 LR = 0.01  # Learning rate
 B = 100  # Batch size
 
@@ -67,7 +64,7 @@ EDGESERVER_PORT = {'edge1': 5001}
 
 K = 1  # Number of devices
 G = 1  # Number of groups
-S = 1  # Number of server connecting devices
+S = 1
 
 # Unique clients order
 HOST2IP = {}
