@@ -65,7 +65,7 @@ class FedServerInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def edge_split_layer(self):
+    def get_split_layers_config_from_edge(self):
         pass
 
     @abstractmethod

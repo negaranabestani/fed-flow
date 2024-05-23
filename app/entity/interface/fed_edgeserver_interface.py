@@ -51,7 +51,7 @@ class FedEdgeServerInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def split_layer(self, client_ips):
+    def get_split_layers_config(self, client_ips):
         """
         receive send splitting data to clients
         """

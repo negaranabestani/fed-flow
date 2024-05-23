@@ -40,8 +40,8 @@ def run(options_ins):
 
     for layer in range(model_utils.get_unit_model_len()):
         for i in range(5):
-            client.edge_global_weights()
-            client.edge_split_layer()
+            client.get_edge_global_weights()
+            client.get_split_layers_config_from_edge()
             st = time.time()
 
             # fed_logger.info("initializing client")
@@ -54,7 +54,7 @@ def run(options_ins):
 
             # fed_logger.info("sending local weights")
             start_transmission()
-            msg = client.edge_upload()
+            msg = client.send_local_weights_to_edge()
             end_transmission(sys.getsizeof(msg) * 8)
             et = time.time()
             tt = et - st
