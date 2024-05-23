@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import torch
 from torch import nn, optim
 
-from app.entity.Communicator import Communicator
+from app.entity.communicator import Communicator
 from app.util import model_utils
 
 

@@ -14,37 +14,6 @@ from app.config.logger import fed_logger
 logging.getLogger("pika").setLevel(logging.FATAL)
 
 
-def call_back_recv_msg(ch, method, properties, body):
-    ch.stop_consuming()
-    ch.close()
-    global answer
-    answer = body
-
-
-def pack(msg, is_weight=False):
-    if is_weight:
-        ll = []
-        for o in msg[1:]:
-            to_send = io.BytesIO()
-            torch.save(o, to_send, _use_new_zipfile_serialization=False)
-            to_send.seek(0)
-            ll.append(bytes(to_send.read()))
-        return pickle.dumps(ll)
-    else:
-        return json.dumps(msg[1:])
-
-
-def unpack(msg, is_weight=False):
-    if is_weight:
-        fl = []
-        ll = pickle.loads(msg)
-        for o in ll:
-            fl.append(torch.load(io.BytesIO(o)))
-        return fl
-    else:
-        return json.loads(msg)
-
-
 class Communicator(object):
     def __init__(self):
         self.connection = None
@@ -129,7 +98,8 @@ class Communicator(object):
         else:
             return self.open_connection(self.url)
 
-    def send_queue(self, exchange, msg, channel):
+    @staticmethod
+    def declare_queue_if_not_exist(exchange, msg, channel):
         queue = None
         while queue is None:
             try:
@@ -144,9 +114,9 @@ class Communicator(object):
         return queue
 
     def send_msg(self, exchange, msg, is_weight=False, url=None):
-        bb = pack(msg, is_weight)
+        bb = self.serialize_message(msg, is_weight)
         channel, connection = self.open_connection(url)
-        queue = self.send_queue(exchange, msg, channel)
+        queue = self.declare_queue_if_not_exist(exchange, msg, channel)
         # q2 = queue.method.message_count
         # if not msg[0].__contains__("MSG_LOCAL_ITERATION_FLAG") and q2 == 0:
         #     self.channel.basic_publish(exchange=config.cluster + "." + exchange,
@@ -212,7 +182,7 @@ class Communicator(object):
                     # q2 = queue.method.message_count
                     # fed_logger.info(Fore.MAGENTA + f"{expect_msg_type},{q2}")
                     msg = [expect_msg_type]
-                    res = unpack(body, is_weight)
+                    res = self.deserialize_message(body, is_weight)
                     msg.extend(res)
                     channel.stop_consuming()
                     channel.cancel()
@@ -232,3 +202,27 @@ class Communicator(object):
                 msg.extend(res)
                 fed_logger.info(Fore.CYAN + f"received {msg[0]},{type(msg[1])},{is_weight}")
                 return msg
+
+    @staticmethod
+    def serialize_message(msg, is_weight=False):
+        if is_weight:
+            ll = []
+            for o in msg[1:]:
+                to_send = io.BytesIO()
+                torch.save(o, to_send, _use_new_zipfile_serialization=False)
+                to_send.seek(0)
+                ll.append(bytes(to_send.read()))
+            return pickle.dumps(ll)
+        else:
+            return json.dumps(msg[1:])
+
+    @staticmethod
+    def deserialize_message(msg, is_weight=False):
+        if is_weight:
+            fl = []
+            ll = pickle.loads(msg)
+            for o in ll:
+                fl.append(torch.load(io.BytesIO(o)))
+            return fl
+        else:
+            return json.loads(msg)

@@ -5,7 +5,7 @@ from torch import multiprocessing
 
 from app.config import config
 from app.config.logger import fed_logger
-from app.entity.Communicator import Communicator
+from app.entity.communicator import Communicator
 from app.util import data_utils, model_utils, message_utils
 
 
