@@ -7,16 +7,21 @@ simnet = False
 dataset_name = ''
 home = sys.path[0].split('fed-flow')[0] + 'fed-flow' + "/app"
 dataset_path = home + '/dataset/data/'
-N = 100  # data length
-# mq_url = "sparrow.rmq.cloudamqp.com"
-mq_port = 5672
-mq_url = "amqp://user:password@broker:5672/%2F"
-mq_host = "edge1"
-mq_user = "user"
-mq_pass = "password"
-mq_vh = "/"
-cluster = "fed-flow"
-current_round = 0
+N = 500  # data # length
+
+mq_url = "amqps://unspbyvk:n4ZRJKnuQ2vYn1foWUe_E1UgMEXYZUSX@sparrow.rmq.cloudamqp.com/unspbyvk"
+mq_user = "unspbyvk"
+mq_pass = "n4ZRJKnuQ2vYn1foWUe_E1UgMEXYZUSX"
+cluster= "fed-flow"
+# Model configration
+model_cfg = {
+    # (Type, in_channels, out_channels, kernel_size, out_size(c_out*h*w), flops(c_out*h*w*k*k*c_in))
+    'VGG5': [('C', 3, 32, 3, 32 * 32 * 32, 32 * 32 * 32 * 3 * 3 * 3), ('M', 32, 32, 2, 32 * 16 * 16, 0),
+             ('C', 32, 64, 3, 64 * 16 * 16, 64 * 16 * 16 * 3 * 3 * 32), ('M', 64, 64, 2, 64 * 8 * 8, 0),
+             ('C', 64, 64, 3, 64 * 8 * 8, 64 * 8 * 8 * 3 * 3 * 64),
+             ('D', 8 * 8 * 64, 128, 1, 64, 128 * 8 * 8 * 64),
+             ('D', 128, 10, 1, 10, 128 * 10)]
+}
 model_name = ''
 model_size = 1.28
 model_flops = 32.902
@@ -25,12 +30,12 @@ split_layer = [[6, 6]]  # Initial split layers
 model_len = 7
 
 # FL training configration
-R = 6  # FL rounds
+R = 2  # FL rounds
 LR = 0.01  # Learning rate
 B = 100  # Batch size
 
 # RL training configration
-max_episodes = 2000  # max training episodes
+max_episodes = 100  # max training episodes
 max_timesteps = 50  # max timesteps in one episode
 exploration_times = 20  # exploration times without std decay
 n_latent_var = 64  # number of variables in hidden layer
@@ -58,10 +63,9 @@ S = 1
 
 # Unique clients order
 HOST2IP = {}
-CLIENTS_INDEX = {0: 'client1'}
 CLIENTS_CONFIG = {'client1': 0}
 EDGE_SERVER_LIST = ['edge1']
-EDGE_SERVER_CONFIG = {0: 'edge1'}
+EDGE_SERVER_CONFIG = {'edge1': 0}
 CLIENTS_LIST = ['client1']
 EDGE_MAP = {'edge1': ['client1']}
 CLIENT_MAP = {'client1': 'edge1'}

@@ -11,7 +11,7 @@ N = 100  # data length
 # mq_url = "sparrow.rmq.cloudamqp.com"
 mq_port = 5672
 mq_url = "amqp://user:password@broker:5672/%2F"
-mq_host = "edge1"
+mq_host = "broker"
 mq_user = "user"
 mq_pass = "password"
 mq_vh = "/"
@@ -21,17 +21,17 @@ model_name = ''
 model_size = 1.28
 model_flops = 32.902
 total_flops = 8488192
-split_layer = [[6, 6]]  # Initial split layers
+split_layer = [[6, 6], [6, 6]]  # Initial split layers
 model_len = 7
 
 # FL training configration
-R = 6  # FL rounds
+R = 2000 * 50  # FL rounds
 LR = 0.01  # Learning rate
 B = 100  # Batch size
 
 # RL training configration
 max_episodes = 2000  # max training episodes
-max_timesteps = 50  # max timesteps in one episode
+max_timesteps = 10  # max timesteps in one episode
 exploration_times = 20  # exploration times without std decay
 n_latent_var = 64  # number of variables in hidden layer
 action_std = 0.5  # constant std for action distribution (Multivariate Normal)
@@ -52,16 +52,16 @@ SERVER_ADDR = 'server'
 SERVER_PORT = 5002
 EDGESERVER_PORT = {'edge1': 5001}
 
-K = 1  # Number of devices
+K = 2  # Number of devices
 G = 1  # Number of groups
 S = 1
 
 # Unique clients order
 HOST2IP = {}
-CLIENTS_INDEX = {0: 'client1'}
-CLIENTS_CONFIG = {'client1': 0}
+CLIENTS_INDEX = {0: 'client1', 1: 'client2'}
+CLIENTS_CONFIG = {'client1': 0, 'client2': 1}
 EDGE_SERVER_LIST = ['edge1']
 EDGE_SERVER_CONFIG = {0: 'edge1'}
-CLIENTS_LIST = ['client1']
-EDGE_MAP = {'edge1': ['client1']}
-CLIENT_MAP = {'client1': 'edge1'}
+CLIENTS_LIST = ['client1', 'client2']
+EDGE_MAP = {'edge1': ['client1', 'client2']}
+CLIENT_MAP = {'client1': 'edge1', 'client2': 'edge1'}

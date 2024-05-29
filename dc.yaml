@@ -1,0 +1,37 @@
+version: '3'
+services:
+  server:
+    volumes:
+      - ./config.py:/fed-flow/app/config/config.py
+      - ./../../../Graphs(testbed):/Graphs
+      - ./../../../agent:/app/agent
+    image: negaranabestani/fed-flow:rabbitmq
+    ports:
+      - "5002:5002"
+    hostname: server
+    deploy:
+      resources:
+        limits:
+          cpus: '6'
+        reservations:
+          cpus: '6'
+      restart_policy:
+        condition: on-failure
+    working_dir: /fed-flow/app/rl_training/runner
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py -o True -e True"
+
+  client1:
+    volumes:
+      - ./config.py:/fed-flow/app/config/config.py
+    image: negaranabestani/fed-flow:rabbitmq
+    hostname: client1
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+        reservations:
+          cpus: '2'
+      restart_policy:
+        condition: on-failure
+    working_dir: /fed-flow/app/rl_training/runner
+    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -e True & wait -n"
