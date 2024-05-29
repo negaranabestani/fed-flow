@@ -47,13 +47,13 @@ def run(options_ins):
         # fed_logger.info('Episode: {} START'.format(r))
 
         # fed_logger.info("receiving global weights")
-        client.edge_global_weights()
+        client.get_edge_global_weights()
 
         # fed_logger.info("test network")
         # client.test_network()
 
         # fed_logger.info("receiving splitting info")
-        client.edge_split_layer()
+        client.get_split_layers_config_from_edge()
         st = time.time()
 
         # fed_logger.info("initializing client")
@@ -66,7 +66,7 @@ def run(options_ins):
 
         # fed_logger.info("sending local weights")
         start_transmission()
-        msg = client.edge_upload()
+        msg = client.send_local_weights_to_edge()
         end_transmission(sys.getsizeof(msg) * 8)
         et = time.time()
         tt = et - st
@@ -82,13 +82,13 @@ def run(options_ins):
             # fed_logger.info('TimeStep: {} START'.format(r))
 
             # fed_logger.info("receiving global weights")
-            client.edge_global_weights()
+            client.get_edge_global_weights()
 
             # fed_logger.info("test network")
             # client.test_network()
 
             # fed_logger.info("receiving splitting info")
-            client.edge_split_layer()
+            client.get_split_layers_config_from_edge()
             st = time.time()
 
             # fed_logger.info("initializing client")
@@ -101,7 +101,7 @@ def run(options_ins):
 
             # fed_logger.info("sending local weights")
             start_transmission()
-            msg = client.edge_upload()
+            msg = client.send_local_weights_to_edge()
             et = time.time()
             tt = et - st
             end_transmission(sys.getsizeof(msg) * 8)
@@ -129,10 +129,10 @@ def preTrain(client):
 
     for i in range(5):
         fed_logger.info("Getting params...")
-        client.edge_global_weights()
+        client.get_edge_global_weights()
         fed_logger.info("test network")
         # client.test_network()
-        client.edge_split_layer()
+        client.get_split_layers_config_from_edge()
         st = time.time()
 
         computation_start()
@@ -145,7 +145,7 @@ def preTrain(client):
 
         start_transmission()
         fed_logger.info("Uploaded")
-        msg = client.edge_upload()
+        msg = client.send_local_weights_to_edge()
         et = time.time()
         tt = et - st
         end_transmission(sys.getsizeof(msg) * 8)

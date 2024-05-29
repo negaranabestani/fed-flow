@@ -38,7 +38,7 @@ def run(options_ins):
             # server.test_server_network()
 
             # fed_logger.info("receiving and sending splitting info")
-            edge_server.split_layer(client_ips)
+            edge_server.get_split_layers_config(client_ips)
 
             # fed_logger.info("initializing server")
             edge_server.initialize(edge_server.split_layers, LR, client_ips)

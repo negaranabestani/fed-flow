@@ -65,7 +65,7 @@ def run(options):
             offloading = server.split_layers
 
             fed_logger.info(f'ACTION : {actions}')
-            server.edge_split_layer()
+            server.get_split_layers_config_from_edge()
 
             fed_logger.info("initializing server")
             server.initialize(server.split_layers, LR)
@@ -286,7 +286,7 @@ def preTrain(server, options) -> tuple[float, float]:
 
         # fed_logger.info("splitting")
         # server.split(state, options)
-        server.edge_split_layer()
+        server.get_split_layers_config_from_edge()
 
         # fed_logger.info("initializing server")
         server.initialize(server.split_layers, 0.1)
@@ -375,7 +375,7 @@ def rl_flow(server, options, r, LR):
 
     # fed_logger.info("splitting")
     # server.split(state, options)
-    server.edge_split_layer()
+    server.get_split_layers_config_from_edge()
 
     if r > 49:
         LR = config.LR * 0.1

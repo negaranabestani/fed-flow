@@ -79,7 +79,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
         fed_logger.info("splitting")
         server.split(state, options)
         # server.split_layers = split_list[r]
-        server.edge_split_layer()
+        server.get_split_layers_config_from_edge()
 
         if r > 49:
             LR = config.LR * 0.1

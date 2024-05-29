@@ -7,7 +7,7 @@ from torch import nn
 
 from app.config import config
 from app.config.logger import fed_logger
-from app.entity.Communicator import Communicator
+from app.entity.communicator import Communicator
 from app.fl_method import fl_method_parser
 from app.util import data_utils, model_utils
 
@@ -65,7 +65,7 @@ class FedServerInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def edge_split_layer(self):
+    def get_split_layers_config_from_edge(self):
         pass
 
     @abstractmethod

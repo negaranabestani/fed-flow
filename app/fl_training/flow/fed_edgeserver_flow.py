@@ -33,7 +33,7 @@ def run_offload(server: FedEdgeServerInterface, LR):
         # fed_logger.info("test server network")
         # server.test_server_network()
         fed_logger.info("receiving and sending splitting info")
-        server.split_layer(client_ips)
+        server.get_split_layers_config(client_ips)
         fed_logger.info("initializing server")
         server.initialize(server.split_layers, LR, client_ips)
         threads = {}
