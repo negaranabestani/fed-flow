@@ -50,7 +50,7 @@ def run_offload(server: FedEdgeServerInterface, LR):
             LR = config.LR * 0.1
         energy = float(energy_estimation.energy())
         # energy /= batch_num
-        fed_logger.info(Fore.LIGHTBLUE_EX + f"Energy : {energy}")
+        fed_logger.info(Fore.LIGHTBLUE_EX + f"Energy : {energy}" + Fore.RESET)
 
 
 def run_no_offload(server: FedEdgeServerInterface, LR):

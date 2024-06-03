@@ -145,7 +145,7 @@ class FedServer(FedServerInterface):
                              f'{message_utils.local_iteration_flag_edge_to_server()}_{i}_{client_ip}',
                              url=config.CLIENT_MAP[client_ip])[1]
         i += 1
-        fed_logger.info(Fore.RED + f"{flag}")
+        fed_logger.info(Fore.RED+f"{flag}" + Fore.RESET)
         if not flag:
             fed_logger.info(str(client_ip) + ' offloading training end')
             return 'Finish'
@@ -157,7 +157,7 @@ class FedServer(FedServerInterface):
                 flag = self.recv_msg(config.CLIENT_MAP[client_ip],
                                      f'{message_utils.local_iteration_flag_edge_to_server()}_{i}_{client_ip}',
                                      url=config.CLIENT_MAP[client_ip])[1]
-                fed_logger.info(Fore.RED + f"{flag}")
+                fed_logger.info(Fore.RED + f"{flag}" + Fore.RESET)
                 if not flag:
                     break
                 msg = self.recv_msg(config.CLIENT_MAP[client_ip],

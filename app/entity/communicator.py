@@ -71,7 +71,7 @@ class Communicator(object):
                                                                          username=config.mq_user,
                                                                          password=config.mq_pass)))
         except Exception as e:
-            pass
+            fed_logger.error(Fore.RED + f"{e}" + Fore.RESET)
 
     def on_connection_open(self, _unused_connection):
         fed_logger.info("opened")
@@ -114,15 +114,15 @@ class Communicator(object):
         while True:
             try:
                 channel, connection = self.reconnect(connection, channel)
-                fed_logger.info(Fore.GREEN + f"publishing {msg[0]}")
+                fed_logger.info(Fore.GREEN + f"publishing {msg[0]}" + Fore.RESET)
                 channel.basic_publish(exchange=config.cluster + "." + exchange,
                                       routing_key=config.cluster + "." + msg[0] + "." + exchange,
                                       body=bb, mandatory=True, properties=pika.BasicProperties(
                         delivery_mode=pika.DeliveryMode.Transient))
                 self.close_connection(channel, connection)
-                fed_logger.info(Fore.GREEN + f"published {msg[0]}")
+                fed_logger.info(Fore.GREEN + f"published {msg[0]}" + Fore.RESET)
                 if self.send_bug:
-                    fed_logger.info(Fore.RED + f"published {msg[0]}")
+                    fed_logger.info(Fore.RED + f"published {msg[0]}" + Fore.RESET)
                 published = True
                 return
 
@@ -130,12 +130,12 @@ class Communicator(object):
                 if published:
                     return
                 self.send_bug = True
-                fed_logger.error(Fore.RED + f"{e}")
+                fed_logger.error(Fore.RED + f"{e}" + Fore.RESET)
                 continue
 
     def recv_msg(self, exchange, expect_msg_type: str = None, is_weight=False, url=None):
         channel, connection = self.open_connection(url)
-        fed_logger.info(Fore.YELLOW + f"receiving {expect_msg_type}")
+        fed_logger.info(Fore.YELLOW + f"receiving {expect_msg_type}" + Fore.RESET)
         res = None
 
         while True:
@@ -148,7 +148,7 @@ class Communicator(object):
                                    queue=config.cluster + "." + expect_msg_type + "." + exchange,
                                    routing_key=config.cluster + "." + expect_msg_type + "." + exchange)
                 fed_logger.info(config.cluster + "." + expect_msg_type + "." + exchange)
-                fed_logger.info(Fore.YELLOW + f"loop {expect_msg_type}")
+                fed_logger.info(Fore.YELLOW + f"loop {expect_msg_type}" + Fore.RESET)
                 for method_frame, properties, body in channel.consume(queue=
                                                                       config.cluster + "." + expect_msg_type + "." + exchange
                                                                       ):
@@ -160,17 +160,17 @@ class Communicator(object):
                     channel.basic_ack(method_frame.delivery_tag)
                     channel.queue_delete(queue=config.cluster + "." + expect_msg_type + "." + exchange)
                     self.close_connection(channel, connection)
-                    fed_logger.info(Fore.CYAN + f"received {msg[0]},{type(msg[1])},{is_weight}")
+                    fed_logger.info(Fore.CYAN + f"received {msg[0]},{type(msg[1])},{is_weight}" + Fore.RESET)
                     return msg
             except Exception as e:
-                fed_logger.info(Fore.RED + f"{expect_msg_type},{e},{is_weight}")
-                fed_logger.info(Fore.RED + f"revived {expect_msg_type}")
+                fed_logger.info(Fore.RED + f"{expect_msg_type},{e},{is_weight}" + Fore.RESET)
+                fed_logger.info(Fore.RED + f"revived {expect_msg_type}" + Fore.RESET)
                 if res is None:
                     continue
                 self.close_connection(channel, connection)
                 msg = [expect_msg_type]
                 msg.extend(res)
-                fed_logger.info(Fore.CYAN + f"received {msg[0]},{type(msg[1])},{is_weight}")
+                fed_logger.info(Fore.CYAN + f"received {msg[0]},{type(msg[1])},{is_weight}" + Fore.RESET)
                 return msg
 
     @staticmethod
