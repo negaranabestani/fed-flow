@@ -245,14 +245,14 @@ class FedServer(FedServerInterface):
             for k in msg[1].keys():
                 self.client_bandwidth[k] = msg[1][k]
 
-    def split_layer(self):
+    def send_split_layers_config(self):
         """
         send splitting data
         """
         msg = [message_utils.split_layers(), self.split_layers]
         self.scatter(msg)
 
-    def get_split_layers_config_from_edge(self):
+    def send_split_layers_config_to_edges(self):
         """
         send splitting data
         """

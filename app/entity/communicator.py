@@ -94,15 +94,19 @@ class Communicator(object):
     def declare_queue_if_not_exist(exchange, msg, channel):
         queue = None
         while queue is None:
+            exchange_name = config.cluster + "." + exchange
+            queue_name = config.cluster + "." + msg[0] + "." + exchange
+            routing_key = config.cluster + "." + msg[0] + "." + exchange
             try:
-                channel.exchange_declare(exchange=config.cluster + "." + exchange, durable=True,
+                channel.exchange_declare(exchange=exchange_name, durable=True,
                                          exchange_type='topic')
-                queue = channel.queue_declare(queue=config.cluster + "." + msg[0] + "." + exchange)
-                channel.queue_bind(exchange=config.cluster + "." + exchange,
-                                   queue=config.cluster + "." + msg[0] + "." + exchange,
-                                   routing_key=config.cluster + "." + msg[0] + "." + exchange)
+                queue = channel.queue_declare(queue=queue_name)
+                channel.queue_bind(exchange=exchange_name,
+                                   queue=queue_name,
+                                   routing_key=routing_key)
             except Exception:
-                continue
+                fed_logger.error(
+                    Fore.RED + f"failed to declare queue {queue_name} in exchange {exchange_name}" + Fore.RESET)
         return queue
 
     def send_msg(self, exchange, msg, is_weight=False, url=None):

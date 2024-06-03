@@ -132,7 +132,7 @@ def preTrain(client):
         client.get_edge_global_weights()
         fed_logger.info("test network")
         # client.test_network()
-        client.get_split_layers_config_from_edge()
+        client.send_split_layers_config_to_edges()
         st = time.time()
 
         computation_start()

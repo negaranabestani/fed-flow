@@ -65,11 +65,11 @@ class FedServerInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def get_split_layers_config_from_edge(self):
+    def send_split_layers_config_to_edges(self):
         pass
 
     @abstractmethod
-    def split_layer(self):
+    def send_split_layers_config(self):
         """
         send splitting data
         """
