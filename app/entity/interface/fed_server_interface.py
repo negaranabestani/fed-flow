@@ -129,8 +129,9 @@ class FedServerInterface(ABC, Communicator):
             for i in list1:
                 self.send_msg(exchange=i, msg=msg, is_weight=is_weight, url=i)
 
-        for i in list1:
-            self.send_msg(exchange=i, msg=msg, is_weight=is_weight)
+        else:
+            for i in list1:
+                self.send_msg(exchange=i, msg=msg, is_weight=is_weight)
 
     def concat_norm(self, ttpi, offloading):
         ttpi_order = []
