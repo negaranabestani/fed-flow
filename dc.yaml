@@ -3,35 +3,56 @@ services:
   server:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-      - ./../../../Graphs(testbed):/Graphs
+      - ./../../../Graphs:/Graphs
       - ./../../../agent:/app/agent
     image: negaranabestani/fed-flow:rabbitmq
     ports:
       - "5002:5002"
     hostname: server
+    depends_on:
+      - broker
     deploy:
-      resources:
-        limits:
-          cpus: '6'
-        reservations:
-          cpus: '6'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/rl_training/runner
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py -o True -e True"
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py -o True -s random_splitting -e True"
+  broker:
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=password
+    hostname: broker
 
+  edge1:
+    volumes:
+      - ./config.py:/fed-flow/app/config/config.py
+    image: negaranabestani/fed-flow:rabbitmq
+    ports:
+      - "5001:5001"
+    hostname: edge1
+    deploy:
+      restart_policy:
+        condition: on-failure
+    working_dir: /fed-flow/app/rl_training/runner
+    depends_on:
+      - server
+      - broker
+    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -o True -s random_splitting -e True & wait -n"
   client1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
     image: negaranabestani/fed-flow:rabbitmq
     hostname: client1
     deploy:
-      resources:
-        limits:
-          cpus: '2'
-        reservations:
-          cpus: '2'
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/rl_training/runner
-    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -e True & wait -n"
+    depends_on:
+      - edge1
+      - broker
+    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s random_splitting -e True & wait -n"

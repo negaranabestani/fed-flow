@@ -11,7 +11,7 @@ N = 100  # data length
 # mq_url = "sparrow.rmq.cloudamqp.com"
 mq_port = 5672
 mq_url = "amqp://user:password@broker:5672/%2F"
-mq_host = "edge1"
+mq_host = "broker"
 mq_user = "user"
 mq_pass = "password"
 mq_vh = "/"
@@ -25,7 +25,7 @@ split_layer = [[6, 6]]  # Initial split layers
 model_len = 7
 
 # FL training configration
-R = 6  # FL rounds
+R = 2  # FL rounds
 LR = 0.01  # Learning rate
 B = 100  # Batch size
 
