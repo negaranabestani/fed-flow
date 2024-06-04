@@ -32,7 +32,7 @@ def run_edge_based(client: FedClientInterface, LR):
         client.edge_global_weights()
         st = time.time()
         fed_logger.info("test network")
-        client.test_network()
+        client.edge_test_network()
         fed_logger.info("receiving splitting info")
         client.edge_split_layer()
         fed_logger.info("initializing client")

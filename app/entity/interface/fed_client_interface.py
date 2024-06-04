@@ -50,8 +50,13 @@ class FedClientInterface(ABC, Communicator):
         pass
 
     @abstractmethod
+    def edge_test_network(self):
+        pass
+
+    @abstractmethod
     def edge_split_layer(self):
         pass
+
     @abstractmethod
     def split_layer(self):
         """
