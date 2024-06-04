@@ -54,6 +54,7 @@ def run_offload(server: FedEdgeServerInterface, LR):
 
 
 def run_no_offload(server: FedEdgeServerInterface, LR):
+    server.initialize(config.split_layer, LR, config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]])
     res = {}
     res['trianing_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
     client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
