@@ -19,7 +19,7 @@ def run(options):
 
         server = FedServer(options.get('model'), options.get('dataset'), offload, edge_based)
 
-        agent = rl_utils.createAgent(agentType='tensorforce', fraction=0.8, timestepNum=config.max_timesteps,
+        agent = rl_utils.createAgent(agentType='tf_ppo', fraction=0.8, timestepNum=config.max_timesteps,
                                      saveSummariesPath=None)
         server.initialize(config.split_layer, LR)
         training_time = 0
@@ -37,36 +37,36 @@ def run(options):
             fed_logger.info('====================================>')
             fed_logger.info(f'==> Episode {r} Start')
 
+            randActions = np.random.uniform(low=0.0, high=1.0, size=(config.K * 2))
+            actions = []
+            for i in range(0, len(randActions), 2):
+                actions.append([rl_utils.actionToLayerEdgeBase([randActions[i], randActions[i + 1]])[0],
+                                rl_utils.actionToLayerEdgeBase([randActions[i], randActions[i + 1]])[1]])
+            fed_logger.info("splitting")
+
+            server.split_layers = [[2,5]]
+            fed_logger.info(f"Action: {server.split_layers}")
+
             fed_logger.info("sending global weights")
-            server.edge_offloading_global_weights()
             s_time = time.time()
+            server.edge_offloading_global_weights()
 
             # fed_logger.info("receiving client network info")
             # server.client_network(config.EDGE_SERVER_LIST)
             #
             # fed_logger.info("test edge servers network")
             # server.test_network(config.EDGE_SERVER_LIST)
+            server.offloading = server.get_offloading(server.split_layers)
 
             fed_logger.info("clustering")
             server.cluster(options)
 
-            fed_logger.info("splitting")
-            randActions = np.random.uniform(low=0.0, high=1.0, size=(config.K * 2))
-            actions = []
-            for i in range(0, len(randActions), 2):
-                actions.append([rl_utils.actionToLayerEdgeBase([randActions[i], randActions[i + 1]])[0],
-                                rl_utils.actionToLayerEdgeBase([randActions[i], randActions[i + 1]])[1]])
-
-            server.split_layers = [[3,4]]
             # fed_logger.info("preparing state...")
-            server.offloading = server.get_offloading(server.split_layers)
 
             # fed_logger.info("getting state")
             offloading = server.split_layers
 
-            fed_logger.info(f'ACTION : {actions}')
-            server.get_split_layers_config_from_edge()
-
+            server.edge_split_layer()
             fed_logger.info("initializing server")
             server.initialize(server.split_layers, LR)
 
@@ -116,8 +116,11 @@ def run(options):
                                     rl_utils.actionToLayerEdgeBase([floatAction[i], floatAction[i + 1]])[1]])
 
                 fed_logger.info(f'ACTION : {actions}')
+                fed_logger.info(f"TYPE OF ACTION: {type(actions)}")
+                fed_logger.info(f"TYPE OF ACTION: {type(actions[0][0])}")
+                fed_logger.info(f"TYPE OF ACTION: {type(actions[0])}")
                 actionList.append(actions)
-                server.split_layers = [[1,3]]
+                server.split_layers = actions
 
                 s_time = time.time()
                 energy_tt_list = rl_flow(server, options, r, LR)
@@ -254,8 +257,8 @@ def preTrain(server, options) -> tuple[float, float]:
     fed_logger.info('====================================>')
     fed_logger.info(f'==> Pre Training Started')
 
-    for j in range(5):
-        fed_logger.info(f"Try {j + 1}/5")
+    for j in range(10):
+        fed_logger.info(f"Try {j + 1}/10")
         fed_logger.info('====================================>')
         # for splitting in splittingLayer:
         #     splittingArray = list()
@@ -325,8 +328,8 @@ def preTrain(server, options) -> tuple[float, float]:
 
     fed_logger.info("====================================>")
     fed_logger.info(f"Tries Finished.")
-    for i in range(5):
-        fed_logger.info(f"Try {i + 1}/5 :")
+    for i in range(10):
+        fed_logger.info(f"Try {i + 1}/10 :")
         fed_logger.info(f"==> classic-fl Energy : {energyArray[i]}")
         fed_logger.info(f"==> classic-fl Training Time : {trainingTimeArray[i]}")
     fed_logger.info("====================================>")

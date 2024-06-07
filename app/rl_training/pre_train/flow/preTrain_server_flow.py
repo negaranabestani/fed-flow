@@ -23,43 +23,26 @@ def run(options):
         training_time = 0
         energy = 0
 
-        energyOfLayers = np.zeros((config.K, model_utils.get_unit_model_len()))
-        ttOfLayers = np.zeros((config.K, model_utils.get_unit_model_len()))
-        fed_logger.info(energyOfLayers)
         x = []
 
-        for layer in range(model_utils.get_unit_model_len()):
+        for layer in range(model_utils.get_unit_model_len()-1):
             fed_logger.info('====================================>')
             fed_logger.info(f'==> Energy Calculation of Layer {layer} Started.')
-            for i in range(5):
-                actions = [[layer, layer]] * config.K
+            for i in range(10):
+                actions = [[layer, layer + 1]] * config.K
                 fed_logger.info("=======================================================")
                 fed_logger.info(f"Try {i + 1} for Layer {layer}")
                 fed_logger.info(f"Actions: {actions}")
                 server.split_layers = actions
                 s_time = time.time()
                 energy_tt_list = rl_flow(server, options, LR)
-                for j in range(config.K):
-                    energyOfLayers[j][layer] += energy_tt_list[j][0]
-                    ttOfLayers[j][layer] += energy_tt_list[j][1]
+
                 e_time = time.time()
                 training_time = e_time - s_time
 
                 fed_logger.info("clustering")
                 server.cluster(options)
-            for j in range(config.K):
-                energyOfLayers[j][layer] /= 5
-                ttOfLayers[j][layer] /= 5
 
-        fed_logger.info("=======================================================")
-        fed_logger.info("Pre Train Ended.")
-        fed_logger.info(f"Energy consumption of layer 0 to {model_utils.get_unit_model_len()} of each device is:")
-        for i in range(config.K):
-            fed_logger.info(f"Device {i}: {energyOfLayers[i]}")
-        fed_logger.info("-------------------------------------------------------")
-        fed_logger.info(f"Training Time of layer 0 to {model_utils.get_unit_model_len()} of each device is:")
-        for i in range(config.K):
-            fed_logger.info(f"Device {i}: {ttOfLayers[i]}")
 
     # x.append(layer)
     # rl_utils.draw_graph(title="Reward vs Episode",

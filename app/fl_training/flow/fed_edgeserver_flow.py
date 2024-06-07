@@ -26,12 +26,12 @@ def run_offload(server: FedEdgeServerInterface, LR):
         fed_logger.info('==> Round {:} Start'.format(config.current_round))
         fed_logger.info("receiving global weights")
         server.global_weights(client_ips)
-        # fed_logger.info("test clients network")
-        # server.test_client_network(client_ips)
-        # fed_logger.info("sending clients network")
-        # server.client_network()
-        # fed_logger.info("test server network")
-        # server.test_server_network()
+        fed_logger.info("test clients network")
+        server.test_client_network(client_ips)
+        fed_logger.info("sending clients network")
+        server.client_network()
+        fed_logger.info("test server network")
+        server.test_server_network()
         fed_logger.info("receiving and sending splitting info")
         server.get_split_layers_config(client_ips)
         fed_logger.info("initializing server")
@@ -54,6 +54,7 @@ def run_offload(server: FedEdgeServerInterface, LR):
 
 
 def run_no_offload(server: FedEdgeServerInterface, LR):
+    server.initialize(config.split_layer, LR, config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]])
     res = {}
     res['trianing_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
     client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]

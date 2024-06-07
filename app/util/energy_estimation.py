@@ -45,8 +45,12 @@ def energy():
     return result.text
 
 
-def comp_tr_energy():
+def energy_and_time_comp_tr():
     session = requests.session()
     session.trust_env = False
-    result = session.get(url=URL + "/energy/comp_tr/").text.split(",")
-    return float(result[0][1:]), float(result[1][:len(result[1]) - 1])
+    result = session.get(url=URL + "/energy/time/comp_tr/").text.split(",")
+    comp_e = float(result[0][1:])
+    tr_e = float(result[1][:])
+    comp_time = float(result[2][:])
+    tr_time = float(result[3][:len(result[3]) - 1])
+    return comp_e, tr_e, comp_time, tr_time

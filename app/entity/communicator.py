@@ -66,14 +66,6 @@ class Communicator(object):
 
     def connect(self, url):
         try:
-
-            # connection = pika.SelectConnection(on_close_callback=self.reconnect,
-            #                                    on_open_callback=self.on_connection_open,
-            #                                    parameters=pika.ConnectionParameters(host=url, port=config.mq_port,
-            #                                                                         credentials=pika.PlainCredentials(
-            #                                                                             username=config.mq_user,
-            #                                                                             password=config.mq_pass))
-            #                                    )
             return pika.BlockingConnection(pika.ConnectionParameters(host=url, port=config.mq_port,
                                                                      credentials=pika.PlainCredentials(
                                                                          username=config.mq_user,
@@ -116,46 +108,30 @@ class Communicator(object):
     def send_msg(self, exchange, msg, is_weight=False, url=None):
         bb = self.serialize_message(msg, is_weight)
         channel, connection = self.open_connection(url)
+        fed_logger.info(config.cluster + "." + msg[0] + "." + exchange)
+        published = False
         queue = self.declare_queue_if_not_exist(exchange, msg, channel)
-        # q2 = queue.method.message_count
-        # if not msg[0].__contains__("MSG_LOCAL_ITERATION_FLAG") and q2 == 0:
-        #     self.channel.basic_publish(exchange=config.cluster + "." + exchange,
-        #                                routing_key=config.cluster + "." + msg[0] + "." + exchange,
-        #                                body=bb, mandatory=True)
-        # elif msg[0].__contains__("MSG_LOCAL_ITERATION_FLAG"):
-        #     self.channel.basic_publish(exchange=config.cluster + "." + exchange,
-        #                                routing_key=config.cluster + "." + msg[0] + "." + exchange,
-        #                                body=bb, mandatory=True)
         while True:
             try:
                 channel, connection = self.reconnect(connection, channel)
                 fed_logger.info(Fore.GREEN + f"publishing {msg[0]}")
-                # q2 = queue.method.message_count
-                # if not msg[0].__contains__("MSG_LOCAL_ITERATION_FLAG") and q2 == 0:
-                #     self.channel.basic_publish(exchange=config.cluster + "." + exchange,
-                #                                routing_key=config.cluster + "." + msg[0] + "." + exchange,
-                #                                body=bb, mandatory=True)
-                # elif msg[0].__contains__("MSG_LOCAL_ITERATION_FLAG"):
                 channel.basic_publish(exchange=config.cluster + "." + exchange,
                                       routing_key=config.cluster + "." + msg[0] + "." + exchange,
                                       body=bb, mandatory=True, properties=pika.BasicProperties(
                         delivery_mode=pika.DeliveryMode.Transient))
-                # q2 = queue.method.message_count
-                # fed_logger.info(Fore.MAGENTA + f" {q1},{q2}")
                 self.close_connection(channel, connection)
-                # if q2 > 0:
-                # fed_logger.info(Fore.CYAN + f" {msg[0]},{q2}")
                 fed_logger.info(Fore.GREEN + f"published {msg[0]}")
                 if self.send_bug:
                     fed_logger.info(Fore.RED + f"published {msg[0]}")
+                published = True
                 return
 
             except Exception as e:
+                if published:
+                    return
                 self.send_bug = True
                 fed_logger.error(Fore.RED + f"{e}")
-                # self.close_connection(self.channel, self.connection)
                 continue
-                # self.send_msg(exchange, msg, is_weight, url)
 
     def recv_msg(self, exchange, expect_msg_type: str = None, is_weight=False, url=None):
         channel, connection = self.open_connection(url)
@@ -171,23 +147,17 @@ class Communicator(object):
                 channel.queue_bind(exchange=config.cluster + "." + exchange,
                                    queue=config.cluster + "." + expect_msg_type + "." + exchange,
                                    routing_key=config.cluster + "." + expect_msg_type + "." + exchange)
-
+                fed_logger.info(config.cluster + "." + expect_msg_type + "." + exchange)
                 fed_logger.info(Fore.YELLOW + f"loop {expect_msg_type}")
-                # q2 = queue.method.message_count
-                # fed_logger.info(Fore.MAGENTA + f"{expect_msg_type},{q2}")
-
                 for method_frame, properties, body in channel.consume(queue=
                                                                       config.cluster + "." + expect_msg_type + "." + exchange
                                                                       ):
-                    # q2 = queue.method.message_count
-                    # fed_logger.info(Fore.MAGENTA + f"{expect_msg_type},{q2}")
                     msg = [expect_msg_type]
                     res = self.deserialize_message(body, is_weight)
                     msg.extend(res)
                     channel.stop_consuming()
                     channel.cancel()
                     channel.basic_ack(method_frame.delivery_tag)
-                    # if not expect_msg_type.__contains__("MSG_LOCAL_ITERATION_FLAG"):
                     channel.queue_delete(queue=config.cluster + "." + expect_msg_type + "." + exchange)
                     self.close_connection(channel, connection)
                     fed_logger.info(Fore.CYAN + f"received {msg[0]},{type(msg[1])},{is_weight}")

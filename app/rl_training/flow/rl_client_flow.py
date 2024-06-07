@@ -127,7 +127,7 @@ def preTrain(client):
     data_size = mx - mn
     batch_num = data_size / config.B
 
-    for i in range(5):
+    for i in range(10):
         fed_logger.info("Getting params...")
         client.get_edge_global_weights()
         fed_logger.info("test network")

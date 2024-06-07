@@ -8,7 +8,7 @@ from torch import optim, nn
 from app.config import config
 from app.config.logger import fed_logger
 from app.entity.interface.fed_edgeserver_interface import FedEdgeServerInterface
-from app.util import message_utils, model_utils, energy_estimation
+from app.util import message_utils, model_utils, energy_estimation, data_utils
 
 
 class FedEdgeServer(FedEdgeServerInterface):
@@ -143,13 +143,13 @@ class FedEdgeServer(FedEdgeServerInterface):
         self.send_msg(exchange=client_ip, msg=msg,is_weight=True)
         msg = self.recv_msg(exchange=client_ip, expect_msg_type=message_utils.test_network_client_to_edge(),is_weight=True)
         network_time_end = time.time()
-        self.client_bandwidth[client_ip] = network_time_end - network_time_start
+        self.client_bandwidth[client_ip] = data_utils.sizeofmessage(msg)/(network_time_end - network_time_start)
 
     def test_server_network(self):
-        msg = self.recv_msg(config.EDGE_SERVER_CONFIG[config.index],
-                            message_utils.test_network())
-        msg = [message_utils.test_network(), self.uninet.cpu().state_dict()]
-        self.send_msg(config.EDGE_SERVER_CONFIG[config.index], msg)
+        msg = self.recv_msg(exchange=config.EDGE_SERVER_CONFIG[config.index],
+                           expect_msg_type= message_utils.test_server_network_from_server(),is_weight=True)
+        msg = [message_utils.test_server_network_from_connection(), self.uninet.cpu().state_dict()]
+        self.send_msg(exchange=config.EDGE_SERVER_CONFIG[config.index], msg=msg,is_weight=True)
 
     def client_network(self):
         """

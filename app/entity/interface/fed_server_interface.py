@@ -126,9 +126,12 @@ class FedServerInterface(ABC, Communicator):
         list1 = config.CLIENTS_LIST
         if self.edge_based:
             list1 = config.EDGE_SERVER_LIST
+            for i in list1:
+                self.send_msg(exchange=i, msg=msg, is_weight=is_weight, url=i)
 
-        for i in list1:
-            self.send_msg(i, msg, is_weight, i)
+        else:
+            for i in list1:
+                self.send_msg(exchange=i, msg=msg, is_weight=is_weight)
 
     def concat_norm(self, ttpi, offloading):
         ttpi_order = []
@@ -181,5 +184,5 @@ class FedServerInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def edge_based_state(self, offloading, energy_tt_list, total_tt):
+    def edge_based_state(self):
         pass

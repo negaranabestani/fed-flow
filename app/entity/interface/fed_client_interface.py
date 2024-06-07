@@ -50,6 +50,17 @@ class FedClientInterface(ABC, Communicator):
         pass
 
     @abstractmethod
+
+    def get_server_global_weights(self):
+        pass
+
+    def no_offloading_train(self):
+        pass
+
+    def edge_test_network(self):
+        pass
+
+    @abstractmethod
     def get_split_layers_config_from_edge(self):
         pass
 

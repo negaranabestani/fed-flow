@@ -1,12 +1,18 @@
+import os
 import socket
 import sys
 import threading
+
+import numpy as np
+from colorama import Fore
 
 from app.util import model_utils
 
 sys.path.append('../../../../')
 from app.config import config
 from app.entity.edge_server import FedEdgeServer
+from app.util import energy_estimation
+from app.config.logger import fed_logger
 
 
 def run(options_ins):
@@ -17,11 +23,15 @@ def run(options_ins):
                                 offload=options_ins.get('offload'))
     # fed_logger.info("start mode: " + str(options_ins.values()))
 
+    compEnergyOfLayers = np.zeros((model_utils.get_unit_model_len(), 10))
+    compTTOfLayers = np.zeros((model_utils.get_unit_model_len(), 10))
+
     edge_server.initialize(config.split_layer, LR, config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]])
     client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
+    energy_estimation.init(os.getpid())
 
-    for layer in range(model_utils.get_unit_model_len()):
-        for i in range(5):
+    for layer in range(model_utils.get_unit_model_len() - 1):
+        for j in range(10):
             # fed_logger.info('====================================>')
             # fed_logger.info('==> Round {:} Start'.format(r))
             #
@@ -53,3 +63,15 @@ def run(options_ins):
             for i in range(len(client_ips)):
                 threads[client_ips[i]].join()
             edge_server.energy(client_ips)
+
+            comp_e, tr_e, comp_time, tr_time = energy_estimation.energy_and_time_comp_tr()
+
+            fed_logger.info(Fore.LIGHTBLUE_EX + f"Computation Energy : {comp_e}")
+            compEnergyOfLayers[layer + 1][j] = comp_e
+            compTTOfLayers[layer+1][j] = comp_time
+    fed_logger.info("=======================================================")
+    fed_logger.info("Pre Train Ended.")
+    fed_logger.info(f"Energy consumption of layer 0 to {model_utils.get_unit_model_len()} is:")
+    fed_logger.info(compEnergyOfLayers)
+    fed_logger.info(f"Training time of layer 0 to {model_utils.get_unit_model_len()} is:")
+    fed_logger.info(compTTOfLayers)

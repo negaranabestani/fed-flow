@@ -75,15 +75,18 @@ async def energy():
     return ene
 
 
-@app.get("/energy/comp_tr")
-async def energy_comp_tr():
-    energy_logger.info(
-        Fore.GREEN + f"computation: {config.process.comp_time}, transmission: {config.process.transmission_time}")
-    comp = system_utils.estimate_computation_energy(config.process)
-    tr = system_utils.estimate_communication_energy(config, config.process)
-    energy_logger.info(
-        Fore.MAGENTA + f"energy-computation: {comp}, energy-transmission: {tr}")
-    comp_tr = str(comp) + "," + str(tr)
+@app.get("/energy/time/comp_tr")
+async def energy_and_time_comp_tr():
+    comp_time = config.process.comp_time
+    tr_time = config.process.transmission_time
+    energy_logger.info(Fore.GREEN + f"computation: {comp_time}, transmission: {tr_time}")
+
+    comp_e = system_utils.estimate_computation_energy(config.process)
+    tr_e = system_utils.estimate_communication_energy(config, config.process)
+    energy_logger.info(Fore.MAGENTA + f"energy-computation: {comp_e}, energy-transmission: {tr_e}")
+
+    comp_tr = str(comp_e) + "," + str(tr_e) + "," + str(comp_time) + "," + str(tr_time)
+
     config.process.comp_time = 0
     config.process.cpu_u_count = 0
     config.process.end_comp = False
