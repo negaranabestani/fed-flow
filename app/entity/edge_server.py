@@ -158,7 +158,7 @@ class FedEdgeServer(FedEdgeServerInterface):
         msg = [message_utils.client_network(), self.client_bandwidth]
         self.send_msg(config.EDGE_SERVER_CONFIG[config.index], msg)
 
-    def split_layer(self, client_ips):
+    def get_split_layers_config(self, client_ips):
         """
         receive send splitting data to clients
         """
