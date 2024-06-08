@@ -1,6 +1,5 @@
 import subprocess
 
-from tensorforce import Agent, Environment
 import numpy as np
 import torch
 import random
@@ -10,15 +9,15 @@ from app.model.entity.rl_model import PPO
 from app.util import model_utils, rl_utils
 
 
-def edge_based_rl_splitting(state, labels):
-    agent = Agent.load(directory="/fed-flow/app/agent/tf_1_1_1/0.5/", format="tensorflow")
-    floatAction = agent.act(states=state, evaluation=True)
-    actions = []
-    for i in range(0, len(floatAction), 2):
-        actions.append([rl_utils.actionToLayerEdgeBase([floatAction[i], floatAction[i + 1]])[0],
-                        rl_utils.actionToLayerEdgeBase([floatAction[i], floatAction[i + 1]])[1]])
-
-    return actions
+# def edge_based_rl_splitting(state, labels):
+#     agent = Agent.load(directory="/fed-flow/app/agent/tf_1_1_1/0.5/", format="tensorflow")
+#     floatAction = agent.act(states=state, evaluation=True)
+#     actions = []
+#     for i in range(0, len(floatAction), 2):
+#         actions.append([rl_utils.actionToLayerEdgeBase([floatAction[i], floatAction[i + 1]])[0],
+#                         rl_utils.actionToLayerEdgeBase([floatAction[i], floatAction[i + 1]])[1]])
+#
+#     return actions
 
 
 def rl_splitting(state, labels):
