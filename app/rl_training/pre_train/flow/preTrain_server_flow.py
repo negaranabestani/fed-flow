@@ -137,7 +137,7 @@ def rl_flow(server, options, LR):
 
     # fed_logger.info("splitting")
     # server.split(state, options)
-    server.edge_split_layer()
+    server.get_split_layers_config_from_edge()
 
     fed_logger.info("initializing server")
     server.initialize(server.split_layers, LR)

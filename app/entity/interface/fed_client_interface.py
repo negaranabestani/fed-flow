@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import torch
 from torch import nn, optim
 
-from app.entity.Communicator import Communicator
+from app.entity.communicator import Communicator
 from app.util import model_utils
 
 
@@ -32,14 +32,14 @@ class FedClientInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def edge_upload(self):
+    def send_local_weights_to_edge(self):
         """
         send final weights for aggregation
         """
         pass
 
     @abstractmethod
-    def server_upload(self):
+    def send_local_weights_to_server(self):
         pass
 
     @abstractmethod
@@ -50,29 +50,36 @@ class FedClientInterface(ABC, Communicator):
         pass
 
     @abstractmethod
+
+    def get_server_global_weights(self):
+        pass
+
+    def no_offloading_train(self):
+        pass
+
     def edge_test_network(self):
         pass
 
     @abstractmethod
-    def edge_split_layer(self):
+    def get_split_layers_config_from_edge(self):
         pass
 
     @abstractmethod
-    def split_layer(self):
+    def get_split_layers_config(self):
         """
         receive splitting data
         """
         pass
 
     @abstractmethod
-    def edge_global_weights(self):
+    def get_edge_global_weights(self):
         """
         receive global weights
         """
         pass
 
     @abstractmethod
-    def server_global_weights(self):
+    def get_server_global_weights(self):
         pass
 
     @abstractmethod

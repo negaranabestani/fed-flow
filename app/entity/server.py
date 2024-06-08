@@ -252,7 +252,7 @@ class FedServer(FedServerInterface):
         msg = [message_utils.split_layers(), self.split_layers]
         self.scatter(msg)
 
-    def edge_split_layer(self):
+    def get_split_layers_config_from_edge(self):
         """
         send splitting data
         """

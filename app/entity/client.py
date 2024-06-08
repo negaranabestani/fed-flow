@@ -32,12 +32,12 @@ class Client(FedClientInterface):
             self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
                                        momentum=0.9)
 
-    def edge_upload(self):
+    def send_local_weights_to_edge(self):
         msg = [message_utils.local_weights_client_to_edge(), self.net.cpu().state_dict()]
         self.send_msg(config.CLIENTS_INDEX[config.index], msg, True)
         return msg
 
-    def server_upload(self):
+    def send_local_weights_to_server(self):
         msg = [message_utils.local_weights_client_to_server(), self.net.cpu().state_dict()]
         self.send_msg(config.CLIENTS_INDEX[config.index], msg, True)
         return msg
@@ -57,25 +57,27 @@ class Client(FedClientInterface):
         send message to test network speed
         """
         msg = self.recv_msg(exchange=config.CLIENTS_INDEX[config.index], expect_msg_type=message_utils.test_network_edge_to_client(),is_weight=True)[1]
+
         fed_logger.info("test network received")
         msg = [message_utils.test_network_client_to_edge(), self.uninet.cpu().state_dict()]
-        self.send_msg(exchange=config.CLIENTS_INDEX[config.index], msg=msg,is_weight=True)
+        self.send_msg(exchange=config.CLIENTS_INDEX[config.index], msg=msg, is_weight=True)
         fed_logger.info("test network sent")
         return msg
-    def split_layer(self):
+
+    def get_split_layers_config(self):
         """
         receive splitting data
         """
         self.split_layers = self.recv_msg(config.CLIENTS_INDEX[config.index], message_utils.split_layers())[1]
 
-    def edge_split_layer(self):
+    def get_split_layers_config_from_edge(self):
         """
         receive splitting data
         """
         self.split_layers = \
             self.recv_msg(config.CLIENTS_INDEX[config.index], message_utils.split_layers_edge_to_client())[1]
 
-    def edge_global_weights(self):
+    def get_edge_global_weights(self):
         """
         receive global weights
         """
@@ -85,7 +87,7 @@ class Client(FedClientInterface):
         pweights = model_utils.split_weights_client(weights, self.net.state_dict())
         self.net.load_state_dict(pweights)
 
-    def server_global_weights(self):
+    def get_server_global_weights(self):
         """
         receive global weights
         """
@@ -141,8 +143,8 @@ class Client(FedClientInterface):
                 self.send_msg(config.CLIENTS_INDEX[config.index], flag)
                 end_transmission(data_utils.sizeofmessage(flag))
 
-
-                msg = [f'{message_utils.local_activations_client_to_edge()}_{i}_{socket.gethostname()}', outputs.cpu(), targets.cpu()]
+                msg = [f'{message_utils.local_activations_client_to_edge()}_{i}_{socket.gethostname()}', outputs.cpu(),
+                       targets.cpu()]
                 # fed_logger.info(f"{msg[1], msg[2]}")
                 start_transmission()
                 self.send_msg(exchange=config.CLIENTS_INDEX[config.index], msg=msg, is_weight=True)
