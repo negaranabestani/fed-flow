@@ -4,6 +4,7 @@ import torch
 from torch import nn, optim
 
 from app.entity.communicator import Communicator
+from app.entity.node import NodeType
 from app.util import model_utils
 
 
@@ -28,7 +29,7 @@ class FedClientInterface(ABC, Communicator):
                                    momentum=0.9)
 
     @abstractmethod
-    def initialize(self, split_layer, LR):
+    def initialize(self, node_id: int, ip: str, port: int, node_type: NodeType, split_layer, LR):
         pass
 
     @abstractmethod
