@@ -13,6 +13,8 @@ options = {
     '-dl': ['--datasetlink', '', 'the link to dataset  python file'],
     '-ml': ['--modellink', '', 'the link to model  python file'],
     '-i': ['--index', '0', 'the device index'],
+    '-ip': ['--ip', '127.0.0.1', 'IP address of the node'],
+    '-p': ['--port', '8080', 'Port number of the node']
     '-en': ['--energy', 'False', 'enable or disable energy estimation']
 }
 
