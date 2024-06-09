@@ -18,7 +18,6 @@ options = {
     '-en': ['--energy', 'False', 'enable or disable energy estimation']
 }
 
-
 def parse_argument(parser: argparse.ArgumentParser()):
     """
 
