@@ -19,6 +19,11 @@ options = {
 
 
 def parse_argument(parser: argparse.ArgumentParser):
+    """
+    Args:
+        parser:
+    Returns: a map of options with their associated values
+    """
     for op in options.keys():
         parser.add_argument(op, options.get(op)[0], help=options.get(op)[2], type=str,
                             default=options.get(op)[1])
