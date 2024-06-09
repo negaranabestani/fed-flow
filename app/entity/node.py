@@ -1,32 +1,25 @@
-from typing import List, Dict, Union
-from enum import Enum
+from typing import List
 
-
-class NodeType(Enum):
-    CLIENT = 1
-    EDGE_SERVER = 2
-    SERVER = 3
+from app.entity.neighbour import Neighbor
 
 
 class Node:
-    def __init__(self, node_id: int, ip: str, port: int, node_type: NodeType):
-        self.node_id = node_id
+    def __init__(self, ip: str, port: int):
         self.ip = ip
         self.port = port
-        self.neighbors: List[Dict[str, Union[str, int, NodeType]]] = []
-        self.kind = node_type
+        self.neighbors: List[Neighbor] = []
 
-    def add_neighbor(self, neighbor_ip: str, neighbor_port: int, neighbor_type: NodeType):
-        neighbor = {"ip": neighbor_ip, "port": neighbor_port, "type": neighbor_type}
+    def add_neighbor(self, neighbor_ip: str, neighbor_port: int):
+        neighbor = Neighbor(neighbor_ip, neighbor_port)
         if neighbor not in self.neighbors:
             self.neighbors.append(neighbor)
 
-    def get_neighbors(self) -> List[Dict[str, Union[str, int, NodeType]]]:
+    def get_neighbors(self) -> List[Neighbor]:
         return self.neighbors
 
     def broadcast(self, message: str):
         for neighbor in self.neighbors:
-            self.send_message(message, neighbor["ip"], neighbor["port"])
+            self.send_message(message, neighbor.ip, neighbor.port)
 
     @staticmethod
     def send_message(message: str, receiver_ip: str, receiver_port: int):

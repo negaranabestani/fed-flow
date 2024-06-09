@@ -9,7 +9,6 @@ import torch.optim as optim
 from colorama import Fore
 
 from app.entity.interface.fed_server_interface import FedServerInterface
-from app.entity.node import Node, NodeType
 from app.fl_method import fl_method_parser
 
 sys.path.append('../../')
@@ -21,9 +20,9 @@ np.random.seed(0)
 torch.manual_seed(0)
 
 
-class FedServer(Node, FedServerInterface):
+class FedServer(FedServerInterface):
 
-    def initialize(self, node_id: int, ip: str, port: int, split_layers, LR, node_type=NodeType.SERVER):
+    def initialize(self, split_layers, LR):
         self.split_layers = split_layers
         self.nets = {}
         self.optimizers = {}
