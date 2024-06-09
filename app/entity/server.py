@@ -23,7 +23,7 @@ torch.manual_seed(0)
 
 class FedServer(Node, FedServerInterface):
 
-    def initialize(self, node_id: int, ip: str, port: int, node_type: NodeType, split_layers, LR):
+    def initialize(self, node_id: int, ip: str, port: int, split_layers, LR, node_type=NodeType.SERVER):
         self.split_layers = split_layers
         self.nets = {}
         self.optimizers = {}
