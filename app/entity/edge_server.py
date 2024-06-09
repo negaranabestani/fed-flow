@@ -13,7 +13,8 @@ from app.util import message_utils, model_utils, energy_estimation, data_utils
 
 
 class FedEdgeServer(Node, FedEdgeServerInterface):
-    def initialize(self, node_id: int, ip: str, port: int, node_type: NodeType, split_layers, LR, client_ips):
+    def initialize(self, node_id: int, ip: str, port: int, split_layers, LR, client_ips,
+                   node_type=NodeType.EDGE_SERVER):
         super().__init__(node_id, ip, port, node_type)
         self.split_layers = split_layers
         self.optimizers = {}
@@ -142,16 +143,17 @@ class FedEdgeServer(Node, FedEdgeServerInterface):
     def _thread_client_network_testing(self, client_ip):
         network_time_start = time.time()
         msg = [message_utils.test_network_edge_to_client(), self.uninet.cpu().state_dict()]
-        self.send_msg(exchange=client_ip, msg=msg,is_weight=True)
-        msg = self.recv_msg(exchange=client_ip, expect_msg_type=message_utils.test_network_client_to_edge(),is_weight=True)
+        self.send_msg(exchange=client_ip, msg=msg, is_weight=True)
+        msg = self.recv_msg(exchange=client_ip, expect_msg_type=message_utils.test_network_client_to_edge(),
+                            is_weight=True)
         network_time_end = time.time()
-        self.client_bandwidth[client_ip] = data_utils.sizeofmessage(msg)/(network_time_end - network_time_start)
+        self.client_bandwidth[client_ip] = data_utils.sizeofmessage(msg) / (network_time_end - network_time_start)
 
     def test_server_network(self):
         msg = self.recv_msg(exchange=config.EDGE_SERVER_CONFIG[config.index],
-                           expect_msg_type= message_utils.test_server_network_from_server(),is_weight=True)
+                            expect_msg_type=message_utils.test_server_network_from_server(), is_weight=True)
         msg = [message_utils.test_server_network_from_connection(), self.uninet.cpu().state_dict()]
-        self.send_msg(exchange=config.EDGE_SERVER_CONFIG[config.index], msg=msg,is_weight=True)
+        self.send_msg(exchange=config.EDGE_SERVER_CONFIG[config.index], msg=msg, is_weight=True)
 
     def client_network(self):
         """
