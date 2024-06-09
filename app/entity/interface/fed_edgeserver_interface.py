@@ -6,13 +6,14 @@ from torch import multiprocessing
 from app.config import config
 from app.config.logger import fed_logger
 from app.entity.communicator import Communicator
-from app.entity.node import NodeType
+from app.entity.node import NodeType, Node
 from app.util import data_utils, model_utils, message_utils
 
 
-class FedEdgeServerInterface(ABC, Communicator):
-    def __init__(self, model_name, dataset, offload):
+class FedEdgeServerInterface(Node, ABC, Communicator):
+    def __init__(self, ip: str, port: int, model_name, dataset, offload):
         super(FedEdgeServerInterface, self).__init__()
+        super().__init__(ip, port)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model_name = model_name
         self.nets = {}
@@ -80,7 +81,7 @@ class FedEdgeServerInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def initialize(self, node_id: int, ip: str, port: int, node_type: NodeType, split_layers, LR, client_ips):
+    def initialize(self, split_layers, LR, client_ips):
         pass
 
     def scatter(self, msg, is_weight=False):
