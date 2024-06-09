@@ -26,7 +26,7 @@ class Node:
 
     def broadcast(self, message: str):
         for neighbor in self.neighbors:
-            self.send_message(neighbor["ip"], neighbor["port"])
+            self.send_message(message, neighbor["ip"], neighbor["port"])
 
     @staticmethod
     def send_message(message: str, receiver_ip: str, receiver_port: int):
