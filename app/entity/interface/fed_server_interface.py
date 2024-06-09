@@ -8,6 +8,7 @@ from torch import nn
 from app.config import config
 from app.config.logger import fed_logger
 from app.entity.communicator import Communicator
+from app.entity.node import NodeType
 from app.fl_method import fl_method_parser
 from app.util import data_utils, model_utils
 
@@ -101,7 +102,7 @@ class FedServerInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def initialize(self, split_layers, LR):
+    def initialize(self, node_id: int, ip: str, port: int, node_type: NodeType, split_layers, LR):
         pass
 
     @abstractmethod

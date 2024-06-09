@@ -7,6 +7,8 @@ import torch.nn as nn
 import torch.optim as optim
 import tqdm
 
+from app.entity.node import Node, NodeType
+
 sys.path.append('../../')
 from app.util import message_utils, model_utils, data_utils
 from app.entity.interface.fed_client_interface import FedClientInterface
@@ -18,10 +20,10 @@ np.random.seed(0)
 torch.manual_seed(0)
 
 
-class Client(FedClientInterface):
+class Client(Node, FedClientInterface):
 
-    def initialize(self, split_layer, LR):
-
+    def initialize(self, node_id: int, ip: str, port: int, node_type: NodeType, split_layer, LR):
+        super().__init__(node_id, ip, port, node_type)
         self.split_layers = split_layer
 
         fed_logger.debug('Building Model.')

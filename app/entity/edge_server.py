@@ -8,11 +8,13 @@ from torch import optim, nn
 from app.config import config
 from app.config.logger import fed_logger
 from app.entity.interface.fed_edgeserver_interface import FedEdgeServerInterface
+from app.entity.node import Node, NodeType
 from app.util import message_utils, model_utils, energy_estimation, data_utils
 
 
-class FedEdgeServer(FedEdgeServerInterface):
-    def initialize(self, split_layers, LR, client_ips):
+class FedEdgeServer(Node, FedEdgeServerInterface):
+    def initialize(self, node_id: int, ip: str, port: int, node_type: NodeType, split_layers, LR, client_ips):
+        super().__init__(node_id, ip, port, node_type)
         self.split_layers = split_layers
         self.optimizers = {}
         for i in range(len(split_layers)):
