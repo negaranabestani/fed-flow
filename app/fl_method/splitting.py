@@ -1,9 +1,8 @@
-import subprocess
+import random
 
-from tensorforce import Agent, Environment
 import numpy as np
 import torch
-import random
+from tensorforce import Agent
 
 from app.config import config
 from app.model.entity.rl_model import PPO

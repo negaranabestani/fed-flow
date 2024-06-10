@@ -139,7 +139,7 @@ def test(uninet, testloader, device, criterion):
 
 
 def get_class():
-    kls = MODEL_BASE_DIR + config.model_name + '.' + config.model_name
+    kls = MODEL_BASE_DIR + config.model_name.lower() + '.' + config.model_name.upper()
     parts = kls.split('.')
     module = ".".join(parts[:-1])
     m = __import__(module)

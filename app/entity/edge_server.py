@@ -165,7 +165,7 @@ class FedEdgeServer(FedEdgeServerInterface):
         msg = self.recv_msg(config.EDGE_SERVER_CONFIG[config.index],
                             message_utils.split_layers_server_to_edge())
         self.split_layers = msg[1]
-        fed_logger.info(Fore.LIGHTYELLOW_EX + f"{msg[1]}")
+        fed_logger.info(Fore.LIGHTYELLOW_EX + f"{msg[1]}" + Fore.RESET)
         msg = [message_utils.split_layers_edge_to_client(), self.split_layers]
         self.scatter(msg)
         # for i in range(len(self.split_layers)):

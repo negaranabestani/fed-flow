@@ -56,7 +56,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
     for r in range(config.R):
         config.current_round = r
         fed_logger.info('====================================>')
-        fed_logger.info('==> Round {:} Start'.format(r))
+        fed_logger.info('==> Round {:} Start'.format(r + 1))
 
         fed_logger.info("sending global weights")
         server.edge_offloading_global_weights()
@@ -82,7 +82,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
         fed_logger.info("splitting")
         server.split(state, options)
         # server.split_layers = split_list[r]
-        server.get_split_layers_config_from_edge()
+        server.send_split_layers_config_to_edges()
 
         if r > 49:
             LR = config.LR * 0.1
@@ -148,7 +148,7 @@ def run_no_edge_offload(server: FedServerInterface, LR, options):
 
         fed_logger.info("splitting")
         server.split(state, options)
-        server.split_layer()
+        server.send_split_layers_config()
         fed_logger.info("initializing server")
         server.initialize(server.split_layers, LR)
 

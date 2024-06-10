@@ -7,7 +7,7 @@ options = {
     '-e': ['--edgebased', False, 'True if edge servers are available otherwise, False'],
     '-c': ['--clustering', 'none_clustering', 'name of the clustering method'],
     '-s': ['--splitting', 'none_splitting', 'name of the splitting method'],
-    '-m': ['--model', 'vgg', 'class name of the training model'],
+    '-m': ['--model', 'VGG', 'class name of the training model'],
     '-d': ['--dataset', 'cifar10', 'the name of the using dataset'],
     '-o': ['--offload', False, 'offloading or classic FL mode'],
     '-dl': ['--datasetlink', '', 'the link to dataset  python file'],

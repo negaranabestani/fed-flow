@@ -52,7 +52,7 @@ def run_edge_based(client: FedClientInterface, LR):
         tt = et - st
         energy = float(energy_estimation.energy())
         # energy /= batch_num
-        fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}")
+        fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}" + Fore.RESET)
         client.energy_tt(energy, tt)
         # final.append(energy)
 
@@ -88,7 +88,7 @@ def run_no_offload_edge(client: FedClientInterface, LR):
         tt = et - st
         energy = float(energy_estimation.energy())
         # energy /= batch_num
-        fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}")
+        fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}" + Fore.RESET)
 
 
 def run_no_edge_offload(client: FedClientInterface, LR):
@@ -123,7 +123,7 @@ def run_no_edge_offload(client: FedClientInterface, LR):
         tt = et - st
         energy = float(energy_estimation.energy())
         # energy /= batch_num
-        fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}")
+        fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}" + Fore.RESET)
 
 
 def run_no_edge(client: FedClientInterface, LR):
