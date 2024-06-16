@@ -4,9 +4,11 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
-#from tensorforce import Agent
 
 import app.util.model_utils as model_utils
+
+
+# from tensorforce import Agent
 # from app.model.entity.rl_model import NoSplitting, TRPO, AC, TensorforceAgent, RandomAgent, TF_PPO
 
 
@@ -159,7 +161,7 @@ def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[float, float]:
     op2: float  # Offloading points op1, op2
     workLoad = []
     model_state_flops = []
-
+    splitDecision = splitDecision[0]
     for l in model_utils.get_unit_model().cfg:
         workLoad.append(l[5])
         model_state_flops.append(sum(workLoad))

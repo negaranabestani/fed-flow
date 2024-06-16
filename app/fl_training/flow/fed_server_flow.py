@@ -8,6 +8,7 @@ from app.util import model_utils, message_utils
 from app.entity.server import FedServer
 from app.config.logger import fed_logger
 from app.entity.interface.fed_server_interface import FedServerInterface
+from app.util import rl_utils
 
 
 def run_edge_based_no_offload(server: FedServerInterface, LR, options):
@@ -48,19 +49,25 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
     energy_x = []
     training_y = []
     # split_list = [[[0, 1]], [[1, 2]], [[2, 3]], [[3, 4]], [[4, 5]], [[5, 6]]]
-
+    avgEnergy, tt = [], []
+    iotBW, edgeBW = [], []
+    x = []
     for c in config.CLIENTS_LIST:
         energy_tt_list.append([0, 0])
     res = {}
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
+    fed_logger.info(f"OPTION: {options}")
     for r in range(config.R):
         config.current_round = r
+        x.append(r)
         fed_logger.info('====================================>')
         fed_logger.info('==> Round {:} Start'.format(r))
 
         fed_logger.info("sending global weights")
         server.edge_offloading_global_weights()
+
         s_time = time.time()
+
         fed_logger.info("receiving client network info")
         server.client_network(config.EDGE_SERVER_LIST)
 
@@ -78,6 +85,9 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
 
         state = server.edge_based_state()
         fed_logger.info("state: " + str(state))
+
+        iotBW.append(state[0])
+        edgeBW.append(state[1])
 
         fed_logger.info("splitting")
         server.split(state, options)
@@ -102,10 +112,16 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
         server.call_aggregation(options, local_weights)
 
         energy_tt_list = server.e_energy_tt(config.CLIENTS_LIST)
+        clientEnergy = []
+        for i in range(config.K):
+            clientEnergy.append(energy_tt_list[i][0])
+        avgEnergy.append(sum(clientEnergy) / int(config.K))
+
         e_time = time.time()
 
         # Recording each round training time, bandwidth and test_app accuracy
         training_time = e_time - s_time
+        tt.append(training_time)
 
         res['training_time'].append(training_time)
         res['bandwidth_record'].append(server.bandwith())
@@ -118,6 +134,15 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
 
         fed_logger.info('Round Finish')
         fed_logger.info('==> Round Training Time: {:}'.format(training_time))
+
+        rl_utils.draw_graph(10, 5, x, tt, "Training time", "FL Rounds", "Training Time", "/fed-flow/Graphs",
+                            "trainingTime", True)
+        rl_utils.draw_graph(10, 5, x, avgEnergy, "Energy time", "FL Rounds", "Energy", "/fed-flow/Graphs",
+                            "energy", True)
+        rl_utils.draw_graph(10, 5, x, iotBW, "iot BW", "FL Rounds", "iotBW", "/fed-flow/Graphs",
+                            "iotBW", True)
+        rl_utils.draw_graph(10, 5, x, edgeBW, "edge BW", "FL Rounds", "edgeBW", "/fed-flow/Graphs",
+                            "edgeBW", True)
 
 
 def run_no_edge_offload(server: FedServerInterface, LR, options):
