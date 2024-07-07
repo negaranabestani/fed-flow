@@ -14,6 +14,7 @@ from app.entity.interface.fed_server_interface import FedServerInterface
 from app.util import rl_utils
 
 
+
 def run_edge_based_no_offload(server: FedServerInterface, LR, options):
     res = {}
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
