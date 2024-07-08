@@ -84,13 +84,20 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
         offloading = server.split_layers
 
         state = server.edge_based_state()
+        print(f"STATE : {state}")
         fed_logger.info("state: " + str(state))
-
-        iotBW.append(state[0])
-        edgeBW.append(state[1])
+        normalizedState = []
+        for bw in state:
+            if r < 50:
+                normalizedState.append(bw/100_000_000)
+            else:
+                normalizedState.append(bw/10_000_000)
+        iotBW.append(normalizedState[0])
+        edgeBW.append(normalizedState[1])
 
         fed_logger.info("splitting")
-        server.split(state, options)
+        server.split(normalizedState, options)
+        fed_logger.info(f"Agent Action : {server.split_layers}")
         # server.split_layers = split_list[r]
         server.get_split_layers_config_from_edge()
 
@@ -112,6 +119,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
         server.call_aggregation(options, local_weights)
 
         energy_tt_list = server.e_energy_tt(config.CLIENTS_LIST)
+        print(f"E TT :{energy_tt_list}")
         clientEnergy = []
         for i in range(config.K):
             clientEnergy.append(energy_tt_list[i][0])

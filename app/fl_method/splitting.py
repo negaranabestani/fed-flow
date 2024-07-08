@@ -11,7 +11,7 @@ from stable_baselines3 import PPO, A2C
 
 
 def edge_based_rl_splitting(state, labels):
-    agent = PPO.load(path='/fed-flow/app/agent/7.zip', env=None)
+    agent = PPO.load(path='/fed-flow/app/agent/38.zip', env=None)
     floatAction = agent.predict(observation=state, deterministic=True)
     actions = []
     for i in range(0, len(floatAction), 2):

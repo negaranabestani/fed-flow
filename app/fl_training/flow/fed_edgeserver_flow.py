@@ -48,9 +48,9 @@ def run_offload(server: FedEdgeServerInterface, LR):
         server.energy(client_ips)
         if r > 49:
             LR = config.LR * 0.1
-        energy = float(energy_estimation.energy())
+        # energy = float(energy_estimation.energy())
         # energy /= batch_num
-        fed_logger.info(Fore.LIGHTBLUE_EX + f"Energy : {energy}")
+        # fed_logger.info(Fore.LIGHTBLUE_EX + f"Energy : {energy}")
 
 
 def run_no_offload(server: FedEdgeServerInterface, LR):
