@@ -37,7 +37,7 @@ services:
     depends_on:
       - server
       - broker
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py & python3 /fed-flow/energy/service.py & wait -n"
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py"
   broker:
     image: rabbitmq:3.13-management
     ports:

@@ -1,11 +1,5 @@
-import os
-import socket
 import sys
 import threading
-
-from colorama import Fore
-
-from app.util import message_utils, energy_estimation
 
 sys.path.append('../../../')
 from app.config import config
@@ -48,9 +42,6 @@ def run_offload(server: FedEdgeServerInterface, LR):
         server.energy(client_ips)
         if r > 49:
             LR = config.LR * 0.1
-        energy = float(energy_estimation.energy())
-        # energy /= batch_num
-        fed_logger.info(Fore.LIGHTBLUE_EX + f"Energy : {energy}")
 
 
 def run_no_offload(server: FedEdgeServerInterface, LR):
@@ -88,7 +79,6 @@ def run(options_ins):
     fed_logger.info('Preparing Sever.')
     offload = options_ins.get('offload')
     if offload:
-        energy_estimation.init(os.getpid())
         edge_server_ins = FedEdgeServer(
             options_ins.get('model'),
             options_ins.get('dataset'), offload=offload)
