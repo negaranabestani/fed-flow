@@ -4,10 +4,12 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
-from tensorforce import Agent
 
 import app.util.model_utils as model_utils
-from app.model.entity.rl_model import NoSplitting, TRPO, AC, TensorforceAgent, RandomAgent, TF_PPO
+
+
+# from tensorforce import Agent
+# from app.model.entity.rl_model import NoSplitting, TRPO, AC, TensorforceAgent, RandomAgent, TF_PPO
 
 
 def draw_graph(figSizeX, figSizeY, x, y, title, xlabel, ylabel, savePath, pictureName, saveFig=True):
@@ -134,23 +136,23 @@ def randomSelectionSplitting(modelLen, deviceNumber) -> list[list[int]]:
     return result
 
 
-def createAgent(agentType, fraction, timestepNum, saveSummariesPath, environment=None):
-    if agentType == 'ac':
-        return AC.create(fraction=fraction, environment=environment, timestepNum=timestepNum,
-                         saveSummariesPath=saveSummariesPath)
-    elif agentType == 'tensorforce':
-        return TensorforceAgent.create(fraction=fraction, timestepNum=timestepNum, saveSummariesPath=saveSummariesPath)
-    elif agentType == 'trpo':
-        return TRPO.create(fraction=fraction, environment=environment,
-                           timestepNum=timestepNum, saveSummariesPath=saveSummariesPath)
-    elif agentType == 'random':
-        return RandomAgent.RandomAgent(environment=environment)
-    elif agentType == 'noSplitting':
-        return NoSplitting.NoSplitting(environment=environment)
-    elif agentType == 'tf_ppo':
-        return Agent.load(directory='/fed-flow/app/agent/ppo_1_1_1_agent')
-    else:
-        raise Exception('Invalid config select from [ppo, ac, tensorforce, random]')
+# def createAgent(agentType, fraction, timestepNum, saveSummariesPath, environment=None):
+#     if agentType == 'ac':
+#         return AC.create(fraction=fraction, environment=environment, timestepNum=timestepNum,
+#                          saveSummariesPath=saveSummariesPath)
+#     elif agentType == 'tensorforce':
+#         return TensorforceAgent.create(fraction=fraction, timestepNum=timestepNum, saveSummariesPath=saveSummariesPath)
+#     elif agentType == 'trpo':
+#         return TRPO.create(fraction=fraction, environment=environment,
+#                            timestepNum=timestepNum, saveSummariesPath=saveSummariesPath)
+#     elif agentType == 'random':
+#         return RandomAgent.RandomAgent(environment=environment)
+#     elif agentType == 'noSplitting':
+#         return NoSplitting.NoSplitting(environment=environment)
+#     elif agentType == 'tf_ppo':
+#         return Agent.load(directory='/fed-flow/app/agent/ppo_1_1_1_agent')
+#     else:
+#         raise Exception('Invalid config select from [ppo, ac, tensorforce, random]')
 
 
 def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[float, float]:
@@ -159,7 +161,7 @@ def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[float, float]:
     op2: float  # Offloading points op1, op2
     workLoad = []
     model_state_flops = []
-
+    splitDecision = splitDecision[0]
     for l in model_utils.get_unit_model().cfg:
         workLoad.append(l[5])
         model_state_flops.append(sum(workLoad))

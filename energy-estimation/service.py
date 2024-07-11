@@ -1,4 +1,5 @@
 import logging
+import subprocess
 import threading
 import warnings
 
@@ -67,12 +68,20 @@ async def energy():
     energy_logger.info(
         Fore.MAGENTA + f"energy-conputation: {comp}, energy-trasmission: {tr}")
     ene = comp + tr
+
+    cores = int(subprocess.run("nproc", capture_output=True, shell=True, text=True).stdout)
+    # energy_logger.info(f"cpus: {cores}")
+    print(f"config.process.cpu_u_count : {config.process.cpu_u_count}")
+    print(f"cores : {cores}")
+
+    utilization = config.process.cpu_utilization / config.process.cpu_u_count / 100 / cores
+
     config.process.comp_time = 0
     config.process.cpu_u_count = 0
     config.process.end_comp = False
     config.process.cpu_utilization = 0
     config.process.transmission_time = 0
-    return ene
+    return utilization
 
 
 @app.get("/energy/time/comp_tr")
