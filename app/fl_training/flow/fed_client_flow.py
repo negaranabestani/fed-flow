@@ -168,29 +168,28 @@ def run(options_ins):
 
     offload = options_ins.get('offload')
     edge_based = options_ins.get('edgebased')
-    if edge_based and offload:
+    if options_ins.get("splitting")=="edge_based_energy_aware_rl_splitting":
         energy_estimation.init(os.getpid())
+    if edge_based and offload:
+
         client_ins = Client(server=config.CLIENT_MAP[config.CLIENTS_INDEX[index]], datalen=datalen,
                             model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             )
         run_edge_based(client_ins, LR)
     elif edge_based and not offload:
-        energy_estimation.init(os.getpid())
         client_ins = Client(server=config.CLIENT_MAP[config.CLIENTS_INDEX[index]],
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             )
         run_no_offload_edge(client_ins, LR)
     elif offload:
-        energy_estimation.init(os.getpid())
         client_ins = Client(server=config.SERVER_ADDR,
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             )
         run_no_edge_offload(client_ins, LR)
     else:
-        energy_estimation.init(os.getpid())
         client_ins = Client(server=config.SERVER_ADDR,
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,

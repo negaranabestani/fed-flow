@@ -10,7 +10,7 @@ from app.model.entity.rl_model import PPO
 from app.util import model_utils, rl_utils
 
 
-def edge_based_rl_splitting(state, labels):
+def edge_based_energy_aware_rl_splitting(state, labels):
     agent = Agent.load(directory="/fed-flow/app/agent/tf_1_1_1/0.5/", format="tensorflow")
     floatAction = agent.act(states=state, evaluation=True)
     actions = []
