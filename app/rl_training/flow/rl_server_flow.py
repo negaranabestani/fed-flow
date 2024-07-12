@@ -1,6 +1,8 @@
 import sys
 import time
 
+from app.dto.message import JsonMessage
+
 sys.path.append('../../../')
 from app.config import config
 from app.util import message_utils, rl_utils
@@ -245,7 +247,7 @@ def run(options):
     #                    pictureName='Action_hist_3')
 
     agent.close()
-    msg = [message_utils.finish, True]
+    msg = JsonMessage(True)
     server.scatter(msg)
 
 

@@ -23,16 +23,16 @@ def run_edge_based(client: FedClientInterface, LR):
     mn: int = int((N / K) * index)
     data_size = mx - mn
     batch_num = data_size / config.B
-    # final=[]
+    final = []
     for r in range(config.R):
         config.current_round = r
         fed_logger.info('====================================>')
-        fed_logger.info('ROUND: {} START'.format(r))
+        fed_logger.info('ROUND: {} START'.format(r + 1))
         fed_logger.info("receiving global weights")
         client.get_edge_global_weights()
         st = time.time()
-        fed_logger.info("test network")
-        client.edge_test_network()
+        # fed_logger.info("test network")
+        # client.edge_test_network()
         fed_logger.info("receiving splitting info")
         client.get_split_layers_config_from_edge()
         fed_logger.info("initializing client")
@@ -47,14 +47,14 @@ def run_edge_based(client: FedClientInterface, LR):
         msg = client.send_local_weights_to_edge()
         energy_estimation.end_transmission(data_utils.sizeofmessage(msg))
         et = time.time()
-        fed_logger.info('ROUND: {} END'.format(r))
+        fed_logger.info('ROUND: {} END'.format(r + 1))
         fed_logger.info('==> Waiting for aggregration')
         tt = et - st
         energy = float(energy_estimation.energy())
-        # energy /= batch_num
+        energy /= batch_num
         fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}" + Fore.RESET)
-        client.energy_tt(energy, tt)
-        # final.append(energy)
+        # client.energy_tt(energy, tt)
+        final.append(energy)
 
         if r > 49:
             LR = config.LR * 0.1
@@ -141,7 +141,6 @@ def run_no_edge(client: FedClientInterface, LR):
         fed_logger.info("sending local weights")
         client.send_local_weights_to_server()
 
-
         tt = time.time()
         fed_logger.info('ROUND: {} END'.format(r))
 
@@ -164,20 +163,20 @@ def run(options_ins):
     cpu_count = multiprocessing.cpu_count()
     indices = list(range(N))
     part_tr = indices[int((N / K) * index): int((N / K) * (index + 1))]
-    trainloader = data_utils.get_trainloader(data_utils.get_trainset(), part_tr, cpu_count)
+    trainloader = data_utils.get_trainloader(data_utils.get_trainset(), part_tr, 0)
 
     offload = options_ins.get('offload')
     edge_based = options_ins.get('edgebased')
     if edge_based and offload:
         energy_estimation.init(os.getpid())
-        client_ins = Client(server=config.CLIENT_MAP[config.CLIENTS_INDEX[index]], datalen=datalen,
+        client_ins = Client(server=config.CLIENT_NAME_TO_EDGE_NAME[config.CLIENTS_INDEX_TO_NAME[index]], datalen=datalen,
                             model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             )
         run_edge_based(client_ins, LR)
     elif edge_based and not offload:
         energy_estimation.init(os.getpid())
-        client_ins = Client(server=config.CLIENT_MAP[config.CLIENTS_INDEX[index]],
+        client_ins = Client(server=config.CLIENT_NAME_TO_EDGE_NAME[config.CLIENTS_INDEX_TO_NAME[index]],
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             )

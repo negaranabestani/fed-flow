@@ -42,7 +42,10 @@ def energy():
     session = requests.session()
     session.trust_env = False
     result = session.get(url=URL + "/energy/")
-    return result.text
+    try:
+        return float(result.text)
+    except Exception:
+        return 0
 
 
 def energy_and_time_comp_tr():

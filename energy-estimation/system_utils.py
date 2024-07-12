@@ -52,6 +52,7 @@ def end_transmission(process, bits):
 
 
 def get_cpu_u(pid):
+    return 0
     # print("pid" + str(pid))
     data = subprocess.run("top -n 1 -b -p " + str(pid), capture_output=True, shell=True, text=True)
     # print("result"+str(data.stdout))

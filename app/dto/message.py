@@ -30,6 +30,9 @@ class BaseMessage(ABC):
     def get_message_type(self) -> MessageType:
         raise NotImplementedError
 
+    # def get_message_size(self) -> int:
+    #     raise NotImplementedError
+
 
 class GlobalWeightMessage(BaseMessage):
     weights: list[dict]
@@ -39,9 +42,8 @@ class GlobalWeightMessage(BaseMessage):
         self.weights = weights
 
     def serialize(self) -> bytes:
-        weights = self.weights
         ll = []
-        for o in weights:
+        for o in self.weights:
             to_send = io.BytesIO()
             torch.save(o, to_send, _use_new_zipfile_serialization=False)
             to_send.seek(0)
@@ -62,9 +64,9 @@ class GlobalWeightMessage(BaseMessage):
 
 class JsonMessage(BaseMessage):
     MESSAGE_TYPE: Final = MessageType('JsonMessage')
-    data: dict
+    data: any
 
-    def __init__(self, data: dict):
+    def __init__(self, data: any):
         self.data = data
 
     def serialize(self) -> bytes:

@@ -7,6 +7,7 @@ from torch import nn
 
 from app.config import config
 from app.config.logger import fed_logger
+from app.dto.message import BaseMessage
 from app.entity.communicator import Communicator
 from app.fl_method import fl_method_parser
 from app.util import data_utils, model_utils
@@ -122,16 +123,16 @@ class FedServerInterface(ABC, Communicator):
     def split(self, state, options: dict):
         pass
 
-    def scatter(self, msg, is_weight=False):
+    def scatter(self, msg: BaseMessage):
         list1 = config.CLIENTS_LIST
         if self.edge_based:
             list1 = config.EDGE_SERVER_LIST
             for i in list1:
-                self.send_msg(exchange=i, msg=msg, is_weight=is_weight, url=i)
+                self.send_msg(i, config.mq_url, msg)
 
         else:
             for i in list1:
-                self.send_msg(exchange=i, msg=msg, is_weight=is_weight)
+                self.send_msg(i, config.mq_url, msg)
 
     def concat_norm(self, ttpi, offloading):
         ttpi_order = []

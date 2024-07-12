@@ -4,9 +4,9 @@ import torch
 from torch import multiprocessing
 
 from app.config import config
-from app.config.logger import fed_logger
+from app.dto.message import BaseMessage
 from app.entity.communicator import Communicator
-from app.util import data_utils, model_utils, message_utils
+from app.util import data_utils, model_utils
 
 
 class FedEdgeServerInterface(ABC, Communicator):
@@ -65,7 +65,7 @@ class FedEdgeServerInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def global_weights(self, client_ips: []):
+    def get_global_weights(self, client_ips: []):
         """
         receive global weights
         """
@@ -82,9 +82,9 @@ class FedEdgeServerInterface(ABC, Communicator):
     def initialize(self, split_layers, LR, client_ips):
         pass
 
-    def scatter(self, msg, is_weight=False):
-        for i in config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]:
-            self.send_msg(i, msg, is_weight)
+    def scatter(self, msg: BaseMessage):
+        for i in config.EDGE_NAME_TO_CLIENTS_NAME[config.EDGE_SERVER_INDEX_TO_NAME[config.index]]:
+            self.send_msg(i, config.mq_url, msg)
 
     @abstractmethod
     def forward_propagation(self, client_ip):
