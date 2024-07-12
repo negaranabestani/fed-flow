@@ -16,3 +16,4 @@ class Aggregator(ABC):
             fed_logger.error("aggregate method is none")
             return
         self.aggregate(config.CLIENTS_LIST, method, eweights)
+

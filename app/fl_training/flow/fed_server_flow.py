@@ -14,7 +14,6 @@ from app.entity.interface.fed_server_interface import FedServerInterface
 from app.util import rl_utils
 
 
-
 def run_edge_based_no_offload(server: FedServerInterface, LR, options):
     res = {}
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
@@ -120,6 +119,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options, estimate_ene
         local_weights = server.e_local_weights(config.CLIENTS_LIST)
 
         fed_logger.info("aggregating weights")
+
         server.call_aggregation(options, local_weights)
 
         if estimate_energy:
@@ -196,7 +196,7 @@ def run_no_edge_offload(server: FedServerInterface, LR, options):
         fed_logger.info("initializing server")
         server.initialize(server.split_layers, LR)
 
-        fed_logger.info("start training")
+        fed_logger.info("1start training")
         server.no_edge_offloading_train(config.CLIENTS_LIST)
         fed_logger.info("receiving local weights")
         local_weights = server.c_local_weights(config.CLIENTS_LIST)
@@ -241,6 +241,7 @@ def run_no_edge(server: FedServerInterface, options):
         fed_logger.info("receiving local weights")
         local_weights = server.c_local_weights(config.CLIENTS_LIST)
         fed_logger.info("aggregating weights")
+
         server.call_aggregation(options, local_weights)
         e_time = time.time()
 
