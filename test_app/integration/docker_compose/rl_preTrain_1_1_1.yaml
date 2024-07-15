@@ -5,7 +5,7 @@ services:
       - ./config.py:/fed-flow/app/config/config.py
       - ./../../../Graphs:/Graphs
       - ./../../../agent:/app/agent
-    image: negaranabestani/fed-flow:rabbitmq
+    image: autlpdslab/fedflow:rabbitmq
     ports:
       - "5002:5002"
     hostname: server
@@ -34,7 +34,7 @@ services:
   edge1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: negaranabestani/fed-flow:rabbitmq
+    image: autlpdslab/fedflow:rabbitmq
     ports:
       - "5001:5001"
     hostname: edge1
@@ -54,7 +54,7 @@ services:
   client1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: negaranabestani/fed-flow:rabbitmq
+    image: autlpdslab/fedflow:rabbitmq
     hostname: client1
     deploy:
       resources:

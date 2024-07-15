@@ -18,12 +18,12 @@ warnings.filterwarnings('ignore')
 logging.getLogger("requests").setLevel(logging.WARNING)
 
 
-def run_edge_based(client: FedClientInterface, LR):
+def run_edge_based(client: FedClientInterface, LR, estimate_energy):
     mx: int = int((N / K) * (index + 1))
     mn: int = int((N / K) * index)
     data_size = mx - mn
     batch_num = data_size / config.B
-    final = []
+    # final=[]
     for r in range(config.R):
         config.current_round = r
         fed_logger.info('====================================>')
@@ -50,18 +50,19 @@ def run_edge_based(client: FedClientInterface, LR):
         fed_logger.info('ROUND: {} END'.format(r + 1))
         fed_logger.info('==> Waiting for aggregration')
         tt = et - st
-        energy = float(energy_estimation.energy())
-        energy /= batch_num
-        fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}" + Fore.RESET)
-        # client.energy_tt(energy, tt)
-        final.append(energy)
+        if estimate_energy:
+            energy = float(energy_estimation.energy())
+            # energy /= batch_num
+            fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}" + Fore.RESET)
+            client.energy_tt(energy, tt)
+            # final.append(energy)
 
         if r > 49:
             LR = config.LR * 0.1
     # fed_logger.info(f"test network{final}")
 
 
-def run_no_offload_edge(client: FedClientInterface, LR):
+def run_no_offload_edge(client: FedClientInterface, LR, estimate_energy):
     mx: int = int((N / K) * (index + 1))
     mn: int = int((N / K) * index)
     data_size = mx - mn
@@ -86,12 +87,13 @@ def run_no_offload_edge(client: FedClientInterface, LR):
             LR = config.LR * 0.1
         et = time.time()
         tt = et - st
-        energy = float(energy_estimation.energy())
-        # energy /= batch_num
-        fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}" + Fore.RESET)
+        if estimate_energy:
+            energy = float(energy_estimation.energy())
+            # energy /= batch_num
+            fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}" + Fore.RESET)
 
 
-def run_no_edge_offload(client: FedClientInterface, LR):
+def run_no_edge_offload(client: FedClientInterface, LR, estimate_energy):
     for r in range(config.R):
         config.current_round = r
         fed_logger.info('====================================>')
@@ -121,12 +123,13 @@ def run_no_edge_offload(client: FedClientInterface, LR):
             LR = config.LR * 0.1
         et = time.time()
         tt = et - st
-        energy = float(energy_estimation.energy())
-        # energy /= batch_num
-        fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}" + Fore.RESET)
+        if estimate_energy:
+            energy = float(energy_estimation.energy())
+            # energy /= batch_num
+            fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}" + Fore.RESET)
 
 
-def run_no_edge(client: FedClientInterface, LR):
+def run_no_edge(client: FedClientInterface, LR, estimate_energy):
     for r in range(config.R):
         config.current_round = r
         fed_logger.info('====================================>')
@@ -147,9 +150,9 @@ def run_no_edge(client: FedClientInterface, LR):
         fed_logger.info('==> Waiting for aggregration')
         if r > 49:
             LR = config.LR * 0.1
-
-        energy = float(energy_estimation.energy())
-        fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt - st}")
+        if estimate_energy:
+            energy = float(energy_estimation.energy())
+            fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt - st}" + Fore.RESET)
 
 
 def run(options_ins):
@@ -165,36 +168,36 @@ def run(options_ins):
     part_tr = indices[int((N / K) * index): int((N / K) * (index + 1))]
     trainloader = data_utils.get_trainloader(data_utils.get_trainset(), part_tr, 0)
 
+    estimate_energy = False
     offload = options_ins.get('offload')
     edge_based = options_ins.get('edgebased')
-    if edge_based and offload:
+    if options_ins.get("energy") == "True":
         energy_estimation.init(os.getpid())
+        estimate_energy = True
+    if edge_based and offload:
         client_ins = Client(server=config.CLIENT_NAME_TO_EDGE_NAME[config.CLIENTS_INDEX_TO_NAME[index]], datalen=datalen,
                             model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             )
-        run_edge_based(client_ins, LR)
+        run_edge_based(client_ins, LR, estimate_energy)
     elif edge_based and not offload:
-        energy_estimation.init(os.getpid())
         client_ins = Client(server=config.CLIENT_NAME_TO_EDGE_NAME[config.CLIENTS_INDEX_TO_NAME[index]],
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             )
-        run_no_offload_edge(client_ins, LR)
+        run_no_offload_edge(client_ins, LR, estimate_energy)
     elif offload:
-        energy_estimation.init(os.getpid())
         client_ins = Client(server=config.SERVER_ADDR,
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             )
-        run_no_edge_offload(client_ins, LR)
+        run_no_edge_offload(client_ins, LR, estimate_energy)
     else:
-        energy_estimation.init(os.getpid())
         client_ins = Client(server=config.SERVER_ADDR,
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             )
-        run_no_edge(client_ins, LR)
+        run_no_edge(client_ins, LR, estimate_energy)
     # client_ins.recv_msg(config.CLIENTS_INDEX[index], message_utils.finish)
 
 # parser = argparse.ArgumentParser()

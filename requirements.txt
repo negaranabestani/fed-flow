@@ -42,3 +42,4 @@ Jinja2==3.1.2
 keras==2.8.0
 Keras-Preprocessing==1.1.2
 psutil==5.9.6
+stable_baselines3==2.3.2

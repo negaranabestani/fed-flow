@@ -1,5 +1,4 @@
 import threading
-import threading
 import time
 
 from colorama import Fore
@@ -73,11 +72,9 @@ class FedEdgeServer(FedEdgeServerInterface):
                 inputs, targets = smashed_layers.to(self.device), labels.to(self.device)
                 if self.split_layers[config.CLIENTS_NAME_TO_INDEX[client_ip]][0] < \
                         self.split_layers[config.CLIENTS_NAME_TO_INDEX[client_ip]][1]:
-                    energy_estimation.computation_start()
                     if self.optimizers.keys().__contains__(client_ip):
                         self.optimizers[client_ip].zero_grad()
                     outputs = self.nets[client_ip](inputs)
-                    energy_estimation.computation_end()
                     # fed_logger.info(client_ip + " sending local activations")
                     if self.split_layers[config.CLIENTS_NAME_TO_INDEX[client_ip]][
                         1] < model_utils.get_unit_model_len() - 1:
@@ -89,19 +86,15 @@ class FedEdgeServer(FedEdgeServerInterface):
                                                                  GlobalWeightMessage.MESSAGE_TYPE)
                         gradients = msg.weights[0].to(self.device)
                         # fed_logger.info(client_ip + " training model backward")
-                        energy_estimation.computation_start()
                         outputs.backward(gradients)
-                        energy_estimation.computation_end()
                         msg: list = [inputs.grad]
                         self.send_msg(client_exchange, config.mq_url, GlobalWeightMessage(msg))
                     else:
-                        energy_estimation.computation_start()
                         outputs = self.nets[client_ip](inputs)
                         loss = self.criterion(outputs, targets)
                         loss.backward()
                         if client_ip in self.optimizers.keys():
                             self.optimizers[client_ip].step()
-                        energy_estimation.computation_end()
                         msg: list = [inputs.grad]
                         self.send_msg(client_exchange, config.mq_url, GlobalWeightMessage(msg))
                 else:

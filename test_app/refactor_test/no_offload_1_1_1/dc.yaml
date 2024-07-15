@@ -11,7 +11,7 @@ services:
         condition: on-failure
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: negaranabestani/fed-flow:rabbitmq
+    image: autlpdslab/fedflow:mega-v0.0.1
     hostname: server
     ports:
       - "51008:51008"
@@ -21,7 +21,7 @@ services:
   edge1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: negaranabestani/fed-flow:rabbitmq
+    image: autlpdslab/fedflow:mega-v0.0.1
     ports:
       - "5001:5001"
     hostname: edge1
@@ -37,8 +37,9 @@ services:
     depends_on:
       - server
       - broker
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py & python3 /fed-flow/energy/service.py & wait -n"
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py"
   broker:
+    attach: false
     image: rabbitmq:3.13-management
     ports:
       - "5672:5672"
@@ -59,8 +60,8 @@ services:
         condition: on-failure
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: negaranabestani/fed-flow:rabbitmq
+    image: autlpdslab/fedflow:mega-v0.0.1
     hostname: client1
     working_dir: /fed-flow/app/fl_training/runner
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -e True & python3 /fed-flow/energy/service.py & wait -n"
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -e True"
 

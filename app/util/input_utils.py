@@ -12,7 +12,8 @@ options = {
     '-o': ['--offload', False, 'offloading or classic FL mode'],
     '-dl': ['--datasetlink', '', 'the link to dataset  python file'],
     '-ml': ['--modellink', '', 'the link to model  python file'],
-    '-i': ['--index', '0', 'the device index']
+    '-i': ['--index', '0', 'the device index'],
+    '-en': ['--energy', 'False', 'enable or disable energy estimation']
 }
 
 
