@@ -1,8 +1,10 @@
 import logging
+import multiprocessing
 import random
 import subprocess
 import time
 
+import psutil
 from colorama import Fore
 
 import config
@@ -18,7 +20,7 @@ def estimate_computation_energy(process):
     if process.cpu_u_count == 0:
         return 0
     # max_energy_per_core = ((process.system_energy) / process.cpu_u_count)
-    cores = int(subprocess.run("nproc", capture_output=True, shell=True, text=True).stdout)
+    cores = multiprocessing.cpu_count()
     # energy_logger.info(f"cpus: {cores}")
     utilization = process.cpu_utilization / process.cpu_u_count / 100 / cores
     # energy_logger.info(Fore.RED+f"{utilization}")
@@ -52,27 +54,15 @@ def end_transmission(process, bits):
 
 
 def get_cpu_u(pid):
-    return 0
-    # print("pid" + str(pid))
-    data = subprocess.run("top -n 1 -b -p " + str(pid), capture_output=True, shell=True, text=True)
-    # print("result"+str(data.stdout))
-    result = data.stdout.split("\n")
-    target = result[7].split(" ")
-    i = 0
-    j = len(target) - 1
-    ut = ''
-    while j != 0:
-        st = target[j]
-        if st != '':
-            i += 1
-        if i == 4:
-            ut = st
-            break
-        j -= 1
-    # energy_logger.info(ut)
-    # energy_logger.info(Fore.LIGHTYELLOW_EX + f"{float(target[len(target) - 8])}")
-    # return float(target[len(target) - 8])
-    return float(ut)
+    try:
+        pid = int(pid)
+        # Create a Process object for the given PID
+        process = psutil.Process(pid)
+        # Get the CPU utilization (as a percentage)
+        cpu_utilization = process.cpu_percent(interval=1.0)
+        return cpu_utilization
+    except Exception as e:
+        return 0
 
 
 def get_power_now():

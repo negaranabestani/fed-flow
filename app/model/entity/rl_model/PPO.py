@@ -4,7 +4,7 @@ from torch.distributions import MultivariateNormal
 import logging
 
 # ToDo inherit Rl model interface
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(filename)s:%(lineno)d - %(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
