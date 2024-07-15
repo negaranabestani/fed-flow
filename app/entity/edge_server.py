@@ -7,7 +7,7 @@ from torch import optim, nn
 
 from app.config import config
 from app.config.logger import fed_logger
-from app.dto.message import JsonMessage, GlobalWeightMessage
+from app.dto.message import JsonMessage, GlobalWeightMessage, NetworkTestMessage
 from app.entity.interface.fed_edgeserver_interface import FedEdgeServerInterface
 from app.util import model_utils, energy_estimation, data_utils
 
@@ -79,7 +79,8 @@ class FedEdgeServer(FedEdgeServerInterface):
                     outputs = self.nets[client_ip](inputs)
                     energy_estimation.computation_end()
                     # fed_logger.info(client_ip + " sending local activations")
-                    if self.split_layers[config.CLIENTS_NAME_TO_INDEX[client_ip]][1] < model_utils.get_unit_model_len() - 1:
+                    if self.split_layers[config.CLIENTS_NAME_TO_INDEX[client_ip]][
+                        1] < model_utils.get_unit_model_len() - 1:
                         self.send_msg(server_exchange, config.mq_url, JsonMessage(flag))
                         msg: list = [outputs.cpu(), targets.cpu()]
                         self.send_msg(server_exchange, config.mq_url, GlobalWeightMessage(msg))
@@ -136,24 +137,27 @@ class FedEdgeServer(FedEdgeServerInterface):
     def _thread_client_network_testing(self, client_ip):
         network_time_start = time.time()
         msg: list = [self.uninet.cpu().state_dict()]
-        self.send_msg(client_ip, config.mq_url, GlobalWeightMessage(msg))
-        msg: GlobalWeightMessage = self.recv_msg(client_ip, config.mq_url, GlobalWeightMessage.MESSAGE_TYPE)
+        self.send_msg(client_ip, config.mq_url, NetworkTestMessage(msg))
+        msg: NetworkTestMessage = self.recv_msg(config.EDGE_SERVER_INDEX_TO_NAME[config.index], config.mq_url,
+                                                NetworkTestMessage.MESSAGE_TYPE)
         network_time_end = time.time()
         self.client_bandwidth[client_ip] = data_utils.sizeofmessage(msg.weights) / (
                 network_time_end - network_time_start)
 
     def test_server_network(self):
-        msg: GlobalWeightMessage = self.recv_msg(config.EDGE_SERVER_INDEX_TO_NAME[config.index],
-                                                 config.mq_url, GlobalWeightMessage.MESSAGE_TYPE)
+        _ = self.recv_msg(config.EDGE_SERVER_INDEX_TO_NAME[config.index],
+                                                 config.mq_url, NetworkTestMessage.MESSAGE_TYPE)
+        server_exchange = 'server.' + config.EDGE_SERVER_INDEX_TO_NAME[config.index]
         msg: list = [self.uninet.cpu().state_dict()]
-        self.send_msg(config.EDGE_SERVER_INDEX_TO_NAME[config.index], config.mq_url, GlobalWeightMessage(msg))
+        self.send_msg(server_exchange, config.mq_url, NetworkTestMessage(msg))
 
     def client_network(self):
         """
         send client network speed to central server
         """
+        server_exchange = 'server.' + config.EDGE_SERVER_INDEX_TO_NAME[config.index]
         msg = [self.client_bandwidth]
-        self.send_msg(config.EDGE_SERVER_INDEX_TO_NAME[config.index], config.mq_url, JsonMessage(msg))
+        self.send_msg(server_exchange, config.mq_url, JsonMessage(msg))
 
     def get_split_layers_config(self, client_ips):
         """

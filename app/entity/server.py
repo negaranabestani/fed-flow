@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 from colorama import Fore
 
-from app.dto.message import JsonMessage, GlobalWeightMessage
+from app.dto.message import JsonMessage, GlobalWeightMessage, NetworkTestMessage
 from app.entity.interface.fed_server_interface import FedServerInterface
 from app.fl_method import fl_method_parser
 
@@ -218,17 +218,16 @@ class FedServer(FedServerInterface):
             self.net_threads[connection_ips[i]].join()
 
     def _thread_network_testing(self, connection_ip):
-        url = None
-        if self.edge_based:
-            url = connection_ip
         network_time_start = time.time()
-        msg = GlobalWeightMessage([self.uninet.cpu().state_dict()])
+        msg = NetworkTestMessage([self.uninet.cpu().state_dict()])
         self.send_msg(connection_ip, config.mq_url, msg)
         fed_logger.info("server test network sent")
-        msg = self.recv_msg(connection_ip, config.mq_url, GlobalWeightMessage.MESSAGE_TYPE)
+        server_exchange = 'server.' + connection_ip
+        msg: NetworkTestMessage = self.recv_msg(server_exchange, config.mq_url, NetworkTestMessage.MESSAGE_TYPE)
         fed_logger.info("server test network received")
         network_time_end = time.time()
-        self.edge_bandwidth[connection_ip] = data_utils.sizeofmessage(msg) / (network_time_end - network_time_start)
+        self.edge_bandwidth[connection_ip] = data_utils.sizeofmessage(msg.weights) / (
+                    network_time_end - network_time_start)
 
     def client_network(self, edge_ips):
         """
@@ -236,7 +235,8 @@ class FedServer(FedServerInterface):
         """
 
         for i in edge_ips:
-            msg = self.recv_msg(i, config.mq_url, JsonMessage.MESSAGE_TYPE).data[0]
+            server_exchange = 'server.' + i
+            msg = self.recv_msg(server_exchange, config.mq_url, JsonMessage.MESSAGE_TYPE).data[0]
             for k in msg.keys():
                 self.client_bandwidth[k] = msg[k]
 

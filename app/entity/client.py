@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 import tqdm
 
-from app.dto.message import GlobalWeightMessage, JsonMessage
+from app.dto.message import GlobalWeightMessage, JsonMessage, NetworkTestMessage
 
 sys.path.append('../../')
 from app.util import model_utils, data_utils
@@ -64,11 +64,11 @@ class Client(FedClientInterface):
         """
         _ = self.recv_msg(config.CLIENTS_INDEX_TO_NAME[config.index],
                           config.mq_url,
-                          GlobalWeightMessage.MESSAGE_TYPE)
+                          NetworkTestMessage.MESSAGE_TYPE)
 
         fed_logger.info("test network received")
-        msg = GlobalWeightMessage([self.uninet.cpu().state_dict()])
-        self.send_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, msg)
+        msg = NetworkTestMessage([self.uninet.cpu().state_dict()])
+        self.send_msg(config.CLIENT_NAME_TO_EDGE_NAME[config.CLIENTS_INDEX_TO_NAME[config.index]], config.mq_url, msg)
         fed_logger.info("test network sent")
         return msg
 

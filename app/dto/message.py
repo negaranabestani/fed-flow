@@ -36,7 +36,7 @@ class BaseMessage(ABC):
 
 class GlobalWeightMessage(BaseMessage):
     weights: list[dict]
-    MESSAGE_TYPE: Final = MessageType('GlobalWeightMessage')
+    MESSAGE_TYPE = MessageType('GlobalWeightMessage')
 
     def __init__(self, weights: list[dict]):
         self.weights = weights
@@ -57,6 +57,13 @@ class GlobalWeightMessage(BaseMessage):
         for o in ll:
             fl.append(torch.load(io.BytesIO(o)))
         return GlobalWeightMessage(fl)
+
+    def get_message_type(self) -> MessageType:
+        return self.MESSAGE_TYPE
+
+
+class NetworkTestMessage(GlobalWeightMessage):
+    MESSAGE_TYPE: Final = MessageType('NetworkTestMessage')
 
     def get_message_type(self) -> MessageType:
         return self.MESSAGE_TYPE
