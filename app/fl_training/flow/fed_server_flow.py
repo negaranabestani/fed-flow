@@ -196,7 +196,7 @@ def run_no_edge_offload(server: FedServerInterface, LR, options):
         fed_logger.info("initializing server")
         server.initialize(server.split_layers, LR)
 
-        fed_logger.info("1start training")
+        fed_logger.info("start training")
         server.no_edge_offloading_train(config.CLIENTS_LIST)
         fed_logger.info("receiving local weights")
         local_weights = server.c_local_weights(config.CLIENTS_LIST)
