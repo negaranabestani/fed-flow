@@ -9,7 +9,7 @@ sys.path.append('../../../')
 from app.entity.client import Client
 from app.config import config
 from app.config.config import *
-from app.util import data_utils, energy_estimation
+from app.util import data_utils, energy_estimation, rl_utils
 from app.config.logger import fed_logger
 from app.entity.interface.fed_client_interface import FedClientInterface
 from colorama import Fore
@@ -23,8 +23,11 @@ def run_edge_based(client: FedClientInterface, LR):
     mn: int = int((N / K) * index)
     data_size = mx - mn
     batch_num = data_size / config.B
+    x = []
+    ut = []
     # final=[]
     for r in range(config.R):
+        x.append(r)
         config.current_round = r
         fed_logger.info('====================================>')
         fed_logger.info('ROUND: {} START'.format(r))
@@ -50,11 +53,16 @@ def run_edge_based(client: FedClientInterface, LR):
         fed_logger.info('ROUND: {} END'.format(r))
         fed_logger.info('==> Waiting for aggregration')
         tt = et - st
+        utilization = energy_estimation.utilization()
+        ut.append(float(utilization))
         energy = float(energy_estimation.energy())
+
         # energy /= batch_num
         fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}")
         client.energy_tt(energy, tt)
         # final.append(energy)
+        rl_utils.draw_graph(20, 5, x, ut, "utilization", "FL Rounds", "utilization", "/fed-flow/Graphs",
+                            "utilization", True)
 
         if r > 49:
             LR = config.LR * 0.1

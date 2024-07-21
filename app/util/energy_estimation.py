@@ -44,7 +44,11 @@ def energy():
     result = session.get(url=URL + "/energy/")
     return result.text
 
-
+def utilization():
+    session = requests.session()
+    session.trust_env = False
+    result = session.get(url=URL + "/utilization/")
+    return result.text
 def energy_and_time_comp_tr():
     session = requests.session()
     session.trust_env = False

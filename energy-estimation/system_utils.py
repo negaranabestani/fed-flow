@@ -1,11 +1,9 @@
 import logging
 import multiprocessing
 import random
-import subprocess
 import time
 
 import psutil
-from colorama import Fore
 
 import config
 from config import energy_logger
@@ -59,7 +57,8 @@ def get_cpu_u(pid):
         # Create a Process object for the given PID
         process = psutil.Process(pid)
         # Get the CPU utilization (as a percentage)
-        cpu_utilization = process.cpu_percent(interval=1.0)
+        cpu_utilization = process.cpu_percent(interval=0.2)
+        energy_logger.info(f"ut {cpu_utilization}")
         return cpu_utilization
     except Exception as e:
         return 0

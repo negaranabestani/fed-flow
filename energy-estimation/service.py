@@ -1,4 +1,5 @@
 import logging
+import multiprocessing
 import subprocess
 import threading
 import warnings
@@ -69,19 +70,17 @@ async def energy():
         Fore.MAGENTA + f"energy-conputation: {comp}, energy-trasmission: {tr}")
     ene = comp + tr
 
-    cores = int(subprocess.run("nproc", capture_output=True, shell=True, text=True).stdout)
-    # energy_logger.info(f"cpus: {cores}")
-    print(f"config.process.cpu_u_count : {config.process.cpu_u_count}")
-    print(f"cores : {cores}")
+    cores = multiprocessing.cpu_count()
+    energy_logger.info(f"config.process.cpu_u_count : {config.process.cpu_u_count}")
+    energy_logger.info(f"cores : {cores}")
 
-    utilization = config.process.cpu_utilization / config.process.cpu_u_count / 100 / cores
 
     config.process.comp_time = 0
     config.process.cpu_u_count = 0
     config.process.end_comp = False
     config.process.cpu_utilization = 0
     config.process.transmission_time = 0
-    return utilization
+    return ene
 
 
 @app.get("/energy/time/comp_tr")
@@ -104,9 +103,11 @@ async def energy_and_time_comp_tr():
     return comp_tr
 
 
-@app.get("/get-cpu-utilization/{pid}")
-async def get_cpu_utilization(pid):
-    return system_utils.get_cpu_u(pid)
+@app.get("/utilization/")
+async def get_cpu_utilization():
+    cores = multiprocessing.cpu_count()
+    # energy_logger.info(f"cpus: {cores}")
+    return config.process.cpu_utilization / config.process.cpu_u_count / 100 / cores
 
 
 # uvconfig = uvicorn.Config(app, host="0.0.0.0", port=8023, log_level="critical")
