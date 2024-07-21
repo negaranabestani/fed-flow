@@ -1,8 +1,9 @@
 from app.fl_method import aggregation, clustering, splitting
+from app.entity.interface.fed_client_interface import Aggregator
 
 # a mapping of fl methods to make function call easier
 fl_methods = {
-    "fed_avg": aggregation.fed_avg,
+    "fed_avg": Aggregator.fed_avg,
     "bandwidth": clustering.bandwidth,
     "none_clustering": clustering.none,
     "none_splitting": splitting.none,
