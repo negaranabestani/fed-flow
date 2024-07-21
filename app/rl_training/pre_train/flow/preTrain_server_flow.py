@@ -151,7 +151,7 @@ def rl_flow(server, options, LR):
     local_weights = server.e_local_weights(config.CLIENTS_LIST)
 
     fed_logger.info("aggregating weights")
-    server.call_aggregation(options, local_weights)
+    server.aggregate(options, local_weights)
 
     energy_tt_list = server.e_energy_tt(config.CLIENTS_LIST)
     return energy_tt_list

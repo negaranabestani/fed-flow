@@ -14,44 +14,48 @@ class Aggregator(ABC):
         self.edge_based = edge_based
         self.offload = offload
 
-    def aggregate(self, client_ips, aggregate_method, eweights):
-        w_local_list = []
-        for i in range(len(eweights)):
-            sp = self.split_layers[i]
-            if self.edge_based:
-                sp = self.split_layers[i][0]
-            if sp != (config.model_len - 1):
-                w_local = (
-                    model_utils.concat_weights(self.uninet.state_dict(), eweights[i],
+    def _aggregate_weights(self, client_ips, aggregate_method, received_weights):
+        weight_list = []
+
+        for i, weights in enumerate(received_weights):
+            split_point = self.split_layers[i][0] if self.edge_based else self.split_layers[i]
+
+            if split_point != (config.model_len - 1):
+                local_weights = (
+                    model_utils.concat_weights(self.uninet.state_dict(), weights,
                                                self.nets[client_ips[i]].state_dict()),
-                    config.N / config.K)
-                w_local_list.append(w_local)
+                    config.N / config.K
+                )
             else:
-                w_local = (eweights[i], config.N / config.K)
-            w_local_list.append(w_local)
+                local_weights = (weights, config.N / config.K)
+            weight_list.append(local_weights)
 
         zero_model = model_utils.zero_init(self.uninet).state_dict()
-        aggregated_model = aggregate_method(zero_model, w_local_list, config.N)
+        aggregated_model = aggregate_method(zero_model, weight_list, config.N)
         self.uninet.load_state_dict(aggregated_model)
+
         return aggregated_model
 
-    def call_aggregation(self, options: dict, eweights):
-        method = fl_method_parser.fl_methods.get(options.get('aggregation'))
-        if method is None:
-            fed_logger.error("aggregate method is none")
+    def aggregate(self, options: dict, received_weights):
+        method_name = options.get('aggregation')
+        aggregate_method = fl_method_parser.fl_methods.get(method_name)
+
+        if aggregate_method is None:
+            fed_logger.error(f"Aggregation method '{method_name}' is not found.")
             return
-        self.aggregate(config.CLIENTS_LIST, method, eweights)
+
+        self._aggregate_weights(config.CLIENTS_LIST, aggregate_method, received_weights)
 
     @staticmethod
-    def fed_avg(zero_model, w_local_list, total_data_size):
-        keys = w_local_list[0][0].keys()
+    def fed_avg(zero_model, weight_list, total_data_size):
+        keys = weight_list[0][0].keys()
 
-        for k in keys:
-            for w in w_local_list:
-                beta = float(w[1]) / float(total_data_size)
-                if 'num_batches_tracked' in k:
-                    zero_model[k] = w[0][k]
+        for key in keys:
+            for weights, beta in weight_list:
+                beta_weight = beta / float(total_data_size)
+                if 'num_batches_tracked' in key:
+                    zero_model[key] = weights[key]
                 else:
-                    zero_model[k] += (w[0][k] * beta)
+                    zero_model[key] += weights[key] * beta_weight
 
         return zero_model
