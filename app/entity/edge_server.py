@@ -1,4 +1,3 @@
-import socket
 import threading
 import time
 
@@ -71,7 +70,6 @@ class FedEdgeServer(FedEdgeServerInterface):
                 inputs, targets = smashed_layers.to(self.device), labels.to(self.device)
                 if self.split_layers[config.CLIENTS_CONFIG[client_ip]][0] < \
                         self.split_layers[config.CLIENTS_CONFIG[client_ip]][1]:
-                    energy_estimation.computation_start()
                     if self.optimizers.keys().__contains__(client_ip):
                         self.optimizers[client_ip].zero_grad()
                     outputs = self.nets[client_ip](inputs)
@@ -89,12 +87,10 @@ class FedEdgeServer(FedEdgeServerInterface):
                                             is_weight=True)
                         gradients = msg[1].to(self.device)
                         # fed_logger.info(client_ip + " training model backward")
-                        energy_estimation.computation_start()
                         outputs.backward(gradients)
                         msg = [f'{message_utils.server_gradients_edge_to_client() + client_ip}_{i}', inputs.grad]
                         self.send_msg(exchange=client_ip, msg=msg, is_weight=True)
                     else:
-                        energy_estimation.computation_start()
                         outputs = self.nets[client_ip](inputs)
                         loss = self.criterion(outputs, targets)
                         loss.backward()
