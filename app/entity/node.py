@@ -17,14 +17,5 @@ class Node:
     def get_neighbors(self) -> List[Neighbor]:
         return self.neighbors
 
-    def broadcast(self, message: str):
-        for neighbor in self.neighbors:
-            self.send_message(message, neighbor.ip, neighbor.port)
-
-    @staticmethod
-    def send_message(message: str, receiver_ip: str, receiver_port: int):
-        print(f"Sending message to {receiver_ip}:{receiver_port} - {message}")
-
-    @staticmethod
-    def receive_message(message: str, sender_ip: str, sender_port: int):
-        print(f"Received message from {sender_ip}:{sender_port} - {message}")
+    # def broadcast(self, message: str):
+    #     for neighbor in self.neighbors:
