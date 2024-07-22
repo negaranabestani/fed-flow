@@ -8,7 +8,7 @@ from torch import optim, nn
 from app.config import config
 from app.config.logger import fed_logger
 from app.entity.interface.fed_edgeserver_interface import FedEdgeServerInterface
-from app.util import message_utils, model_utils, energy_estimation, data_utils
+from app.util import message_utils, model_utils, data_utils
 
 
 class FedEdgeServer(FedEdgeServerInterface):
@@ -91,7 +91,6 @@ class FedEdgeServer(FedEdgeServerInterface):
                         # fed_logger.info(client_ip + " training model backward")
                         energy_estimation.computation_start()
                         outputs.backward(gradients)
-                        energy_estimation.computation_end()
                         msg = [f'{message_utils.server_gradients_edge_to_client() + client_ip}_{i}', inputs.grad]
                         self.send_msg(exchange=client_ip, msg=msg, is_weight=True)
                     else:
@@ -101,7 +100,6 @@ class FedEdgeServer(FedEdgeServerInterface):
                         loss.backward()
                         if self.optimizers.keys().__contains__(client_ip):
                             self.optimizers[client_ip].step()
-                        energy_estimation.computation_end()
                         msg = [f'{message_utils.server_gradients_edge_to_client() + client_ip}_{i}', inputs.grad]
                         self.send_msg(exchange=client_ip, msg=msg, is_weight=True)
                 else:
