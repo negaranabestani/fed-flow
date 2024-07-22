@@ -73,7 +73,6 @@ class FedEdgeServer(FedEdgeServerInterface):
                     if self.optimizers.keys().__contains__(client_ip):
                         self.optimizers[client_ip].zero_grad()
                     outputs = self.nets[client_ip](inputs)
-                    energy_estimation.computation_end()
                     # fed_logger.info(client_ip + " sending local activations")
                     if self.split_layers[config.CLIENTS_CONFIG[client_ip]][1] < model_utils.get_unit_model_len() - 1:
                         flmsg = [f'{message_utils.local_iteration_flag_edge_to_server()}_{i}_{client_ip}', flag]
