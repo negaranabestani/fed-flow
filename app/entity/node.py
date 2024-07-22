@@ -1,6 +1,6 @@
 from typing import List
 
-from app.entity.neighbour import Neighbor
+from app.entity.neighbor import Neighbor
 
 
 class Node:
