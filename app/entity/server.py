@@ -312,10 +312,10 @@ class FedServer(FedServerInterface):
         #
         # edge_offloading = []
         # server_offloading = 0
-        # for i in range(len(config.EDGE_MAP)):
+        # for i in range(len(config.EDGE_NAME_TO_CLIENTS_NAME)):
         #     edge_offloading.append(0)
-        #     for j in range(len(config.EDGE_MAP.get((list(config.EDGE_MAP.keys()))[i]))):
-        #         split_key = config.CLIENTS_CONFIG.get(config.EDGE_MAP.get(list(config.EDGE_MAP.keys())[i])[j])
+        #     for j in range(len(config.EDGE_NAME_TO_CLIENTS_NAME.get((list(config.EDGE_NAME_TO_CLIENTS_NAME.keys()))[i]))):
+        #         split_key = config.CLIENTS_NAME_TO_INDEX.get(config.EDGE_NAME_TO_CLIENTS_NAME.get(list(config.EDGE_NAME_TO_CLIENTS_NAME.keys())[i])[j])
         #         if self.split_layers[split_key][0] < self.split_layers[split_key][1]:
         #             edge_offloading[i] += 1
         #         if self.split_layers[split_key][1] < model_utils.get_unit_model_len() - 1:
