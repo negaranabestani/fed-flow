@@ -31,7 +31,10 @@ def get_trainloader(trainset, part_tr, cpu_count):
 
 
 def sizeofmessage(msg):
-    return sys.getsizeof(pickle.dumps(msg)) * 8
+    size = 0
+    for i in range(len(msg)):
+        size += sys.getsizeof(pickle.dumps(msg[i]))
+    return size * 8
 
 
 def get_testloader(testset, cpu_count):
