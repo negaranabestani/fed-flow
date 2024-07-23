@@ -1,0 +1,14 @@
+### Python ###
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jetbrains IDEs
+.idea
+results
+.DS_Store
+app/.DS_Store
+
+#dataset data
+app/dataset/data

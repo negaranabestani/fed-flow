@@ -1,3 +1,4 @@
+import os
 import pickle
 import sys
 import time
@@ -41,7 +42,7 @@ def run_edge_based_no_offload(server: FedServerInterface, LR, options):
         fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
 
-def run_edge_based_offload(server: FedServerInterface, LR, options,estimate_energy):
+def run_edge_based_offload(server: FedServerInterface, LR, options, estimate_energy):
     server.initialize(config.split_layer, LR)
     training_time = 0
     energy_tt_list = []
@@ -89,9 +90,9 @@ def run_edge_based_offload(server: FedServerInterface, LR, options,estimate_ener
         normalizedState = []
         for bw in state:
             if r < 50:
-                normalizedState.append(bw/100_000_000)
+                normalizedState.append(bw / 100_000_000)
             else:
-                normalizedState.append(bw/10_000_000)
+                normalizedState.append(bw / 10_000_000)
         iotBW.append(normalizedState[0])
         edgeBW.append(normalizedState[1])
 
@@ -134,7 +135,11 @@ def run_edge_based_offload(server: FedServerInterface, LR, options,estimate_ener
 
         res['training_time'].append(training_time)
         res['bandwidth_record'].append(server.bandwith())
-        with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
+
+        directory = os.path.join(config.home, 'results')
+        file_path = os.path.join(directory, 'FedAdapt_res.pkl')
+        os.makedirs(directory, exist_ok=True)
+        with open(file_path, 'wb') as f:
             pickle.dump(res, f)
 
         fed_logger.info("testing accuracy")
@@ -148,7 +153,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options,estimate_ener
                             "trainingTime", True)
         if estimate_energy:
             rl_utils.draw_graph(10, 5, x, avgEnergy, "Energy time", "FL Rounds", "Energy", "/fed-flow/Graphs",
-                            "energy", True)
+                                "energy", True)
         rl_utils.draw_graph(10, 5, x, iotBW, "iot BW", "FL Rounds", "iotBW", "/fed-flow/Graphs",
                             "iotBW", True)
         rl_utils.draw_graph(10, 5, x, edgeBW, "edge BW", "FL Rounds", "edgeBW", "/fed-flow/Graphs",
@@ -199,8 +204,13 @@ def run_no_edge_offload(server: FedServerInterface, LR, options):
         training_time = e_time - s_time
         res['training_time'].append(training_time)
         res['bandwidth_record'].append(server.bandwith())
-        with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
+
+        directory = os.path.join(config.home, 'results')
+        file_path = os.path.join(directory, 'FedAdapt_res.pkl')
+        os.makedirs(directory, exist_ok=True)
+        with open(file_path, 'wb') as f:
             pickle.dump(res, f)
+
         test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
         res['test_acc_record'].append(test_acc)
 
@@ -234,8 +244,13 @@ def run_no_edge(server: FedServerInterface, options):
         training_time = e_time - s_time
         res['training_time'].append(training_time)
         res['bandwidth_record'].append(server.bandwith())
-        with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
+
+        directory = os.path.join(config.home, 'results')
+        file_path = os.path.join(directory, 'FedAdapt_res.pkl')
+        os.makedirs(directory, exist_ok=True)
+        with open(file_path, 'wb') as f:
             pickle.dump(res, f)
+
         test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
         res['test_acc_record'].append(test_acc)
 
@@ -249,22 +264,22 @@ def run(options_ins):
     fed_logger.info("start mode: " + str(options_ins.values()))
     offload = options_ins.get('offload')
     edge_based = options_ins.get('edgebased')
-    estimate_energy=False
-    if options_ins.get('energy')=="True":
-        estimate_energy=True
+    estimate_energy = False
+    if options_ins.get('energy') == "True":
+        estimate_energy = True
     if edge_based and offload:
-        server_ins = FedServer(options_ins.get('model'),
+        server_ins = FedServer(options_ins.get('ip'), options_ins.get('port'), options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)
-        run_edge_based_offload(server_ins, LR, options_ins,estimate_energy)
+        run_edge_based_offload(server_ins, LR, options_ins, estimate_energy)
     elif edge_based and not offload:
-        server_ins = FedServer(options_ins.get('model'),
+        server_ins = FedServer(options_ins.get('ip'), options_ins.get('port'), options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)
         run_edge_based_no_offload(server_ins, LR, options_ins)
     elif offload and not edge_based:
-        server_ins = FedServer(options_ins.get('model'),
+        server_ins = FedServer(options_ins.get('ip'), options_ins.get('port'), options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)
         run_no_edge_offload(server_ins, LR, options_ins)
     else:
-        server_ins = FedServer(options_ins.get('model'),
+        server_ins = FedServer(options_ins.get('ip'), options_ins.get('port'), options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)
         run_no_edge(server_ins, options_ins)
