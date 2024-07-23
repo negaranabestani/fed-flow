@@ -1,3 +1,4 @@
+import os
 import pickle
 import sys
 import time
@@ -134,7 +135,11 @@ def run_edge_based_offload(server: FedServerInterface, LR, options, estimate_ene
 
         res['training_time'].append(training_time)
         res['bandwidth_record'].append(server.bandwith())
-        with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
+
+        directory = os.path.join(config.home, 'results')
+        file_path = os.path.join(directory, 'FedAdapt_res.pkl')
+        os.makedirs(directory, exist_ok=True)
+        with open(file_path, 'wb') as f:
             pickle.dump(res, f)
 
         fed_logger.info("testing accuracy")
@@ -199,8 +204,13 @@ def run_no_edge_offload(server: FedServerInterface, LR, options):
         training_time = e_time - s_time
         res['training_time'].append(training_time)
         res['bandwidth_record'].append(server.bandwith())
-        with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
+
+        directory = os.path.join(config.home, 'results')
+        file_path = os.path.join(directory, 'FedAdapt_res.pkl')
+        os.makedirs(directory, exist_ok=True)
+        with open(file_path, 'wb') as f:
             pickle.dump(res, f)
+
         test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
         res['test_acc_record'].append(test_acc)
 
@@ -234,8 +244,13 @@ def run_no_edge(server: FedServerInterface, options):
         training_time = e_time - s_time
         res['training_time'].append(training_time)
         res['bandwidth_record'].append(server.bandwith())
-        with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
+
+        directory = os.path.join(config.home, 'results')
+        file_path = os.path.join(directory, 'FedAdapt_res.pkl')
+        os.makedirs(directory, exist_ok=True)
+        with open(file_path, 'wb') as f:
             pickle.dump(res, f)
+
         test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
         res['test_acc_record'].append(test_acc)
 
