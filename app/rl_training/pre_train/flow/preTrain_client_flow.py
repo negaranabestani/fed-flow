@@ -45,8 +45,8 @@ def run(options_ins):
     ttOfLayer0 = []
     for layer in range(model_utils.get_unit_model_len() - 1):
         for i in range(10):
-            client.edge_global_weights()
-            client.edge_split_layer()
+            client.get_edge_global_weights()
+            client.get_split_layers_config_from_edge()
 
             st = time.time()
 
