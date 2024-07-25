@@ -1,5 +1,7 @@
+import os
 import sys
 
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 CLIENTS_BANDWIDTH = []
 index = 0
 simnet = False
@@ -9,7 +11,7 @@ home = sys.path[0].split('fed-flow')[0] + 'fed-flow' + "/app"
 dataset_path = home + '/dataset/data/'
 N = 100  # data # length
 
-mq_url = "amqps://rabbitmq:rabbitmq@localhost/5672"
+mq_url = "amqp://rabbitmq:rabbitmq@localhost:5672/%2F"
 mq_host = "localhost"
 mq_user = "rabbitmq"
 mq_pass = "rabbitmq"
@@ -28,6 +30,7 @@ model_name = ''
 model_size = 1.28
 model_flops = 32.902
 total_flops = 8488192
+# split_layer = [6]  # Initial split layers for no edge base
 split_layer = [[6, 6]]  # Initial split layers
 model_len = 7
 

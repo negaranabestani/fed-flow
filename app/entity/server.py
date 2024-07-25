@@ -280,7 +280,7 @@ class FedServer(FedServerInterface):
     def c_local_weights(self, client_ips):
         cweights = []
         for i in range(len(client_ips)):
-            msg: GlobalWeightMessage = self.recv_msg(client_ips[i], config.mq_url, GlobalWeightMessage.MESSAGE_TYPE)
+            msg: GlobalWeightMessage = self.recv_msg(config.SERVER_INDEX_TO_NAME[config.index], config.mq_url, GlobalWeightMessage.MESSAGE_TYPE)
             self.tt_end[client_ips[i]] = time.time()
             cweights.append(msg.weights[0])
         return cweights

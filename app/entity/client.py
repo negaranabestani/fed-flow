@@ -40,9 +40,8 @@ class Client(FedClientInterface):
         return msg
 
     def send_local_weights_to_server(self):
-        edge_exchange = 'edge.' + config.CLIENTS_INDEX_TO_NAME[config.index]
         msg = GlobalWeightMessage([self.net.cpu().state_dict()])
-        self.send_msg(edge_exchange, config.mq_url, msg)
+        self.send_msg(config.SERVER_INDEX_TO_NAME[config.index], config.mq_url, msg)
         return msg
 
     def test_network(self):
@@ -51,10 +50,11 @@ class Client(FedClientInterface):
         """
         _ = self.recv_msg(config.CLIENTS_INDEX_TO_NAME[config.index],
                           config.mq_url,
-                          GlobalWeightMessage.MESSAGE_TYPE)
+                          NetworkTestMessage.MESSAGE_TYPE)
         fed_logger.info("test network received")
-        msg = GlobalWeightMessage([self.uninet.cpu().state_dict()])
-        self.send_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, msg)
+        msg = NetworkTestMessage([self.uninet.cpu().state_dict()])
+        server_exchange = 'server.' + config.CLIENTS_INDEX_TO_NAME[config.index]
+        self.send_msg(server_exchange, config.mq_url, msg)
         fed_logger.info("test network sent")
         return msg
 
