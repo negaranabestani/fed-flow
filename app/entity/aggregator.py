@@ -2,17 +2,17 @@ from abc import ABC
 
 from app.config import config
 from app.config.logger import fed_logger
+from app.entity.aggregator_config import AggregatorConfig
 from app.fl_method import fl_method_parser
 from app.util import model_utils
 
 
 class Aggregator(ABC):
-    def __init__(self, uninet, split_layers, nets, edge_based, offload):
-        self.uninet = uninet
-        self.split_layers = split_layers
-        self.nets = nets
-        self.edge_based = edge_based
-        self.offload = offload
+    def __init__(self, config: AggregatorConfig):
+        self.uninet = config.uninet
+        self.split_layers = config.split_layers
+        self.nets = config.nets
+        self.edge_based = config.edge_based
 
     def _aggregate_weights(self, client_ips, aggregate_method, received_weights):
         weight_list = []
@@ -38,24 +38,10 @@ class Aggregator(ABC):
 
     def aggregate(self, options: dict, received_weights):
         method_name = options.get('aggregation')
-        aggregate_method = fl_method_parser.fl_methods.get(method_name)
+        aggregate_method = fl_method_parser.fl_methods.get(options.get('aggregation'))
 
         if aggregate_method is None:
             fed_logger.error(f"Aggregation method '{method_name}' is not found.")
             return
 
         self._aggregate_weights(config.CLIENTS_LIST, aggregate_method, received_weights)
-
-    @staticmethod
-    def fed_avg(zero_model, weight_list, total_data_size):
-        keys = weight_list[0][0].keys()
-
-        for key in keys:
-            for weights, beta in weight_list:
-                beta_weight = beta / float(total_data_size)
-                if 'num_batches_tracked' in key:
-                    zero_model[key] = weights[key]
-                else:
-                    zero_model[key] += weights[key] * beta_weight
-
-        return zero_model

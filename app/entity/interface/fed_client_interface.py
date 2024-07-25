@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import torch
 from torch import nn, optim
 
+from app.entity.aggregator_config import AggregatorConfig
 from app.entity.communicator import Communicator
 from app.entity.node import Node
 from app.util import model_utils
@@ -11,7 +12,6 @@ from app.util import model_utils
 class FedClientInterface(Node, ABC, Communicator):
     def __init__(self, ip: str, port: int, server, datalen, model_name, dataset,
                  train_loader, LR, edge_based):
-        Node.__init__(self, ip, port)
         Communicator.__init__(self)
 
         self.datalen = datalen
@@ -29,6 +29,10 @@ class FedClientInterface(Node, ABC, Communicator):
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
                                    momentum=0.9)
+
+        Node.__init__(self, ip, port, aggregator_config=AggregatorConfig(
+            self.uninet, self.split_layers, self.net, edge_based, False)
+                      )
 
     @abstractmethod
     def initialize(self, split_layer, LR):
