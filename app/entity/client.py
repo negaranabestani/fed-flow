@@ -6,7 +6,8 @@ import torch.nn as nn
 import torch.optim as optim
 import tqdm
 
-from app.dto.message import GlobalWeightMessage, JsonMessage, NetworkTestMessage
+from app.dto.message import GlobalWeightMessage, JsonMessage, NetworkTestMessage, IterationFlagMessage, \
+    SplitLayerConfigMessage
 
 sys.path.append('../../')
 from app.util import model_utils, data_utils
@@ -77,14 +78,14 @@ class Client(FedClientInterface):
         receive splitting data
         """
         self.split_layers = self.recv_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url,
-                                          JsonMessage.MESSAGE_TYPE).data
+                                          SplitLayerConfigMessage.MESSAGE_TYPE).data
 
     def get_split_layers_config_from_edge(self):
         """
         receive splitting data
         """
         self.split_layers = self.recv_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url,
-                                          JsonMessage.MESSAGE_TYPE).data
+                                          SplitLayerConfigMessage.MESSAGE_TYPE).data
 
     def get_edge_global_weights(self):
         """
@@ -114,7 +115,7 @@ class Client(FedClientInterface):
             fed_logger.info("no offloding training start----------------------------")
             flag = False
             start_transmission()
-            self.send_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, JsonMessage(flag))
+            self.send_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, IterationFlagMessage(flag))
             end_transmission(data_utils.sizeofmessage(flag))
             i += 1
             for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(self.train_loader)):
@@ -134,7 +135,7 @@ class Client(FedClientInterface):
             fed_logger.info(f"offloding training start {self.split_layers}----------------------------")
             flag = True
             start_transmission()
-            self.send_msg(edge_exchange, config.mq_url, JsonMessage(flag))
+            self.send_msg(edge_exchange, config.mq_url, IterationFlagMessage(flag))
             end_transmission(data_utils.sizeofmessage(flag))
             i += 1
 
@@ -149,7 +150,7 @@ class Client(FedClientInterface):
                 # fed_logger.info("sending local activations")
                 flag = True
                 start_transmission()
-                self.send_msg(edge_exchange, config.mq_url, JsonMessage(flag))
+                self.send_msg(edge_exchange, config.mq_url, IterationFlagMessage(flag))
                 end_transmission(data_utils.sizeofmessage(flag))
 
                 msg = GlobalWeightMessage([outputs.cpu(),
@@ -174,7 +175,7 @@ class Client(FedClientInterface):
                 i += 1
             flag = False
             start_transmission()
-            self.send_msg(edge_exchange, config.mq_url, JsonMessage(flag))
+            self.send_msg(edge_exchange, config.mq_url, IterationFlagMessage(flag))
             end_transmission(data_utils.sizeofmessage(flag))
 
     def offloading_train(self):
@@ -182,12 +183,12 @@ class Client(FedClientInterface):
         self.net.train()
         flag = True
         start_transmission()
-        self.send_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, JsonMessage(flag))
+        self.send_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, IterationFlagMessage(flag))
         end_transmission(data_utils.sizeofmessage(flag))
         for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(self.train_loader)):
             flag = True
             start_transmission()
-            self.send_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, JsonMessage(flag))
+            self.send_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, IterationFlagMessage(flag))
             end_transmission(data_utils.sizeofmessage(flag))
             computation_start()
             inputs, targets = inputs.to(self.device), targets.to(self.device)
@@ -215,7 +216,7 @@ class Client(FedClientInterface):
 
         flag = False
         start_transmission()
-        self.send_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, JsonMessage(flag))
+        self.send_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, IterationFlagMessage(flag))
         end_transmission(data_utils.sizeofmessage(flag))
 
     def no_offloading_train(self):
