@@ -8,4 +8,8 @@ __pycache__/
 .idea
 results
 .DS_Store
+app/.DS_Store
+
+#dataset data
+app/dataset/data
 venv

@@ -39,7 +39,7 @@ services:
       - broker
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py"
   broker:
-    attach: false
+#    attach: false
     image: rabbitmq:3.13-management
     ports:
       - "5672:5672"
