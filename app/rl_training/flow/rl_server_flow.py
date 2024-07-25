@@ -1,7 +1,7 @@
 import sys
 import time
 
-from app.dto.message import JsonMessage
+from app.dto.message import JsonMessage, IterationFlagMessage
 
 sys.path.append('../../../')
 from app.config import config
@@ -247,7 +247,7 @@ def run(options):
     #                    pictureName='Action_hist_3')
 
     agent.close()
-    msg = JsonMessage(True)
+    msg = IterationFlagMessage(True)
     server.scatter(msg)
 
 

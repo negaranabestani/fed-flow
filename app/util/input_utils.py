@@ -13,18 +13,17 @@ options = {
     '-dl': ['--datasetlink', '', 'the link to dataset  python file'],
     '-ml': ['--modellink', '', 'the link to model  python file'],
     '-i': ['--index', '0', 'the device index'],
+    '-ip': ['--ip', '127.0.0.1', 'IP address of the node'],
+    '-p': ['--port', '8080', 'Port number of the node'],
     '-en': ['--energy', 'False', 'enable or disable energy estimation']
 }
 
 
-def parse_argument(parser: argparse.ArgumentParser()):
+def parse_argument(parser: argparse.ArgumentParser):
     """
-
     Args:
         parser:
-
     Returns: a map of options with their associated values
-
     """
     for op in options.keys():
         parser.add_argument(op, options.get(op)[0], help=options.get(op)[2], type=str,

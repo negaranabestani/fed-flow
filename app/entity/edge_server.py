@@ -6,7 +6,8 @@ from torch import optim, nn
 
 from app.config import config
 from app.config.logger import fed_logger
-from app.dto.message import JsonMessage, GlobalWeightMessage, NetworkTestMessage
+from app.dto.message import JsonMessage, GlobalWeightMessage, NetworkTestMessage, IterationFlagMessage, \
+    SplitLayerConfigMessage
 from app.entity.interface.fed_edgeserver_interface import FedEdgeServerInterface
 from app.util import model_utils, energy_estimation, data_utils
 
@@ -44,21 +45,22 @@ class FedEdgeServer(FedEdgeServerInterface):
         edge_exchange = 'edge.' + client_ip
         server_exchange = 'server.' + client_ip
         client_exchange = 'client.' + client_ip
-        msg: JsonMessage = self.recv_msg(edge_exchange, config.mq_url, JsonMessage.MESSAGE_TYPE)
-        flag: bool = msg.data
+        msg: IterationFlagMessage = self.recv_msg(edge_exchange, config.mq_url, IterationFlagMessage.MESSAGE_TYPE)
+        flag: bool = msg.flag
         if self.split_layers[config.CLIENTS_NAME_TO_INDEX.get(client_ip)][1] < model_utils.get_unit_model_len() - 1:
-            self.send_msg(server_exchange, config.mq_url, JsonMessage(flag))
+            self.send_msg(server_exchange, config.mq_url, IterationFlagMessage(flag))
         else:
-            self.send_msg(server_exchange, config.mq_url, JsonMessage(False))
+            self.send_msg(server_exchange, config.mq_url, IterationFlagMessage(False))
         i += 1
 
         while flag:
             if self.split_layers[config.CLIENTS_NAME_TO_INDEX.get(client_ip)][0] < model_utils.get_unit_model_len() - 1:
-                msg: JsonMessage = self.recv_msg(edge_exchange, config.mq_url, JsonMessage.MESSAGE_TYPE)
-                flag: bool = msg.data
+                msg: IterationFlagMessage = self.recv_msg(edge_exchange, config.mq_url,
+                                                          IterationFlagMessage.MESSAGE_TYPE)
+                flag: bool = msg.flag
 
                 if not flag:
-                    self.send_msg(server_exchange, config.mq_url, JsonMessage(flag))
+                    self.send_msg(server_exchange, config.mq_url, IterationFlagMessage(flag))
                     break
                 # fed_logger.info(client_ip + " receiving local activations")
                 msg: GlobalWeightMessage = self.recv_msg(edge_exchange,
@@ -78,7 +80,7 @@ class FedEdgeServer(FedEdgeServerInterface):
                     # fed_logger.info(client_ip + " sending local activations")
                     if self.split_layers[config.CLIENTS_NAME_TO_INDEX[client_ip]][
                         1] < model_utils.get_unit_model_len() - 1:
-                        self.send_msg(server_exchange, config.mq_url, JsonMessage(flag))
+                        self.send_msg(server_exchange, config.mq_url, IterationFlagMessage(flag))
                         msg: list = [outputs.cpu(), targets.cpu()]
                         self.send_msg(server_exchange, config.mq_url, GlobalWeightMessage(msg))
                         msg: GlobalWeightMessage = self.recv_msg(edge_exchange,
@@ -98,7 +100,7 @@ class FedEdgeServer(FedEdgeServerInterface):
                         msg: list = [inputs.grad]
                         self.send_msg(client_exchange, config.mq_url, GlobalWeightMessage(msg))
                 else:
-                    self.send_msg(server_exchange, config.mq_url, JsonMessage(flag))
+                    self.send_msg(server_exchange, config.mq_url, IterationFlagMessage(flag))
                     msg: list = [inputs.cpu(), targets.cpu()]
                     self.send_msg(server_exchange, config.mq_url, GlobalWeightMessage(msg))
                     # fed_logger.info(client_ip + " edge receiving gradients")
@@ -139,7 +141,7 @@ class FedEdgeServer(FedEdgeServerInterface):
 
     def test_server_network(self):
         _ = self.recv_msg(config.EDGE_SERVER_INDEX_TO_NAME[config.index],
-                                                 config.mq_url, NetworkTestMessage.MESSAGE_TYPE)
+                          config.mq_url, NetworkTestMessage.MESSAGE_TYPE)
         server_exchange = 'server.' + config.EDGE_SERVER_INDEX_TO_NAME[config.index]
         msg: list = [self.uninet.cpu().state_dict()]
         self.send_msg(server_exchange, config.mq_url, NetworkTestMessage(msg))
@@ -156,11 +158,11 @@ class FedEdgeServer(FedEdgeServerInterface):
         """
         receive send splitting data to clients
         """
-        msg: JsonMessage = self.recv_msg(config.EDGE_SERVER_INDEX_TO_NAME[config.index], config.mq_url,
-                                         JsonMessage.MESSAGE_TYPE)
+        msg: SplitLayerConfigMessage = self.recv_msg(config.EDGE_SERVER_INDEX_TO_NAME[config.index], config.mq_url,
+                                                     SplitLayerConfigMessage.MESSAGE_TYPE)
         self.split_layers = msg.data
         fed_logger.info(Fore.LIGHTYELLOW_EX + f"{msg.data}" + Fore.RESET)
-        msg = JsonMessage(self.split_layers)
+        msg = SplitLayerConfigMessage(self.split_layers)
         self.scatter(msg)
 
     def local_weights(self, client_ip):

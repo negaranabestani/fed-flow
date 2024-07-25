@@ -19,7 +19,7 @@ services:
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py"
 
   broker:
-    attach: false
+#    attach: false
     image: rabbitmq:3.13-management
     ports:
       - "5672:5672"

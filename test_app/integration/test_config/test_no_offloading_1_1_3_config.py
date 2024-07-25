@@ -59,8 +59,8 @@ S = 1  # Number of server connecting devices
 
 # Unique clients order
 HOST2IP = {}
-CLIENTS_CONFIG = {'client1': 0, 'client2': 1, 'client3': 2}
+CLIENTS_NAME_TO_INDEX = {'client1': 0, 'client2': 1, 'client3': 2}
 EDGE_SERVER_LIST = ['edge1']
 CLIENTS_LIST = ['client1', 'client2', 'client3']
-EDGE_MAP = {'edge1': ['client1', 'client2', 'client3']}
-CLIENT_MAP = {'client1': 'edge1', 'client2': 'edge1', 'client3': 'edge1'}
+EDGE_NAME_TO_CLIENTS_NAME = {'edge1': ['client1', 'client2', 'client3']}
+CLIENT_NAME_TO_EDGE_NAME = {'client1': 'edge1', 'client2': 'edge1', 'client3': 'edge1'}

@@ -94,13 +94,14 @@ def run(options_ins):
         estimate_energy = True
     if offload:
         edge_server_ins = FedEdgeServer(
-            options_ins.get('model'),
+            options_ins.get('ip'), options_ins.get('port'), options_ins.get('model'),
             options_ins.get('dataset'), offload=offload)
         fed_logger.info("start mode: " + str(options_ins.values()))
         run_offload(edge_server_ins, LR, estimate_energy)
     else:
-        edge_server_ins = FedEdgeServer(options_ins.get('model'),
-                                        options_ins.get('dataset'), offload=offload)
+        edge_server_ins = FedEdgeServer(
+            options_ins.get('ip'), options_ins.get('port'), options_ins.get('model'),
+            options_ins.get('dataset'), offload=offload)
         fed_logger.info("start mode: " + str(options_ins.values()))
         run_no_offload(edge_server_ins, LR)
     # msg = edge_server_ins.recv_msg(config.SERVER_ADDR, message_utils.finish)

@@ -65,12 +65,14 @@ class GlobalWeightMessage(BaseMessage):
 class NetworkTestMessage(GlobalWeightMessage):
     MESSAGE_TYPE: Final = MessageType('NetworkTestMessage')
 
-    def get_message_type(self) -> MessageType:
-        return self.MESSAGE_TYPE
+    @staticmethod
+    def deserialize(data: bytes, msg_type: MessageType) -> 'NetworkTestMessage':
+        msg = GlobalWeightMessage.deserialize(data, msg_type)
+        return NetworkTestMessage(msg.weights)
 
 
 class JsonMessage(BaseMessage):
-    MESSAGE_TYPE: Final = MessageType('JsonMessage')
+    MESSAGE_TYPE = MessageType('JsonMessage')
     data: any
 
     def __init__(self, data: any):
@@ -85,3 +87,38 @@ class JsonMessage(BaseMessage):
 
     def get_message_type(self) -> MessageType:
         return self.MESSAGE_TYPE
+
+
+class IterationFlagMessage(JsonMessage):
+    MESSAGE_TYPE = MessageType('IterationFlagMessage')
+    flag: bool
+
+    def __init__(self, flag: bool):
+        super().__init__(flag)
+        self.flag = flag
+
+    def serialize(self) -> bytes:
+        return super().serialize()
+
+    @staticmethod
+    def deserialize(data: bytes, msg_type: MessageType) -> 'IterationFlagMessage':
+        msg = JsonMessage.deserialize(data, JsonMessage.MESSAGE_TYPE)
+        return IterationFlagMessage(msg.data)
+
+
+class EnergyReportMessage(JsonMessage):
+    MESSAGE_TYPE = MessageType('EnergyReportMessage')
+
+    @staticmethod
+    def deserialize(data: bytes, msg_type: MessageType) -> 'JsonMessage':
+        msg = JsonMessage.deserialize(data, msg_type)
+        return EnergyReportMessage(msg.data)
+
+
+class SplitLayerConfigMessage(JsonMessage):
+    MESSAGE_TYPE = MessageType('SplitLayerConfigMessage')
+
+    @staticmethod
+    def deserialize(data: bytes, msg_type: MessageType) -> 'JsonMessage':
+        msg = JsonMessage.deserialize(data, msg_type)
+        return SplitLayerConfigMessage(msg.data)

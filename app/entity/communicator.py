@@ -22,7 +22,7 @@ class Communicator(object):
 
     @staticmethod
     def delete_all_queues():
-        mq_conn = Connection('amqp://rabbitmq:rabbitmq@localhost:5672//')
+        mq_conn = Connection(config.mq_url)
         mq_conn.connect()
 
         # Create a channel

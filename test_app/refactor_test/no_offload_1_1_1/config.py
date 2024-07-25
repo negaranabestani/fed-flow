@@ -69,9 +69,11 @@ S = 1
 # Unique clients order
 HOST2IP = {}
 CLIENTS_INDEX = {0: 'client1'}
-CLIENTS_CONFIG = {'client1': 0}
+CLIENTS_NAME_TO_INDEX = {'client1': 0}
+CLIENTS_INDEX_TO_NAME = {0: 'client1'}
 EDGE_SERVER_LIST = ['edge1']
-EDGE_SERVER_CONFIG = {0: 'edge1'}
+EDGE_SERVER_INDEX_TO_NAME = {0: 'edge1'}
 CLIENTS_LIST = ['client1']
-EDGE_MAP = {'edge1': ['client1']}
-CLIENT_MAP = {'client1': 'edge1'}
+EDGE_NAME_TO_CLIENTS_NAME = {'edge1': ['client1']}
+CLIENT_NAME_TO_EDGE_NAME = {'client1': 'edge1'}
+SERVER_INDEX_TO_NAME = {0: 'server1'}

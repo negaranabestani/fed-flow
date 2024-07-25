@@ -8,7 +8,8 @@ import torch.nn as nn
 import torch.optim as optim
 from colorama import Fore
 
-from app.dto.message import JsonMessage, GlobalWeightMessage, NetworkTestMessage
+from app.dto.message import JsonMessage, GlobalWeightMessage, NetworkTestMessage, SplitLayerConfigMessage, \
+    IterationFlagMessage
 from app.entity.interface.fed_server_interface import FedServerInterface
 from app.fl_method import fl_method_parser
 
@@ -106,9 +107,9 @@ class FedServer(FedServerInterface):
 
     def _thread_training_offloading(self, client_ip):
         # iteration = int((test_config.N / (test_config.K * test_config.B)))
-        flag: bool = self.recv_msg(client_ip, config.mq_url, JsonMessage.MESSAGE_TYPE).data
+        flag: bool = self.recv_msg(client_ip, config.mq_url, IterationFlagMessage.MESSAGE_TYPE).flag
         while flag:
-            flag = self.recv_msg(client_ip, config.mq_url, JsonMessage.MESSAGE_TYPE).data
+            flag = self.recv_msg(client_ip, config.mq_url, IterationFlagMessage.MESSAGE_TYPE).flag
             if not flag:
                 break
             # fed_logger.info(client_ip + " receiving local activations")
@@ -142,7 +143,7 @@ class FedServer(FedServerInterface):
         server_exchange = 'server.' + client_ip
         edge_exchange = 'edge.' + client_ip
         i = 0
-        flag: bool = self.recv_msg(server_exchange, config.mq_url, JsonMessage.MESSAGE_TYPE).data
+        flag: bool = self.recv_msg(server_exchange, config.mq_url, IterationFlagMessage.MESSAGE_TYPE).flag
         i += 1
         fed_logger.info(Fore.RED + f"{flag}" + Fore.RESET)
         if not flag:
@@ -153,7 +154,7 @@ class FedServer(FedServerInterface):
             # fed_logger.info(client_ip + " receiving local activations")
             if self.split_layers[config.CLIENTS_NAME_TO_INDEX[client_ip]][1] < len(
                     self.uninet.cfg) - 1:
-                flag: bool = self.recv_msg(server_exchange, config.mq_url, JsonMessage.MESSAGE_TYPE).data
+                flag: bool = self.recv_msg(server_exchange, config.mq_url, IterationFlagMessage.MESSAGE_TYPE).flag
                 fed_logger.info(Fore.RED + f"{flag}" + Fore.RESET)
                 if not flag:
                     break
@@ -244,13 +245,13 @@ class FedServer(FedServerInterface):
         """
         send splitting data
         """
-        self.scatter(JsonMessage(self.split_layers))
+        self.scatter(SplitLayerConfigMessage(self.split_layers))
 
     def send_split_layers_config_to_edges(self):
         """
         send splitting data
         """
-        self.scatter(JsonMessage(self.split_layers))
+        self.scatter(SplitLayerConfigMessage(self.split_layers))
 
     def e_local_weights(self, client_ips):
         """
@@ -280,7 +281,7 @@ class FedServer(FedServerInterface):
     def c_local_weights(self, client_ips):
         cweights = []
         for i in range(len(client_ips)):
-            msg: GlobalWeightMessage = self.recv_msg(client_ips[i], config.mq_url, GlobalWeightMessage.MESSAGE_TYPE)
+            msg: GlobalWeightMessage = self.recv_msg(config.SERVER_INDEX_TO_NAME[config.index], config.mq_url, GlobalWeightMessage.MESSAGE_TYPE)
             self.tt_end[client_ips[i]] = time.time()
             cweights.append(msg.weights[0])
         return cweights
@@ -312,10 +313,10 @@ class FedServer(FedServerInterface):
         #
         # edge_offloading = []
         # server_offloading = 0
-        # for i in range(len(config.EDGE_MAP)):
+        # for i in range(len(config.EDGE_NAME_TO_CLIENTS_NAME)):
         #     edge_offloading.append(0)
-        #     for j in range(len(config.EDGE_MAP.get((list(config.EDGE_MAP.keys()))[i]))):
-        #         split_key = config.CLIENTS_CONFIG.get(config.EDGE_MAP.get(list(config.EDGE_MAP.keys())[i])[j])
+        #     for j in range(len(config.EDGE_NAME_TO_CLIENTS_NAME.get((list(config.EDGE_NAME_TO_CLIENTS_NAME.keys()))[i]))):
+        #         split_key = config.CLIENTS_NAME_TO_INDEX.get(config.EDGE_NAME_TO_CLIENTS_NAME.get(list(config.EDGE_NAME_TO_CLIENTS_NAME.keys())[i])[j])
         #         if self.split_layers[split_key][0] < self.split_layers[split_key][1]:
         #             edge_offloading[i] += 1
         #         if self.split_layers[split_key][1] < model_utils.get_unit_model_len() - 1:
