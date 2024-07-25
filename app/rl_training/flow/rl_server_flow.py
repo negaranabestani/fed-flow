@@ -1,6 +1,8 @@
 import sys
 import time
 
+from app.dto.message import JsonMessage, IterationFlagMessage
+
 sys.path.append('../../../')
 from app.config import config
 from app.util import message_utils, rl_utils
@@ -66,7 +68,7 @@ def run(options):
             # fed_logger.info("getting state")
             offloading = server.split_layers
 
-            server.edge_split_layer()
+            server.send_split_layers_config_to_edges()
             fed_logger.info("initializing server")
             server.initialize(server.split_layers, LR)
 
@@ -245,7 +247,7 @@ def run(options):
     #                    pictureName='Action_hist_3')
 
     agent.close()
-    msg = [message_utils.finish, True]
+    msg = IterationFlagMessage(True)
     server.scatter(msg)
 
 
@@ -289,7 +291,7 @@ def preTrain(server, options) -> tuple[float, float]:
 
         # fed_logger.info("splitting")
         # server.split(state, options)
-        server.get_split_layers_config_from_edge()
+        server.send_split_layers_config_to_edges()
 
         # fed_logger.info("initializing server")
         server.initialize(server.split_layers, 0.1)
@@ -378,7 +380,7 @@ def rl_flow(server, options, r, LR):
 
     # fed_logger.info("splitting")
     # server.split(state, options)
-    server.get_split_layers_config_from_edge()
+    server.send_split_layers_config_to_edges()
 
     if r > 49:
         LR = config.LR * 0.1

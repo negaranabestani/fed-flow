@@ -4,7 +4,7 @@ from app.model.interface.nn_model_interface import NNModel
 
 
 # Build the VGG nn_model according to location and split_layer
-class vgg16(NNModel):
+class VGG16(NNModel):
     def _make_layers(self, edge_based):
         num_classes = 10
         features = []

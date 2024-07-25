@@ -4,6 +4,8 @@ import socket
 import sys
 import time
 
+from app.dto.message import JsonMessage
+
 sys.path.append('../../../')
 from app.entity.client import Client
 from app.config.config import *
@@ -35,7 +37,7 @@ def run(options_ins):
     edge_based = options_ins.get('edgebased')
 
     init(os.getpid())
-    client = Client(server=config.CLIENT_MAP[config.CLIENTS_INDEX[index]],
+    client = Client(server=config.CLIENT_NAME_TO_EDGE_NAME[config.CLIENTS_INDEX_TO_NAME[index]],
                     datalen=datalen, model_name=options_ins.get('model'),
                     dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                     )
@@ -114,7 +116,7 @@ def run(options_ins):
 
             if r > 49:
                 LR = config.LR * 0.1
-    msg = client.recv_msg(client.sock, message_utils.finish)
+    msg = client.recv_msg('client', config.mq_url, JsonMessage.MESSAGE_TYPE)
 
 
 # parser = argparse.ArgumentParser()
@@ -132,7 +134,7 @@ def preTrain(client):
         client.get_edge_global_weights()
         fed_logger.info("test network")
         # client.test_network()
-        client.get_split_layers_config_from_edge()
+        client.send_split_layers_config_to_edges()
         st = time.time()
 
         computation_start()

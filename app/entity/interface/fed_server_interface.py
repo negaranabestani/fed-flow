@@ -7,6 +7,7 @@ from torch import nn
 
 from app.config import config
 from app.config.logger import fed_logger
+from app.dto.message import BaseMessage
 from app.entity.communicator import Communicator
 from app.entity.node import Node
 from app.fl_method import fl_method_parser
@@ -68,11 +69,11 @@ class FedServerInterface(Node, ABC, Communicator):
         pass
 
     @abstractmethod
-    def get_split_layers_config_from_edge(self):
+    def send_split_layers_config_to_edges(self):
         pass
 
     @abstractmethod
-    def split_layer(self):
+    def send_split_layers_config(self):
         """
         send splitting data
         """
@@ -125,16 +126,16 @@ class FedServerInterface(Node, ABC, Communicator):
     def split(self, state, options: dict):
         pass
 
-    def scatter(self, msg, is_weight=False):
+    def scatter(self, msg: BaseMessage):
         list1 = config.CLIENTS_LIST
         if self.edge_based:
             list1 = config.EDGE_SERVER_LIST
             for i in list1:
-                self.send_msg(exchange=i, msg=msg, is_weight=is_weight, url=i)
+                self.send_msg(i, config.mq_url, msg)
 
         else:
             for i in list1:
-                self.send_msg(exchange=i, msg=msg, is_weight=is_weight)
+                self.send_msg(i, config.mq_url, msg)
 
     def concat_norm(self, ttpi, offloading):
         ttpi_order = []

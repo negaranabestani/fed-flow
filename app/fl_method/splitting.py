@@ -1,13 +1,11 @@
-import subprocess
+import random
 
 import numpy as np
 import torch
-import random
+from stable_baselines3 import PPO
 
 from app.config import config
-# from app.model.entity.rl_model import PPO
 from app.util import model_utils, rl_utils
-from stable_baselines3 import PPO, A2C
 
 
 def edge_based_energy_aware_rl_splitting(state, labels):

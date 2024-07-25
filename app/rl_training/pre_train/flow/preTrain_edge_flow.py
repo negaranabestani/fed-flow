@@ -26,8 +26,8 @@ def run(options_ins):
     compEnergyOfLayers = np.zeros((model_utils.get_unit_model_len(), 10))
     compTTOfLayers = np.zeros((model_utils.get_unit_model_len(), 10))
 
-    edge_server.initialize(config.split_layer, LR, config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]])
-    client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
+    edge_server.initialize(config.split_layer, LR, config.EDGE_NAME_TO_CLIENTS_NAME[config.EDGE_SERVER_INDEX_TO_NAME[config.index]])
+    client_ips = config.EDGE_NAME_TO_CLIENTS_NAME[config.EDGE_SERVER_INDEX_TO_NAME[config.index]]
     energy_estimation.init(os.getpid())
 
     for layer in range(model_utils.get_unit_model_len() - 1):
@@ -36,7 +36,7 @@ def run(options_ins):
             # fed_logger.info('==> Round {:} Start'.format(r))
             #
             # fed_logger.info("receiving global weights")
-            edge_server.global_weights(client_ips)
+            edge_server.get_global_weights(client_ips)
 
             # fed_logger.info("test clients network")
             # server.test_client_network(client_ips)

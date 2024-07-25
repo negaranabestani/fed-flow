@@ -1,15 +1,13 @@
 # Communicator Object
-import io
-import json
 import logging
-import pickle
 
 import pika
-import torch
+from kombu import Connection
 from colorama import Fore
 
 from app.config import config
 from app.config.logger import fed_logger
+from app.dto.message import BaseMessage, MessageType
 
 logging.getLogger("pika").setLevel(logging.FATAL)
 
@@ -22,6 +20,24 @@ class Communicator(object):
         self.should_close = False
         self.send_bug = False
 
+    @staticmethod
+    def delete_all_queues():
+        mq_conn = Connection(config.mq_url)
+        mq_conn.connect()
+
+        # Create a channel
+        channel = mq_conn.channel()
+
+        # Get all queues
+        vhost = "/"
+        manager = mq_conn.get_manager()
+        queues = manager.get_queues(vhost)
+
+        # Purge each queue
+        for queue in queues:
+            queue_name = queue["name"]
+            channel.queue_purge(queue_name)
+
     def close_connection(self, ch, c):
         self.should_close = True
         if ch.is_open:
@@ -31,22 +47,11 @@ class Communicator(object):
         while not (c.is_closed and ch.close):
             pass
         self.should_close = False
-        # self.connection = None
-        # self.channel = None
 
     def open_connection(self, url=None):
         fed_logger.info("connecting")
-        # if url is None:
-        #     url = config.mq_host
         url = config.mq_host
         self.url = url
-
-        # url = config.mq_host
-
-        # else:
-        #     url = config.mq_host + url + ':5672/%2F'
-        # url = config.mq_url
-        # fed_logger.info(Fore.RED + f"{url}")
         connection = None
         while connection is None:
             connection = self.connect(url)
@@ -69,9 +74,10 @@ class Communicator(object):
             return pika.BlockingConnection(pika.ConnectionParameters(host=url, port=config.mq_port,
                                                                      credentials=pika.PlainCredentials(
                                                                          username=config.mq_user,
-                                                                         password=config.mq_pass)))
+                                                                         password=config.mq_pass,
+                                                                     )))
         except Exception as e:
-            pass
+            fed_logger.error(Fore.RED + f"failed to connect to rabbitmq {url}: {e}" + Fore.RESET)
 
     def on_connection_open(self, _unused_connection):
         fed_logger.info("opened")
@@ -91,38 +97,41 @@ class Communicator(object):
             return self.open_connection(self.url)
 
     @staticmethod
-    def declare_queue_if_not_exist(exchange, msg, channel):
+    def declare_queue_if_not_exist(exchange_name: str, queue_name: str, routing_key: str, channel):
         queue = None
         while queue is None:
             try:
-                channel.exchange_declare(exchange=config.cluster + "." + exchange, durable=True,
+                channel.exchange_declare(exchange=exchange_name, durable=True,
                                          exchange_type='topic')
-                queue = channel.queue_declare(queue=config.cluster + "." + msg[0] + "." + exchange)
-                channel.queue_bind(exchange=config.cluster + "." + exchange,
-                                   queue=config.cluster + "." + msg[0] + "." + exchange,
-                                   routing_key=config.cluster + "." + msg[0] + "." + exchange)
+                queue = channel.queue_declare(queue=queue_name)
+                channel.queue_bind(exchange=exchange_name,
+                                   queue=queue_name,
+                                   routing_key=routing_key)
             except Exception:
-                continue
+                fed_logger.error(
+                    Fore.RED + f"failed to declare queue {queue_name} in exchange {exchange_name}" + Fore.RESET)
         return queue
 
-    def send_msg(self, exchange, msg, is_weight=False, url=None):
-        bb = self.serialize_message(msg, is_weight)
-        channel, connection = self.open_connection(url)
-        fed_logger.info(config.cluster + "." + msg[0] + "." + exchange)
+    def send_msg(self, target_name: str, rabbitmq_endpoint: str, msg: BaseMessage):
+        body = msg.serialize()
+        channel, connection = self.open_connection(rabbitmq_endpoint)
         published = False
-        queue = self.declare_queue_if_not_exist(exchange, msg, channel)
+        exchange = config.cluster + "." + target_name
+        queue_name = config.cluster + "." + msg.get_message_type() + "." + target_name
+        routing_key = config.cluster + "." + msg.get_message_type() + "." + target_name
+        self.declare_queue_if_not_exist(exchange, queue_name, routing_key, channel)
         while True:
             try:
                 channel, connection = self.reconnect(connection, channel)
-                fed_logger.info(Fore.GREEN + f"publishing {msg[0]}")
-                channel.basic_publish(exchange=config.cluster + "." + exchange,
-                                      routing_key=config.cluster + "." + msg[0] + "." + exchange,
-                                      body=bb, mandatory=True, properties=pika.BasicProperties(
+                fed_logger.info(Fore.GREEN + f"publishing {msg.get_message_type()} to {target_name}" + Fore.RESET)
+                channel.basic_publish(exchange=exchange,
+                                      routing_key=routing_key,
+                                      body=body, mandatory=True, properties=pika.BasicProperties(
                         delivery_mode=pika.DeliveryMode.Transient))
                 self.close_connection(channel, connection)
-                fed_logger.info(Fore.GREEN + f"published {msg[0]}")
+                fed_logger.info(Fore.GREEN + f"published {msg.get_message_type()}" + Fore.RESET)
                 if self.send_bug:
-                    fed_logger.info(Fore.RED + f"published {msg[0]}")
+                    fed_logger.info(Fore.RED + f"published {msg.get_message_type()}" + Fore.RESET)
                 published = True
                 return
 
@@ -130,69 +139,27 @@ class Communicator(object):
                 if published:
                     return
                 self.send_bug = True
-                fed_logger.error(Fore.RED + f"{e}")
+                fed_logger.error(Fore.RED + f"{e}" + Fore.RESET)
                 continue
 
-    def recv_msg(self, exchange, expect_msg_type: str = None, is_weight=False, url=None):
-        channel, connection = self.open_connection(url)
-        fed_logger.info(Fore.YELLOW + f"receiving {expect_msg_type}")
-        res = None
+    def recv_msg(self, target_name: str, rabbitmq_endpoint: str, msg_type: MessageType) -> BaseMessage:
+        channel, connection = self.open_connection(rabbitmq_endpoint)
+        fed_logger.info(Fore.YELLOW + f"receiving {msg_type}" + Fore.RESET)
 
         while True:
             try:
                 channel, connection = self.reconnect(connection, channel)
-                queue = channel.queue_declare(queue=config.cluster + "." + expect_msg_type + "." + exchange)
-                channel.exchange_declare(exchange=config.cluster + "." + exchange, durable=True,
-                                         exchange_type='topic')
-                channel.queue_bind(exchange=config.cluster + "." + exchange,
-                                   queue=config.cluster + "." + expect_msg_type + "." + exchange,
-                                   routing_key=config.cluster + "." + expect_msg_type + "." + exchange)
-                fed_logger.info(config.cluster + "." + expect_msg_type + "." + exchange)
-                fed_logger.info(Fore.YELLOW + f"loop {expect_msg_type}")
-                for method_frame, properties, body in channel.consume(queue=
-                                                                      config.cluster + "." + expect_msg_type + "." + exchange
-                                                                      ):
-                    msg = [expect_msg_type]
-                    res = self.deserialize_message(body, is_weight)
-                    msg.extend(res)
-                    channel.stop_consuming()
+                queue = config.cluster + "." + msg_type + "." + target_name
+                exchange = config.cluster + "." + target_name
+                routing_key = config.cluster + "." + msg_type + "." + exchange
+                self.declare_queue_if_not_exist(exchange, queue, routing_key, channel)
+                fed_logger.info(Fore.YELLOW + f"waiting for {msg_type} to get sent from {exchange}" + Fore.RESET)
+                for method_frame, properties, body in channel.consume(queue=queue):
+                    msg = BaseMessage.deserialize(body, msg_type)
                     channel.cancel()
                     channel.basic_ack(method_frame.delivery_tag)
-                    channel.queue_delete(queue=config.cluster + "." + expect_msg_type + "." + exchange)
                     self.close_connection(channel, connection)
-                    fed_logger.info(Fore.CYAN + f"received {msg[0]},{type(msg[1])},{is_weight}")
+                    fed_logger.info(Fore.CYAN + f"received {msg.get_message_type()}" + Fore.RESET)
                     return msg
             except Exception as e:
-                fed_logger.info(Fore.RED + f"{expect_msg_type},{e},{is_weight}")
-                fed_logger.info(Fore.RED + f"revived {expect_msg_type}")
-                if res is None:
-                    continue
-                self.close_connection(channel, connection)
-                msg = [expect_msg_type]
-                msg.extend(res)
-                fed_logger.info(Fore.CYAN + f"received {msg[0]},{type(msg[1])},{is_weight}")
-                return msg
-
-    @staticmethod
-    def serialize_message(msg, is_weight=False):
-        if is_weight:
-            ll = []
-            for o in msg[1:]:
-                to_send = io.BytesIO()
-                torch.save(o, to_send, _use_new_zipfile_serialization=False)
-                to_send.seek(0)
-                ll.append(bytes(to_send.read()))
-            return pickle.dumps(ll)
-        else:
-            return json.dumps(msg[1:])
-
-    @staticmethod
-    def deserialize_message(msg, is_weight=False):
-        if is_weight:
-            fl = []
-            ll = pickle.loads(msg)
-            for o in ll:
-                fl.append(torch.load(io.BytesIO(o)))
-            return fl
-        else:
-            return json.loads(msg)
+                fed_logger.info(Fore.RED + f"exception occurred while consuming {msg_type}: {e}" + Fore.RESET)

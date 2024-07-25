@@ -12,3 +12,4 @@ app/.DS_Store
 
 #dataset data
 app/dataset/data
+venv

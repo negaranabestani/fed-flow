@@ -1,4 +1,3 @@
-import socket
 import sys
 
 import numpy as np
@@ -7,17 +6,20 @@ import torch.nn as nn
 import torch.optim as optim
 import tqdm
 
+from app.dto.message import GlobalWeightMessage, JsonMessage, NetworkTestMessage, IterationFlagMessage, \
+    SplitLayerConfigMessage
+
 sys.path.append('../../')
-from app.util import message_utils, model_utils, data_utils
+from app.util import model_utils, data_utils
 from app.entity.interface.fed_client_interface import FedClientInterface
 from app.config.logger import fed_logger
-from app.config import config
 from app.util.energy_estimation import *
 
 np.random.seed(0)
 torch.manual_seed(0)
 
 
+# noinspection PyTypeChecker
 class Client(FedClientInterface):
 
     def initialize(self, split_layer, LR):
@@ -33,34 +35,41 @@ class Client(FedClientInterface):
                                        momentum=0.9)
 
     def send_local_weights_to_edge(self):
-        msg = [message_utils.local_weights_client_to_edge(), self.net.cpu().state_dict()]
-        self.send_msg(config.CLIENTS_INDEX[config.index], msg, True)
+        edge_exchange = 'edge.' + config.CLIENTS_INDEX_TO_NAME[config.index]
+        msg = GlobalWeightMessage([self.net.cpu().state_dict()])
+        self.send_msg(edge_exchange, config.mq_url, msg)
         return msg
 
     def send_local_weights_to_server(self):
-        msg = [message_utils.local_weights_client_to_server(), self.net.cpu().state_dict()]
-        self.send_msg(config.CLIENTS_INDEX[config.index], msg, True)
+        msg = GlobalWeightMessage([self.net.cpu().state_dict()])
+        self.send_msg(config.SERVER_INDEX_TO_NAME[config.index], config.mq_url, msg)
         return msg
 
     def test_network(self):
         """
         send message to test network speed
         """
-        msg = self.recv_msg(exchange=config.CLIENTS_INDEX[config.index], expect_msg_type=message_utils.test_server_network_from_server(),is_weight=True)[1]
+        _ = self.recv_msg(config.CLIENTS_INDEX_TO_NAME[config.index],
+                          config.mq_url,
+                          NetworkTestMessage.MESSAGE_TYPE)
         fed_logger.info("test network received")
-        msg = [message_utils.test_server_network_from_connection(), self.uninet.cpu().state_dict()]
-        self.send_msg(exchange=config.CLIENTS_INDEX[config.index], msg=msg,is_weight=True)
+        msg = NetworkTestMessage([self.uninet.cpu().state_dict()])
+        server_exchange = 'server.' + config.CLIENTS_INDEX_TO_NAME[config.index]
+        self.send_msg(server_exchange, config.mq_url, msg)
         fed_logger.info("test network sent")
         return msg
+
     def edge_test_network(self):
         """
         send message to test network speed
         """
-        msg = self.recv_msg(exchange=config.CLIENTS_INDEX[config.index], expect_msg_type=message_utils.test_network_edge_to_client(),is_weight=True)[1]
+        _ = self.recv_msg(config.CLIENTS_INDEX_TO_NAME[config.index],
+                          config.mq_url,
+                          NetworkTestMessage.MESSAGE_TYPE)
 
         fed_logger.info("test network received")
-        msg = [message_utils.test_network_client_to_edge(), self.uninet.cpu().state_dict()]
-        self.send_msg(exchange=config.CLIENTS_INDEX[config.index], msg=msg, is_weight=True)
+        msg = NetworkTestMessage([self.uninet.cpu().state_dict()])
+        self.send_msg(config.CLIENT_NAME_TO_EDGE_NAME[config.CLIENTS_INDEX_TO_NAME[config.index]], config.mq_url, msg)
         fed_logger.info("test network sent")
         return msg
 
@@ -68,33 +77,32 @@ class Client(FedClientInterface):
         """
         receive splitting data
         """
-        self.split_layers = self.recv_msg(config.CLIENTS_INDEX[config.index], message_utils.split_layers())[1]
+        self.split_layers = self.recv_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url,
+                                          SplitLayerConfigMessage.MESSAGE_TYPE).data
 
     def get_split_layers_config_from_edge(self):
         """
         receive splitting data
         """
-        self.split_layers = \
-            self.recv_msg(config.CLIENTS_INDEX[config.index], message_utils.split_layers_edge_to_client())[1]
+        self.split_layers = self.recv_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url,
+                                          SplitLayerConfigMessage.MESSAGE_TYPE).data
 
     def get_edge_global_weights(self):
         """
         receive global weights
         """
-        weights = \
-            self.recv_msg(config.CLIENTS_INDEX[config.index], message_utils.initial_global_weights_edge_to_client(),
-                          True)[1]
-        pweights = model_utils.split_weights_client(weights, self.net.state_dict())
+        msg: GlobalWeightMessage = \
+            self.recv_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, GlobalWeightMessage.MESSAGE_TYPE)
+        pweights = model_utils.split_weights_client(msg.weights[0], self.net.state_dict())
         self.net.load_state_dict(pweights)
 
     def get_server_global_weights(self):
         """
         receive global weights
         """
-        weights = \
-            self.recv_msg(config.CLIENTS_INDEX[config.index], message_utils.initial_global_weights_server_to_client(),
-                          True)[1]
-        pweights = model_utils.split_weights_client(weights, self.net.state_dict())
+        msg: GlobalWeightMessage = \
+            self.recv_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, GlobalWeightMessage.MESSAGE_TYPE)
+        pweights = model_utils.split_weights_client(msg.weights[0], self.net.state_dict())
         self.net.load_state_dict(pweights)
 
     def edge_offloading_train(self):
@@ -105,9 +113,9 @@ class Client(FedClientInterface):
         i = 0
         if self.split_layers[config.index][0] == model_utils.get_unit_model_len() - 1:
             fed_logger.info("no offloding training start----------------------------")
-            flag = [f'{message_utils.local_iteration_flag_client_to_edge()}_{i}_{socket.gethostname()}', False]
+            flag = False
             start_transmission()
-            self.send_msg(config.CLIENTS_INDEX[config.index], flag)
+            self.send_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, IterationFlagMessage(flag))
             end_transmission(data_utils.sizeofmessage(flag))
             i += 1
             for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(self.train_loader)):
@@ -121,11 +129,13 @@ class Client(FedClientInterface):
                 computation_end()
 
         if self.split_layers[config.index][0] < model_utils.get_unit_model_len() - 1:
+            edge_exchange = 'edge.' + config.CLIENTS_INDEX_TO_NAME[config.index]
+            client_exchange = 'client.' + config.CLIENTS_INDEX_TO_NAME[config.index]
             # flag = [message_utils.local_iteration_flag_client_to_edge(), True]
             fed_logger.info(f"offloding training start {self.split_layers}----------------------------")
-            flag = [f'{message_utils.local_iteration_flag_client_to_edge()}_{i}_{socket.gethostname()}', True]
+            flag = True
             start_transmission()
-            self.send_msg(config.CLIENTS_INDEX[config.index], flag)
+            self.send_msg(edge_exchange, config.mq_url, IterationFlagMessage(flag))
             end_transmission(data_utils.sizeofmessage(flag))
             i += 1
 
@@ -138,26 +148,24 @@ class Client(FedClientInterface):
                 outputs = self.net(inputs)
                 computation_end()
                 # fed_logger.info("sending local activations")
-                flag = [f'{message_utils.local_iteration_flag_client_to_edge()}_{i}_{socket.gethostname()}', True]
+                flag = True
                 start_transmission()
-                self.send_msg(config.CLIENTS_INDEX[config.index], flag)
+                self.send_msg(edge_exchange, config.mq_url, IterationFlagMessage(flag))
                 end_transmission(data_utils.sizeofmessage(flag))
 
-                msg = [f'{message_utils.local_activations_client_to_edge()}_{i}_{socket.gethostname()}', outputs.cpu(),
-                       targets.cpu()]
-                # fed_logger.info(f"{msg[1], msg[2]}")
+                msg = GlobalWeightMessage([outputs.cpu(),
+                                           targets.cpu()])
                 start_transmission()
-                self.send_msg(exchange=config.CLIENTS_INDEX[config.index], msg=msg, is_weight=True)
+                self.send_msg(edge_exchange, config.mq_url, msg)
                 end_transmission(data_utils.sizeofmessage(msg))
 
                 # Wait receiving edge server gradients
-                # fed_logger.info("receiving gradients")
-                gradients = \
-                    self.recv_msg(exchange=config.CLIENTS_INDEX[config.index],
-                                  expect_msg_type=f'{message_utils.server_gradients_edge_to_client() + socket.gethostname()}_{i}',
-                                  is_weight=True)[
-                        1].to(
-                        self.device)
+                fed_logger.info("receiving gradients")
+                msg: GlobalWeightMessage = self.recv_msg(client_exchange,
+                                                         config.mq_url,
+                                                         GlobalWeightMessage.MESSAGE_TYPE)
+                gradients = msg.weights[0].to(
+                    self.device)
                 # fed_logger.info("received gradients")
                 computation_start()
                 outputs.backward(gradients)
@@ -165,22 +173,22 @@ class Client(FedClientInterface):
                     self.optimizer.step()
                 computation_end()
                 i += 1
-            flag = [f'{message_utils.local_iteration_flag_client_to_edge()}_{i}_{socket.gethostname()}', False]
+            flag = False
             start_transmission()
-            self.send_msg(config.CLIENTS_INDEX[config.index], flag)
+            self.send_msg(edge_exchange, config.mq_url, IterationFlagMessage(flag))
             end_transmission(data_utils.sizeofmessage(flag))
 
     def offloading_train(self):
         self.net.to(self.device)
         self.net.train()
-        flag = [message_utils.local_iteration_flag_client_to_server() + '_' + socket.gethostname(), True]
+        flag = True
         start_transmission()
-        self.send_msg(config.CLIENTS_INDEX[config.index], flag)
+        self.send_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, IterationFlagMessage(flag))
         end_transmission(data_utils.sizeofmessage(flag))
         for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(self.train_loader)):
-            flag = [message_utils.local_iteration_flag_client_to_server() + '_' + socket.gethostname(), True]
+            flag = True
             start_transmission()
-            self.send_msg(config.CLIENTS_INDEX[config.index], flag)
+            self.send_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, IterationFlagMessage(flag))
             end_transmission(data_utils.sizeofmessage(flag))
             computation_start()
             inputs, targets = inputs.to(self.device), targets.to(self.device)
@@ -188,29 +196,27 @@ class Client(FedClientInterface):
                 self.optimizer.zero_grad()
             outputs = self.net(inputs)
             # fed_logger.info("sending local activations")
-            msg = [message_utils.local_activations_client_to_server() + '_' + socket.gethostname(), outputs.cpu(),
-                   targets.cpu()]
+            msg = GlobalWeightMessage([outputs.cpu(), targets.cpu()])
             computation_end()
             start_transmission()
-            self.send_msg(config.CLIENTS_INDEX[config.index], msg, True)
+            self.send_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, msg)
             end_transmission(data_utils.sizeofmessage(msg))
 
             # Wait receiving edge server gradients
             # fed_logger.info("receiving gradients")
-            gradients = \
-                self.recv_msg(config.CLIENTS_INDEX[config.index],
-                              message_utils.server_gradients_server_to_client() + socket.gethostname(), True)[
-                    1].to(
-                    self.device)
+            msg: GlobalWeightMessage = self.recv_msg(config.CLIENTS_INDEX_TO_NAME[config.index],
+                                                     config.mq_url, GlobalWeightMessage.MESSAGE_TYPE)
+            gradients = msg.weights[0].to(
+                self.device)
             computation_start()
             outputs.backward(gradients)
             if self.optimizer is not None:
                 self.optimizer.step()
             computation_end()
 
-        flag = [message_utils.local_iteration_flag_client_to_server() + '_' + socket.gethostname(), False]
+        flag = False
         start_transmission()
-        self.send_msg(config.CLIENTS_INDEX[config.index], flag)
+        self.send_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, IterationFlagMessage(flag))
         end_transmission(data_utils.sizeofmessage(flag))
 
     def no_offloading_train(self):
@@ -227,5 +233,5 @@ class Client(FedClientInterface):
             computation_end()
 
     def energy_tt(self, energy, tt):
-        msg = [message_utils.energy_client_to_edge() + '_' + socket.gethostname(), energy, tt]
-        self.send_msg(config.CLIENTS_INDEX[config.index], msg)
+        msg = JsonMessage([energy, tt])
+        self.send_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, msg)

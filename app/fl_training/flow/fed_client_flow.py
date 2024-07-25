@@ -27,7 +27,7 @@ def run_edge_based(client: FedClientInterface, LR, estimate_energy):
     for r in range(config.R):
         config.current_round = r
         fed_logger.info('====================================>')
-        fed_logger.info('ROUND: {} START'.format(r))
+        fed_logger.info('ROUND: {} START'.format(r + 1))
         fed_logger.info("receiving global weights")
         client.get_edge_global_weights()
         st = time.time()
@@ -47,13 +47,13 @@ def run_edge_based(client: FedClientInterface, LR, estimate_energy):
         msg = client.send_local_weights_to_edge()
         energy_estimation.end_transmission(data_utils.sizeofmessage(msg))
         et = time.time()
-        fed_logger.info('ROUND: {} END'.format(r))
+        fed_logger.info('ROUND: {} END'.format(r + 1))
         fed_logger.info('==> Waiting for aggregration')
         tt = et - st
         if estimate_energy:
             energy = float(energy_estimation.energy())
             # energy /= batch_num
-            fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}")
+            fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}" + Fore.RESET)
             client.energy_tt(energy, tt)
             # final.append(energy)
 
@@ -90,7 +90,7 @@ def run_no_offload_edge(client: FedClientInterface, LR, estimate_energy):
         if estimate_energy:
             energy = float(energy_estimation.energy())
             # energy /= batch_num
-            fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}")
+            fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}" + Fore.RESET)
 
 
 def run_no_edge_offload(client: FedClientInterface, LR, estimate_energy):
@@ -126,7 +126,7 @@ def run_no_edge_offload(client: FedClientInterface, LR, estimate_energy):
         if estimate_energy:
             energy = float(energy_estimation.energy())
             # energy /= batch_num
-            fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}")
+            fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}" + Fore.RESET)
 
 
 def run_no_edge(client: FedClientInterface, LR, estimate_energy):
@@ -152,7 +152,7 @@ def run_no_edge(client: FedClientInterface, LR, estimate_energy):
             LR = config.LR * 0.1
         if estimate_energy:
             energy = float(energy_estimation.energy())
-            fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt - st}")
+            fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt - st}" + Fore.RESET)
 
 
 def run(options_ins):
@@ -166,7 +166,7 @@ def run(options_ins):
     cpu_count = multiprocessing.cpu_count()
     indices = list(range(N))
     part_tr = indices[int((N / K) * index): int((N / K) * (index + 1))]
-    trainloader = data_utils.get_trainloader(data_utils.get_trainset(), part_tr, cpu_count)
+    trainloader = data_utils.get_trainloader(data_utils.get_trainset(), part_tr, 0)
 
     estimate_energy = False
     offload = options_ins.get('offload')
@@ -176,13 +176,16 @@ def run(options_ins):
         estimate_energy = True
     if edge_based and offload:
 
-        client_ins = Client(ip=options_ins.get('ip'), port=options_ins.get('port'), server=config.CLIENT_MAP[config.CLIENTS_INDEX[index]], datalen=datalen,
+        client_ins = Client(ip=options_ins.get('ip'), port=options_ins.get('port'),
+                            server=config.CLIENT_NAME_TO_EDGE_NAME[config.CLIENTS_INDEX_TO_NAME[index]],
+                            datalen=datalen,
                             model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             )
         run_edge_based(client_ins, LR, estimate_energy)
     elif edge_based and not offload:
-        client_ins = Client(ip=options_ins.get('ip'), port=options_ins.get('port'), server=config.CLIENT_MAP[config.CLIENTS_INDEX[index]],
+        client_ins = Client(ip=options_ins.get('ip'), port=options_ins.get('port'),
+                            server=config.CLIENT_NAME_TO_EDGE_NAME[config.CLIENTS_INDEX_TO_NAME[index]],
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             )

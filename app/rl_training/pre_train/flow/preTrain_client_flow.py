@@ -37,7 +37,7 @@ def run(options_ins):
     edge_based = options_ins.get('edgebased')
 
     init(os.getpid())
-    client = Client(server=config.CLIENT_MAP[config.CLIENTS_INDEX[index]],
+    client = Client(server=config.CLIENT_NAME_TO_EDGE_NAME[config.CLIENTS_INDEX_TO_NAME[index]],
                     datalen=datalen, model_name=options_ins.get('model'),
                     dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based)
 

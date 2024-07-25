@@ -17,11 +17,11 @@ def run(options_ins):
     edge_server = FedEdgeServer(options_ins.get('model'),options_ins.get('dataset'),offload=options_ins.get('offload'))
     # fed_logger.info("start mode: " + str(options_ins.values()))
 
-    edge_server.initialize(config.split_layer, LR, config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]])
+    edge_server.initialize(config.split_layer, LR, config.EDGE_NAME_TO_CLIENTS_NAME[config.EDGE_SERVER_INDEX_TO_NAME[config.index]])
 
     res = {}
     res['trianing_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
-    client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
+    client_ips = config.EDGE_NAME_TO_CLIENTS_NAME[config.EDGE_SERVER_INDEX_TO_NAME[config.index]]
 
     preTrain(edge_server, options_ins, client_ips)
 
@@ -30,7 +30,7 @@ def run(options_ins):
         # fed_logger.info('==> Episode {:} Start'.format(r))
         #
         # fed_logger.info("receiving global weights")
-        edge_server.global_weights(client_ips)
+        edge_server.get_global_weights(client_ips)
         # fed_logger.info("test clients network")
         # server.test_client_network(client_ips)
         # fed_logger.info("sending clients network")
@@ -64,7 +64,7 @@ def run(options_ins):
             # fed_logger.info('==> Round {:} Start'.format(r))
             #
             # fed_logger.info("receiving global weights")
-            edge_server.global_weights(client_ips)
+            edge_server.get_global_weights(client_ips)
 
             # fed_logger.info("test clients network")
             # server.test_client_network(client_ips)
@@ -105,7 +105,7 @@ def preTrain(edge_server, options, client_ips):
     for i in range(10):
 
         fed_logger.info("receiving global weights")
-        edge_server.global_weights(client_ips)
+        edge_server.get_global_weights(client_ips)
         # fed_logger.info("test clients network")
         # server.test_client_network(client_ips)
         # fed_logger.info("sending clients network")

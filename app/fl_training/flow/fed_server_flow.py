@@ -3,9 +3,11 @@ import pickle
 import sys
 import time
 
+from app.dto.message import JsonMessage
+
 sys.path.append('../../../')
 from app.config import config
-from app.util import model_utils, message_utils
+from app.util import model_utils
 from app.entity.server import FedServer
 from app.config.logger import fed_logger
 from app.entity.interface.fed_server_interface import FedServerInterface
@@ -62,7 +64,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options, estimate_ene
         config.current_round = r
         x.append(r)
         fed_logger.info('====================================>')
-        fed_logger.info('==> Round {:} Start'.format(r))
+        fed_logger.info('==> Round {:} Start'.format(r + 1))
 
         fed_logger.info("sending global weights")
         server.edge_offloading_global_weights()
@@ -100,7 +102,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options, estimate_ene
         server.split(normalizedState, options)
         fed_logger.info(f"Agent Action : {server.split_layers}")
         # server.split_layers = split_list[r]
-        server.get_split_layers_config_from_edge()
+        server.send_split_layers_config_to_edges()
 
         if r > 49:
             LR = config.LR * 0.1
@@ -147,6 +149,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options, estimate_ene
         res['test_acc_record'].append(test_acc)
 
         fed_logger.info('Round Finish')
+        fed_logger.info('==> Round {:} End'.format(r + 1))
         fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
         rl_utils.draw_graph(10, 5, x, tt, "Training time", "FL Rounds", "Training Time", "/fed-flow/Graphs",
@@ -188,7 +191,7 @@ def run_no_edge_offload(server: FedServerInterface, LR, options):
 
         fed_logger.info("splitting")
         server.split(state, options)
-        server.split_layer()
+        server.send_split_layers_config()
         fed_logger.info("initializing server")
         server.initialize(server.split_layers, LR)
 

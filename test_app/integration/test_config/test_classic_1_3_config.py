@@ -11,11 +11,11 @@ import sys
 #
 # # Unique clients order
 # HOST2IP = {}
-# CLIENTS_CONFIG = {}
+# CLIENTS_NAME_TO_INDEX = {}
 # EDGE_SERVER_LIST = ['127.0.0.1']
 # CLIENTS_LIST = []
-# EDGE_MAP = {'127.0.0.1': ['127.0.0.1']}
-# CLIENT_MAP = {'127.0.0.1': '127.0.0.1'}
+# EDGE_NAME_TO_CLIENTS_NAME = {'127.0.0.1': ['127.0.0.1']}
+# CLIENT_NAME_TO_EDGE_NAME = {'127.0.0.1': '127.0.0.1'}
 
 CLIENTS_BANDWIDTH = []
 index = 0
@@ -76,8 +76,8 @@ S = 3
 
 # Unique clients order
 HOST2IP = {}
-CLIENTS_CONFIG = {}
+CLIENTS_NAME_TO_INDEX = {}
 EDGE_SERVER_LIST = ['127.0.0.1']
 CLIENTS_LIST = ['client1', 'client2', 'client3']
-EDGE_MAP = {'127.0.0.1': ['127.0.0.1']}
-CLIENT_MAP = {'127.0.0.1': '127.0.0.1'}
+EDGE_NAME_TO_CLIENTS_NAME = {'127.0.0.1': ['127.0.0.1']}
+CLIENT_NAME_TO_EDGE_NAME = {'127.0.0.1': '127.0.0.1'}

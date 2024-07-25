@@ -62,11 +62,12 @@ async def end_transmission(bits):
 @app.get("/energy/")
 async def energy():
     energy_logger.info(
-        Fore.GREEN + f"conputation: {config.process.comp_time}, trasmission: {config.process.transmission_time}")
+        Fore.GREEN + f"conputation: {config.process.comp_time}, trasmission: {config.process.transmission_time}" +
+        Fore.RESET)
     comp = system_utils.estimate_computation_energy(config.process)
     tr = system_utils.estimate_communication_energy(config, config.process)
     energy_logger.info(
-        Fore.MAGENTA + f"energy-conputation: {comp}, energy-trasmission: {tr}")
+        Fore.MAGENTA + f"energy-conputation: {comp}, energy-trasmission: {tr}" + Fore.RESET)
     ene = comp + tr
 
     cores = int(subprocess.run("nproc", capture_output=True, shell=True, text=True).stdout)
@@ -88,11 +89,11 @@ async def energy():
 async def energy_and_time_comp_tr():
     comp_time = config.process.comp_time
     tr_time = config.process.transmission_time
-    energy_logger.info(Fore.GREEN + f"computation: {comp_time}, transmission: {tr_time}")
+    energy_logger.info(Fore.GREEN + f"computation: {comp_time}, transmission: {tr_time}" + Fore.RESET)
 
     comp_e = system_utils.estimate_computation_energy(config.process)
     tr_e = system_utils.estimate_communication_energy(config, config.process)
-    energy_logger.info(Fore.MAGENTA + f"energy-computation: {comp_e}, energy-transmission: {tr_e}")
+    energy_logger.info(Fore.MAGENTA + f"energy-computation: {comp_e}, energy-transmission: {tr_e}" + Fore.RESET)
 
     comp_tr = str(comp_e) + "," + str(tr_e) + "," + str(comp_time) + "," + str(tr_time)
 
