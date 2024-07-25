@@ -1,0 +1,63 @@
+{
+  "rabbit_version": "3.8.9",
+  "rabbitmq_version": "3.8.9",
+  "product_name": "RabbitMQ",
+  "product_version": "3.8.9",
+  "users": [
+    {
+      "name": "client1",
+      "password": "password",
+      "tags": "administrator"
+    },
+    {
+      "name": "edge1",
+      "password": "password",
+      "tags": "administrator"
+    },
+    {
+      "name": "server",
+      "password": "password",
+      "tags": "administrator"
+    }
+  ],
+  "vhosts": [
+    {
+      "name": "client1"
+    },
+    {
+      "name": "edge1"
+    },
+    {
+      "name": "server"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "client1",
+      "vhost": "client1",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    },
+    {
+      "user": "edge1",
+      "vhost": "edge1",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    },
+    {
+      "user": "server",
+      "vhost": "server",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "topic_permissions": [
+  ],
+  "parameters": [
+  ],
+  "policies": [
+  ]
+}

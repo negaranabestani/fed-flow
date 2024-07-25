@@ -12,5 +12,8 @@ app/.DS_Store
 
 #dataset data
 app/dataset/data
+app/logs
+Graphs
 app/dataset/data.zip
 venv
+fedflow-env
