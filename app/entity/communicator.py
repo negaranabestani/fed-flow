@@ -50,7 +50,8 @@ class Communicator(object):
 
     def open_connection(self, url=None):
         fed_logger.info("connecting")
-        url = config.mq_host
+        if url is None:
+            url = config.mq_host
         self.url = url
         connection = None
         while connection is None:
@@ -70,12 +71,14 @@ class Communicator(object):
         return channel, connection
 
     def connect(self, url):
+        """if you are not running on a local machine set host to url instead of config.mq_host"""
         try:
-            return pika.BlockingConnection(pika.ConnectionParameters(host=url, port=config.mq_port,
-                                                                     credentials=pika.PlainCredentials(
-                                                                         username=config.mq_user,
-                                                                         password=config.mq_pass,
-                                                                     )))
+            return pika.BlockingConnection(
+                pika.ConnectionParameters(virtual_host=url, host=config.mq_host, port=config.mq_port,
+                                          credentials=pika.PlainCredentials(
+                                              username=url,
+                                              password=config.mq_pass,
+                                          )))
         except Exception as e:
             fed_logger.error(Fore.RED + f"failed to connect to rabbitmq {url}: {e}" + Fore.RESET)
 
