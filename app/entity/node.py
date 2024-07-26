@@ -3,7 +3,7 @@ from typing import Dict
 import uvicorn
 from typing import List
 
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Query
 
 from app.entity.neighbor import Neighbor
 
@@ -15,6 +15,7 @@ class Node:
         self.ip = ip
         self.port = port
         self.device_type = device_type
+
         Node._nodes[f"{ip}:{port}"] = device_type
 
     @classmethod
@@ -25,9 +26,6 @@ class Node:
         else:
             raise HTTPException(status_code=404, detail="Node not found")
 
-
-# Create example nodes
-Node('client1', 8080, 'Edge Server')
 
 app = FastAPI()
 
@@ -43,8 +41,8 @@ def get_neighbors(self) -> List[Neighbor]:
 
 
 @app.get("/device_type")
-async def get_device_type(request: Request):
-    client_ip = request.client.host
+async def get_device_type(request: Request, ip: str = Query(...)):
+    client_ip = ip
     client_port = request.url.port
 
     if client_ip and client_port:
@@ -54,10 +52,11 @@ async def get_device_type(request: Request):
         raise HTTPException(status_code=400, detail="Client IP or port not found in request")
 
 
-def run_server(ip: str, port: int):
-    uvicorn.run(app, host=ip, port=port)
+def run_server(port: int):
+    uvicorn.run(app, host="0.0.0.0", port=port)
 
 
-def start_server_thread(ip: str, port: int):
-    server_thread = threading.Thread(target=run_server, args=(ip, port))
+def start_server_thread(port: int):
+    Node(ip="127.0.0.1", port=8080, device_type="Test")
+    server_thread = threading.Thread(target=run_server, args=(port,))
     server_thread.start()
