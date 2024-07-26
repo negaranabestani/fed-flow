@@ -180,7 +180,7 @@ def run(options_ins):
     ip = options_ins.get('ip')
     port = options_ins.get('port')
 
-    node.start_server_thread(ip, port)
+    node.start_server_thread(port)
 
     if edge_based and offload:
 
