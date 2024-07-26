@@ -15,6 +15,7 @@ class Node:
         self.ip = ip
         self.port = port
         self.device_type = device_type
+        self.neighbors: List[Neighbor] = []
 
         Node._nodes[f"{ip}:{port}"] = device_type
 
