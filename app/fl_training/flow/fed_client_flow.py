@@ -5,6 +5,8 @@ import sys
 import time
 import warnings
 
+from app.entity import node
+
 sys.path.append('../../../')
 from app.entity.client import Client
 from app.config import config
@@ -174,9 +176,15 @@ def run(options_ins):
     if options_ins.get("energy") == "True":
         energy_estimation.init(os.getpid())
         estimate_energy = True
+
+    ip = options_ins.get('ip')
+    port = options_ins.get('port')
+
+    node.start_server_thread(ip, port)
+
     if edge_based and offload:
 
-        client_ins = Client(ip=options_ins.get('ip'), port=options_ins.get('port'),
+        client_ins = Client(ip=ip, port=port,
                             server=config.CLIENT_NAME_TO_EDGE_NAME[config.CLIENTS_INDEX_TO_NAME[index]],
                             datalen=datalen,
                             model_name=options_ins.get('model'),
@@ -184,20 +192,20 @@ def run(options_ins):
                             )
         run_edge_based(client_ins, LR, estimate_energy)
     elif edge_based and not offload:
-        client_ins = Client(ip=options_ins.get('ip'), port=options_ins.get('port'),
+        client_ins = Client(ip=ip, port=port,
                             server=config.CLIENT_NAME_TO_EDGE_NAME[config.CLIENTS_INDEX_TO_NAME[index]],
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             )
         run_no_offload_edge(client_ins, LR, estimate_energy)
     elif offload:
-        client_ins = Client(ip=options_ins.get('ip'), port=options_ins.get('port'), server=config.SERVER_ADDR,
+        client_ins = Client(ip=ip, port=port, server=config.SERVER_ADDR,
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             )
         run_no_edge_offload(client_ins, LR, estimate_energy)
     else:
-        client_ins = Client(ip=options_ins.get('ip'), port=options_ins.get('port'), server=config.SERVER_ADDR,
+        client_ins = Client(ip=ip, port=port, server=config.SERVER_ADDR,
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                             )

@@ -12,7 +12,7 @@ from app.util import data_utils, model_utils
 
 class FedEdgeServerInterface(Node, ABC, Communicator):
     def __init__(self, ip: str, port: int, model_name, dataset, offload):
-        Node.__init__(self, ip, port)
+        Node.__init__(self, ip, port, 'Edge')
         Communicator.__init__(self)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model_name = model_name

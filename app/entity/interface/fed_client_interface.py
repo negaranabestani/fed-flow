@@ -11,7 +11,7 @@ from app.util import model_utils
 class FedClientInterface(Node, ABC, Communicator):
     def __init__(self, ip: str, port: int, server, datalen, model_name, dataset,
                  train_loader, LR, edge_based):
-        Node.__init__(self, ip, port)
+        Node.__init__(self, ip, port, 'Client')
         Communicator.__init__(self)
 
         self.datalen = datalen
