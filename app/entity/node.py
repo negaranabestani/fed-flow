@@ -1,11 +1,11 @@
-from dataclasses import dataclass
 import http
 import threading
+from dataclasses import dataclass
 from enum import Enum
-from typing import Dict
-import uvicorn
 
-from fastapi import FastAPI, Request, HTTPException, Query, APIRouter
+import uvicorn
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 
 @dataclass
@@ -38,11 +38,15 @@ class Node:
         self._app.add_route("/get-node-type", self.get_node_type, methods=["GET"])
 
     async def get_node_type(self, _: Request):
-        return {'node_type': self._node_type, 'statue': http.HTTPStatus.OK}
+        return JSONResponse({'node_type': self._node_type.name}, http.HTTPStatus.OK)
 
     def add_neighbor(self, node_id: NodeIdentifier):
         if node_id not in self._neighbors:
             self._neighbors.append(node_id)
+
+    def add_neighbors(self, node_ids: list[NodeIdentifier]):
+        for node_id in node_ids:
+            self.add_neighbor(node_id)
 
     def get_neighbors(self) -> list[NodeIdentifier]:
         return self._neighbors
