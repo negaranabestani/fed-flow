@@ -1,63 +1,55 @@
+from dataclasses import dataclass
+import http
 import threading
+from enum import Enum
 from typing import Dict
 import uvicorn
-from typing import List
 
-from fastapi import FastAPI, Request, HTTPException, Query
+from fastapi import FastAPI, Request, HTTPException, Query, APIRouter
 
-from app.entity.neighbor import Neighbor
+
+@dataclass
+class NodeIdentifier:
+    ip: str
+    port: int
+
+
+class NodeType(Enum):
+    CLIENT = "client"
+    EDGE = "edge"
+    SERVER = "server"
 
 
 class Node:
-    _nodes: Dict[str, str] = {}
+    _app: FastAPI
+    _neighbors: list[NodeIdentifier]
+    _node_type: NodeType
 
-    def __init__(self, ip: str, port: int, device_type: str):
+    def __init__(self, ip: str, port: int, node_type: NodeType):
         self.ip = ip
         self.port = port
-        self.device_type = device_type
-        self.neighbors: List[Neighbor] = []
+        self._node_type = node_type
+        self._neighbors = []
+        self._app = FastAPI()
+        self._setup_routes()
+        self._start_server_in_thread(port)
 
-        Node._nodes[f"{ip}:{port}"] = device_type
+    def _setup_routes(self):
+        self._app.add_route("/get-node-type", self.get_node_type, methods=["GET"])
 
-    @classmethod
-    def get_device_type(cls, ip: str, port: int) -> str:
-        key = f"{ip}:{port}"
-        if key in cls._nodes:
-            return cls._nodes[key]
-        else:
-            raise HTTPException(status_code=404, detail="Node not found")
+    async def get_node_type(self, _: Request):
+        return {'node_type': self._node_type, 'statue': http.HTTPStatus.OK}
 
+    def add_neighbor(self, node_id: NodeIdentifier):
+        if node_id not in self._neighbors:
+            self._neighbors.append(node_id)
 
-app = FastAPI()
+    def get_neighbors(self) -> list[NodeIdentifier]:
+        return self._neighbors
 
+    def _run_server(self, port: int):
+        uvicorn.run(self._app, host="0.0.0.0", port=port)
 
-def add_neighbor(self, neighbor_ip: str, neighbor_port: int):
-    neighbor = Neighbor(neighbor_ip, neighbor_port)
-    if neighbor not in self.neighbors:
-        self.neighbors.append(neighbor)
-
-
-def get_neighbors(self) -> List[Neighbor]:
-    return self.neighbors
-
-
-@app.get("/device_type")
-async def get_device_type(request: Request, ip: str = Query(...)):
-    client_ip = ip
-    client_port = request.url.port
-
-    if client_ip and client_port:
-        device_type = Node.get_device_type(client_ip, client_port)
-        return {"device_type": device_type}
-    else:
-        raise HTTPException(status_code=400, detail="Client IP or port not found in request")
-
-
-def run_server(port: int):
-    uvicorn.run(app, host="0.0.0.0", port=port)
-
-
-def start_server_thread(port: int):
-    Node(ip="127.0.0.1", port=8080, device_type="Test")
-    server_thread = threading.Thread(target=run_server, args=(port,))
-    server_thread.start()
+    def _start_server_in_thread(self, port: int):
+        server_thread = threading.Thread(target=self._run_server, args=(port,))
+        server_thread.start()

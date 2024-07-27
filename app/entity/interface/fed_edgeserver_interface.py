@@ -6,13 +6,13 @@ from torch import multiprocessing
 from app.config import config
 from app.dto.message import BaseMessage
 from app.entity.communicator import Communicator
-from app.entity.node import Node
+from app.entity.node import Node, NodeType
 from app.util import data_utils, model_utils
 
 
 class FedEdgeServerInterface(Node, ABC, Communicator):
     def __init__(self, ip: str, port: int, model_name, dataset, offload):
-        Node.__init__(self, ip, port, 'Edge')
+        Node.__init__(self, ip, port, NodeType.EDGE)
         Communicator.__init__(self)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model_name = model_name
