@@ -8,6 +8,7 @@ from torch import nn
 from app.config import config
 from app.config.logger import fed_logger
 from app.dto.message import BaseMessage
+from app.entity.aggregator import Aggregator
 from app.entity.communicator import Communicator
 from app.entity.node import Node
 from app.fl_method import fl_method_parser
@@ -41,6 +42,7 @@ class FedServerInterface(Node, ABC, Communicator):
         self.testset = data_utils.get_testset()
         self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
         self.criterion = nn.CrossEntropyLoss()
+        self.aggregator = Aggregator(uninet=self.uninet)
 
     @abstractmethod
     def edge_offloading_train(self, client_ips):

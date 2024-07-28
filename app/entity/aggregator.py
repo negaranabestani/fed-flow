@@ -21,4 +21,3 @@ class Aggregator(ABC):
         aggregated_model = aggregation_method_name(zero_model, local_weights_list, config.N)
         self.uninet.load_state_dict(aggregated_model)
         return aggregated_model
-
