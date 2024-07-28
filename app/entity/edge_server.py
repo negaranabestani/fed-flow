@@ -37,9 +37,6 @@ class FedEdgeServer(FedEdgeServerInterface):
                     self.nets[client_ip] = model_utils.get_model('Edge', split_layers[i], self.device, True)
         self.criterion = nn.CrossEntropyLoss()
 
-    def aggregate(self, client_ips, aggregate_method, eweights):
-        pass
-
     def forward_propagation(self, client_ip):
         i = 0
         edge_exchange = 'edge.' + client_ip

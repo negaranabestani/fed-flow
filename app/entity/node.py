@@ -7,11 +7,10 @@ from app.entity.neighbor import Neighbor
 
 
 class Node:
-    def __init__(self, ip: str, port: int, aggregator_config: AggregatorConfig):
+    def __init__(self, ip: str, port: int):
         self.ip = ip
         self.port = port
         self.neighbors: List[Neighbor] = []
-        self.aggregator = Aggregator(aggregator_config)
 
     def add_neighbor(self, neighbor_ip: str, neighbor_port: int):
         neighbor = Neighbor(neighbor_ip, neighbor_port)
