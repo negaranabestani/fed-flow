@@ -5,10 +5,11 @@ import torch
 from stable_baselines3 import PPO
 
 from app.config import config
+from app.entity.interface.fed_base_node_interface import FedBaseNodeInterface
 from app.util import model_utils, rl_utils
 
 
-def edge_based_energy_aware_rl_splitting(state, labels):
+def edge_based_energy_aware_rl_splitting(state, labels, **kwargs):
     agent = PPO.load(path='/fed-flow/app/agent/38.zip', env=None)
     floatAction = agent.predict(observation=state, deterministic=True)
     actions = []
@@ -19,7 +20,7 @@ def edge_based_energy_aware_rl_splitting(state, labels):
     return actions
 
 
-def rl_splitting(state, labels):
+def rl_splitting(state, labels, **kwargs):
     state_dim = 2 * config.G
     action_dim = config.G
     agent = None
@@ -36,7 +37,7 @@ def rl_splitting(state, labels):
     return result
 
 
-def none(state, labels):
+def none(state, labels, **kwargs):
     split_layer = []
     for c in config.CLIENTS_LIST:
         split_layer.append(model_utils.get_unit_model_len() - 1)
@@ -45,14 +46,14 @@ def none(state, labels):
     return config.split_layer
 
 
-def no_edge_fake(state, labels):
+def no_edge_fake(state, labels, **kwargs):
     split_list = []
     for i in range(config.K):
         split_list.append(random.randint(1, config.model_len - 1))
     return split_list
 
 
-def fake(state, labels):
+def fake(state, labels, **kwargs):
     """
     a fake splitting list of tuples
     """
@@ -62,21 +63,28 @@ def fake(state, labels):
     return split_list
 
 
-def no_splitting(state, labels):
+def fake_decentralized(state, labels, node: FedBaseNodeInterface):
+    split_layers = {}
+    for neighbor in node.get_neighbors():
+        split_layers[str(neighbor)] = [len(node.uninet.cfg) - 2]
+    return split_layers
+
+
+def no_splitting(state, labels, **kwargs):
     split_list = []
     for i in range(config.K):
         split_list.append([6, 6])
     return split_list
 
 
-def only_edge_splitting(state, labels):
+def only_edge_splitting(state, labels, **kwargs):
     split_list = []
     for i in range(config.K):
         split_list.append([0, 6])
     return split_list
 
 
-def only_server_splitting(state, labels):
+def only_server_splitting(state, labels, **kwargs):
     split_list = []
     for i in range(config.K):
         split_list.append([0, 0])
@@ -84,7 +92,7 @@ def only_server_splitting(state, labels):
 
 
 # HFLP used random partitioning for splitting
-def randomSplitting(state, labels):
+def randomSplitting(state, labels, **kwargs):
     """ Randomly split the model between clients edge devices and cloud server """
 
     splittingArray = []

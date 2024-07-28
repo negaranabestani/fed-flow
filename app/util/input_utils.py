@@ -16,8 +16,8 @@ options = {
     '-ml': ['--modellink', '', 'the link to model  python file'],
     '-i': ['--index', '0', 'the device index'],
     '-ip': ['--ip', 'client1', 'IP address of the node'],
-    '-p': ['--port', 8080, 'Port number of the node'],
-    '-en': ['--energy', 'False', 'enable or disable energy estimation']
+    '-en': ['--energy', 'False', 'enable or disable energy estimation'],
+    '-r': ['--rabbitmq-url', 'amqp://rabbitmq:rabbitmq@localhost:5672/%2F', 'RabbitMQ endpoint'],
 }
 
 
@@ -40,29 +40,22 @@ def parse_argument(parser: argparse.ArgumentParser):
     for op in options.keys():
         parser.add_argument(op, options.get(op)[0], help=options.get(op)[2], type=str,
                             default=options.get(op)[1])
+    parser.add_argument('-p', '--port', type=int, help='Port number of the node', default=8080)
     parser.add_argument('--neighbors', type=parse_neighbors, nargs='+',
                         help='A list of neighbors in the format "string,int"', default=[])
     args = parser.parse_args()
     option = vars(args)
-    if option.get("edgebased") == 'True':
-        option["edgebased"] = True
-    else:
-        option["edgebased"] = False
-
-    option["decentralized"] = False
-    if option.get("decentralized") == 'True':
-        option["decentralized"] = True
-    if option.get("decentralized") and option.get("edgebased"):
+    option["offload"] = option.get("offload", "False") == "True"
+    option["edgebased"] = option.get("edgebased", "False") == "True"
+    option["decentralized"] = option.get("decentralized", "False") == 'True'
+    if option["decentralized"] and option["edgebased"]:
         raise argparse.ArgumentTypeError("Decentralized and edgebased cannot be both True")
 
     neighbors = option.get("neighbors")
     if neighbors:
         config.CURRENT_NODE_NEIGHBORS = neighbors
 
-    if option.get("offload") == 'True':
-        option["offload"] = True
-    else:
-        option["offload"] = False
+    config.current_node_mq_url = option["rabbitmq_url"]
     config.dataset_name = option.get('dataset')
     config.model_name = option.get('model')
     config.index = int(option.get('index'))

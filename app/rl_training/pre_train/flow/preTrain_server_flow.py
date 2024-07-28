@@ -140,7 +140,7 @@ def rl_flow(server, options, LR):
     server.send_split_layers_config_to_edges()
 
     fed_logger.info("initializing server")
-    server.initialize(server.split_layers, LR)
+    server.initialize(server.split_layers)
 
     # fed_logger.info('==> Reinitialization Finish')
 

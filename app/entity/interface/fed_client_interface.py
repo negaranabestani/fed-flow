@@ -4,22 +4,20 @@ import torch
 from torch import nn, optim
 
 from app.entity.communicator import Communicator
+from app.entity.interface.fed_base_node_interface import FedBaseNodeInterface
 from app.entity.node import Node, NodeType
 from app.util import model_utils
 
 
-class FedClientInterface(Node, Communicator, ABC):
-    def __init__(self, ip: str, port: int, server, datalen, model_name, dataset,
+class FedClientInterface(FedBaseNodeInterface):
+    def __init__(self, ip: str, port: int, model_name, dataset,
                  train_loader, LR, edge_based):
         Node.__init__(self, ip, port, NodeType.CLIENT)
         Communicator.__init__(self)
 
-
-        self.datalen = datalen
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model_name = model_name
         self.edge_based = edge_based
-        self.server_id = server
         self.dataset = dataset
         self.train_loader = train_loader
         self.split_layers = None

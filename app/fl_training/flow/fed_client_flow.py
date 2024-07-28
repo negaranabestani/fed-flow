@@ -6,6 +6,7 @@ import time
 import warnings
 
 from app.entity import node
+from app.entity.decentralized_client import DecentralizedClient
 
 sys.path.append('../../../')
 from app.entity.client import Client
@@ -157,6 +158,31 @@ def run_no_edge(client: FedClientInterface, LR, estimate_energy):
             fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt - st}" + Fore.RESET)
 
 
+def run_offload_decentralized(client: DecentralizedClient, learning_rate):
+    for r in range(config.R):
+        config.current_round = r
+        fed_logger.info('====================================>')
+        fed_logger.info('ROUND: {} START'.format(r + 1))
+        fed_logger.info("receiving global weights")
+        client.gather_global_weights()
+        fed_logger.info("test network")
+        client.scatter_network_speed_to_edges()
+        fed_logger.info("receiving splitting info")
+        client.gather_split_config()
+        fed_logger.info("initializing client")
+
+        client.initialize(client.split_layers, learning_rate)
+        fed_logger.info("start training")
+        client.start_offloading_train()
+        fed_logger.info("sending local weights")
+        client.scatter_local_weights()
+        fed_logger.info('ROUND: {} END'.format(r + 1))
+        fed_logger.info('==> Waiting for aggregration')
+
+        if r > 49:
+            learning_rate = config.LR * 0.1
+
+
 def run(options_ins):
     fed_logger.info("start mode: " + str(options_ins.values()))
     index = config.index
@@ -181,23 +207,25 @@ def run(options_ins):
     port = options_ins.get('port')
 
     client = None
-    if edge_based:
+    if decentralized:
+        client = DecentralizedClient(ip=ip, port=port, model_name=options_ins.get('model'),
+                                     dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR)
+    elif edge_based:
         client = Client(ip=ip, port=port,
-                        server=config.CLIENT_NAME_TO_EDGE_NAME[config.CLIENTS_INDEX_TO_NAME[index]],
-                        datalen=datalen,
                         model_name=options_ins.get('model'),
                         dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                         )
     else:
-        client = Client(ip=ip, port=port, server=config.SERVER_ADDR,
-                        datalen=datalen, model_name=options_ins.get('model'),
+        client = Client(ip=ip, port=port, model_name=options_ins.get('model'),
                         dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                         )
 
     if decentralized:
-        client.add_neighbors(config.CLIENTS_INDEX_TO_NAME)
+        client.add_neighbors(config.CURRENT_NODE_NEIGHBORS)
 
-    if edge_based and offload:
+    if decentralized and offload:
+        run_offload_decentralized(client, LR)
+    elif edge_based and offload:
         run_edge_based(client, LR, estimate_energy)
     elif edge_based and not offload:
         run_no_offload_edge(client, LR, estimate_energy)

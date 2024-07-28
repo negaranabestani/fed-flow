@@ -37,10 +37,8 @@ def run(options_ins):
     edge_based = options_ins.get('edgebased')
 
     init(os.getpid())
-    client = Client(server=config.CLIENT_NAME_TO_EDGE_NAME[config.CLIENTS_INDEX_TO_NAME[index]],
-                    datalen=datalen, model_name=options_ins.get('model'),
-                    dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
-                    )
+    client = Client(model_name=options_ins.get('model'),
+                    dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,)
 
     preTrain(client)
 
@@ -138,7 +136,7 @@ def preTrain(client):
         st = time.time()
 
         computation_start()
-        client.initialize(client.split_layers, 0.1)
+        client.initialize(client.split_layers)
         fed_logger.info("Initialized ...")
         computation_end()
 

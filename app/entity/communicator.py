@@ -123,15 +123,18 @@ class Communicator(object):
         while True:
             try:
                 channel, connection = self.reconnect(connection, channel)
-                fed_logger.info(Fore.GREEN + f"publishing {msg.get_message_type()} to {target_name}" + Fore.RESET)
+                fed_logger.info(
+                    Fore.GREEN + f"publishing {msg.get_message_type()} to {target_name} using {rabbitmq_endpoint}" + Fore.RESET)
                 channel.basic_publish(exchange=exchange,
                                       routing_key=routing_key,
                                       body=body, mandatory=True, properties=pika.BasicProperties(
                         delivery_mode=pika.DeliveryMode.Transient))
                 self.close_connection(channel, connection)
-                fed_logger.info(Fore.GREEN + f"published {msg.get_message_type()}" + Fore.RESET)
+                fed_logger.info(
+                    Fore.GREEN + f"published {msg.get_message_type()} using {rabbitmq_endpoint}" + Fore.RESET)
                 if self.send_bug:
-                    fed_logger.info(Fore.RED + f"published {msg.get_message_type()}" + Fore.RESET)
+                    fed_logger.info(
+                        Fore.RED + f"published {msg.get_message_type()} using {rabbitmq_endpoint}" + Fore.RESET)
                 published = True
                 return
 
@@ -153,13 +156,14 @@ class Communicator(object):
                 exchange = config.cluster + "." + target_name
                 routing_key = config.cluster + "." + msg_type + "." + exchange
                 self.declare_queue_if_not_exist(exchange, queue, routing_key, channel)
-                fed_logger.info(Fore.YELLOW + f"waiting for {msg_type} to get sent from {exchange}" + Fore.RESET)
+                fed_logger.info(
+                    Fore.YELLOW + f"waiting for {msg_type} to get sent from {exchange} using {rabbitmq_endpoint}" + Fore.RESET)
                 for method_frame, properties, body in channel.consume(queue=queue):
                     msg = BaseMessage.deserialize(body, msg_type)
                     channel.cancel()
                     channel.basic_ack(method_frame.delivery_tag)
                     self.close_connection(channel, connection)
-                    fed_logger.info(Fore.CYAN + f"received {msg.get_message_type()}" + Fore.RESET)
+                    fed_logger.info(Fore.CYAN + f"received {msg.get_message_type()} using {rabbitmq_endpoint}" + Fore.RESET)
                     return msg
             except Exception as e:
                 fed_logger.info(Fore.RED + f"exception occurred while consuming {msg_type}: {e}" + Fore.RESET)

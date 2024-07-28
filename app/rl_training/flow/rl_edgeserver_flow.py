@@ -115,7 +115,7 @@ def preTrain(edge_server, options, client_ips):
         fed_logger.info("receiving and sending splitting info")
         edge_server.get_split_layers_config(client_ips)
         fed_logger.info("initializing server")
-        edge_server.initialize(edge_server.split_layers, 0.1, client_ips)
+        edge_server.initialize(edge_server.split_layers)
         threads = {}
         fed_logger.info("start training")
         for i in range(len(client_ips)):
