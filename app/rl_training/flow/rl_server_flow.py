@@ -81,7 +81,8 @@ def run(options):
             local_weights = server.e_local_weights(config.CLIENTS_LIST)
 
             fed_logger.info("aggregating weights starts")
-            server.call_aggregation(options, local_weights)
+            local_weight_list = server.prepare_aggregation_local_weights(config.CLIENTS_LIST, local_weights)
+            server.aggregator.aggregate(options.get('aggregation'), local_weight_list)
             fed_logger.info("aggregating weights ends")
 
             fed_logger.info("creating energy_tt starts")
@@ -304,8 +305,9 @@ def preTrain(server, options) -> tuple[float, float]:
         # fed_logger.info("receiving local weights")
         local_weights = server.e_local_weights(config.CLIENTS_LIST)
 
+        local_weight_list = server.prepare_aggregation_local_weights(config.CLIENTS_LIST, local_weights)
         # fed_logger.info("aggregating weights")
-        server.aggregate(options, local_weights)
+        server.aggregator.aggregate(options.get('aggregation'), local_weight_list)
 
         energy_tt_list = server.e_energy_tt(config.CLIENTS_LIST)
         e_time = time.time()
@@ -396,8 +398,9 @@ def rl_flow(server, options, r, LR):
     fed_logger.info("receiving local weights")
     local_weights = server.e_local_weights(config.CLIENTS_LIST)
 
+    local_weight_list = server.prepare_aggregation_local_weights(config.CLIENTS_LIST, local_weights)
     fed_logger.info("aggregating weights")
-    server.aggregate(options, local_weights)
+    server.aggregator.aggregate(options.get('aggregation'), local_weight_list)
 
     energy_tt_list = server.e_energy_tt(config.CLIENTS_LIST)
     return energy_tt_list
