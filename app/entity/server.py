@@ -180,29 +180,6 @@ class FedServer(FedServerInterface):
         fed_logger.info(str(client_ip) + ' offloading training end')
         return 'Finish'
 
-    def aggregate(self, client_ips, aggregate_method, eweights):
-        w_local_list = []
-        # fed_logger.info("aggregation start")
-        for i in range(len(eweights)):
-            if self.offload:
-                sp = self.split_layers[i]
-                if self.edge_based:
-                    sp = self.split_layers[i][0]
-                if sp != (config.model_len - 1):
-                    w_local = (
-                        model_utils.concat_weights(self.uninet.state_dict(), eweights[i],
-                                                   self.nets[client_ips[i]].state_dict()),
-                        config.N / config.K)
-                    w_local_list.append(w_local)
-                else:
-                    w_local = (eweights[i], config.N / config.K)
-            else:
-                w_local = (eweights[i], config.N / config.K)
-            w_local_list.append(w_local)
-        zero_model = model_utils.zero_init(self.uninet).state_dict()
-        aggregated_model = aggregate_method(zero_model, w_local_list, config.N)
-        self.uninet.load_state_dict(aggregated_model)
-        return aggregated_model
 
     def test_network(self, connection_ips):
         """
@@ -341,3 +318,19 @@ class FedServer(FedServerInterface):
         data.append(total_tt)
         data.extend(tt)
         return data
+
+    def prepare_aggregation_local_weights(self, client_ips, edge_weights):
+        local_weights_list = []
+        for i in range(len(edge_weights)):
+            split_point = self.split_layers[i]
+            if self.edge_based:
+                split_point = self.split_layers[i][0]
+            if split_point != (config.model_len - 1):
+                local_weights = (
+                    model_utils.concat_weights(self.uninet.state_dict(), edge_weights[i],
+                                               self.nets[client_ips[i]].state_dict()),
+                    config.N / config.K)
+            else:
+                local_weights = (edge_weights[i], config.N / config.K)
+            local_weights_list.append(local_weights)
+        return local_weights_list

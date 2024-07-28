@@ -109,16 +109,6 @@ class FedServerInterface(Node, ABC, Communicator):
         pass
 
     @abstractmethod
-    def aggregate(self, client_ips, aggregate_method, eweights):
-        pass
-
-    def call_aggregation(self, options: dict, eweights):
-        method = fl_method_parser.fl_methods.get(options.get('aggregation'))
-        if method is None:
-            fed_logger.error("aggregate method is none")
-        self.aggregate(config.CLIENTS_LIST, method, eweights)
-
-    @abstractmethod
     def cluster(self, options: dict):
         pass
 
@@ -189,4 +179,7 @@ class FedServerInterface(Node, ABC, Communicator):
 
     @abstractmethod
     def edge_based_state(self):
+        pass
+
+    def prepare_aggregation_local_weights(self, client_ips, eweights):
         pass

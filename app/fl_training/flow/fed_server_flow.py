@@ -30,8 +30,10 @@ def run_edge_based_no_offload(server: FedServerInterface, LR, options):
         server.cluster(options)
         fed_logger.info("receiving local weights")
         local_weights = server.e_local_weights(config.CLIENTS_LIST)
+        fed_logger.info("prepare aggregation local weights")
+        local_weight_list = server.prepare_aggregation_local_weights(config.CLIENTS_LIST, local_weights)
         fed_logger.info("aggregating weights")
-        server.aggregator.aggregate(options, local_weights)
+        server.aggregate(options.get('aggregation'), local_weight_list)
         e_time = time.time()
 
         # Recording each round training time, bandwidth and test_app accuracy

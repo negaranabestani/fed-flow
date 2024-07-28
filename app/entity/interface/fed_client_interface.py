@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import torch
 from torch import nn, optim
 
+from app.entity.aggregator import Aggregator
 from app.entity.aggregator_config import AggregatorConfig
 from app.entity.communicator import Communicator
 from app.entity.node import Node
@@ -30,9 +31,9 @@ class FedClientInterface(Node, ABC, Communicator):
         self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
                                    momentum=0.9)
 
-        Node.__init__(self, ip, port, aggregator_config=AggregatorConfig(
-            self.uninet, self.split_layers, self.net, edge_based, False)
-                      )
+        self.aggregator = Aggregator(self.uninet)
+
+        Node.__init__(self, ip, port)
 
     @abstractmethod
     def initialize(self, split_layer, LR):
