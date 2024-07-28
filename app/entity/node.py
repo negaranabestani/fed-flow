@@ -15,3 +15,4 @@ class Node:
 
     def get_neighbors(self) -> List[Neighbor]:
         return self.neighbors
+

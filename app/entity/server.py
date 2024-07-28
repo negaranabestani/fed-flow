@@ -180,7 +180,6 @@ class FedServer(FedServerInterface):
         fed_logger.info(str(client_ip) + ' offloading training end')
         return 'Finish'
 
-
     def test_network(self, connection_ips):
         """
         send message to test network speed
@@ -205,7 +204,7 @@ class FedServer(FedServerInterface):
         fed_logger.info("server test network received")
         network_time_end = time.time()
         self.edge_bandwidth[connection_ip] = data_utils.sizeofmessage(msg.weights) / (
-                    network_time_end - network_time_start)
+                network_time_end - network_time_start)
 
     def client_network(self, edge_ips):
         """
@@ -258,7 +257,8 @@ class FedServer(FedServerInterface):
     def c_local_weights(self, client_ips):
         cweights = []
         for i in range(len(client_ips)):
-            msg: GlobalWeightMessage = self.recv_msg(config.SERVER_INDEX_TO_NAME[config.index], config.mq_url, GlobalWeightMessage.MESSAGE_TYPE)
+            msg: GlobalWeightMessage = self.recv_msg(config.SERVER_INDEX_TO_NAME[config.index], config.mq_url,
+                                                     GlobalWeightMessage.MESSAGE_TYPE)
             self.tt_end[client_ips[i]] = time.time()
             cweights.append(msg.weights[0])
         return cweights
@@ -322,14 +322,17 @@ class FedServer(FedServerInterface):
     def prepare_aggregation_local_weights(self, client_ips, edge_weights):
         local_weights_list = []
         for i in range(len(edge_weights)):
-            split_point = self.split_layers[i]
-            if self.edge_based:
-                split_point = self.split_layers[i][0]
-            if split_point != (config.model_len - 1):
-                local_weights = (
-                    model_utils.concat_weights(self.uninet.state_dict(), edge_weights[i],
-                                               self.nets[client_ips[i]].state_dict()),
-                    config.N / config.K)
+            if self.offload:
+                split_point = self.split_layers[i]
+                if self.edge_based:
+                    split_point = self.split_layers[i][0]
+                if split_point != (config.model_len - 1):
+                    local_weights = (
+                        model_utils.concat_weights(self.uninet.state_dict(), edge_weights[i],
+                                                   self.nets[client_ips[i]].state_dict()),
+                        config.N / config.K)
+                else:
+                    local_weights = (edge_weights[i], config.N / config.K)
             else:
                 local_weights = (edge_weights[i], config.N / config.K)
             local_weights_list.append(local_weights)
