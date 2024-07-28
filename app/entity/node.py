@@ -19,6 +19,14 @@ class NodeType(Enum):
     EDGE = "edge"
     SERVER = "server"
 
+    @classmethod
+    def from_value(cls, value: str) -> 'NodeType':
+        """Get the NodeType enum member from its value"""
+        for member in cls:
+            if member.value == value:
+                return member
+        raise ValueError(f"No NodeType found for value '{value}'")
+
 
 class Node:
     _app: FastAPI

@@ -52,6 +52,8 @@ def parse_argument(parser: argparse.ArgumentParser):
     option["decentralized"] = False
     if option.get("decentralized") == 'True':
         option["decentralized"] = True
+    if option.get("decentralized") and option.get("edgebased"):
+        raise argparse.ArgumentTypeError("Decentralized and edgebased cannot be both True")
 
     neighbors = option.get("neighbors")
     if neighbors:
