@@ -227,5 +227,5 @@ class FedEdgeServer(FedEdgeServerInterface):
             self.split_layers,
             config.model_len,
             self.nets,
-            get_state_dict_fn=lambda: self.uninet.state_dict()
+            edge_based=True
         )

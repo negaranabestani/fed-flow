@@ -8,17 +8,18 @@ class Aggregator:
     def __init__(self, uninet):
         self.uninet = uninet
 
-    @staticmethod
-    def prepare_aggregation_local_weights(
-            client_ips, weights, offload, split_layers, model_len, nets, get_state_dict_fn):
+    def prepare_aggregation_local_weights(self, client_ips, weights,
+                                          offload, split_layers, model_len, nets, edge_based):
         local_weights_list = []
         for i in range(len(weights)):
             if offload:
                 split_point = split_layers[i]
+                if edge_based:
+                    split_point = split_layers[i][0]
                 if split_point != (model_len - 1):
                     local_weights = (
                         model_utils.concat_weights(
-                            get_state_dict_fn(), weights[i], nets[client_ips[i]].state_dict()),
+                            self.uninet.state_dict(), weights[i], nets[client_ips[i]].state_dict()),
                         config.N / config.K
                     )
                 else:

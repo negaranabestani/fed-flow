@@ -329,24 +329,6 @@ class FedServer(FedServerInterface):
             self.split_layers,
             config.model_len,
             self.nets,
-            get_state_dict_fn=lambda: self.uninet.state_dict()
+            self.edge_based
         )
 
-    def prepare_aggregation_local_weights(self, client_ips, edge_weights):
-        local_weights_list = []
-        for i in range(len(edge_weights)):
-            if self.offload:
-                split_point = self.split_layers[i]
-                if self.edge_based:
-                    split_point = self.split_layers[i][0]
-                if split_point != (config.model_len - 1):
-                    local_weights = (
-                        model_utils.concat_weights(self.uninet.state_dict(), edge_weights[i],
-                                                   self.nets[client_ips[i]].state_dict()),
-                        config.N / config.K)
-                else:
-                    local_weights = (edge_weights[i], config.N / config.K)
-            else:
-                local_weights = (edge_weights[i], config.N / config.K)
-            local_weights_list.append(local_weights)
-        return local_weights_list
