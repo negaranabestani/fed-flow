@@ -10,6 +10,7 @@ from colorama import Fore
 
 from app.dto.message import JsonMessage, GlobalWeightMessage, NetworkTestMessage, SplitLayerConfigMessage, \
     IterationFlagMessage
+from app.entity.aggregator import Aggregator
 from app.entity.interface.fed_server_interface import FedServerInterface
 from app.fl_method import fl_method_parser
 
@@ -268,6 +269,7 @@ class FedServer(FedServerInterface):
         send global weights
         """
         msg = GlobalWeightMessage([self.uninet.state_dict()])
+        print("model state dict:", self.uninet.state_dict())
         self.scatter(msg)
 
     def no_offloading_global_weights(self):
@@ -318,6 +320,17 @@ class FedServer(FedServerInterface):
         data.append(total_tt)
         data.extend(tt)
         return data
+
+    def prepare_aggregation_local_weights(self, client_ips, edge_weights):
+        return self.aggregator.prepare_aggregation_local_weights(
+            client_ips,
+            edge_weights,
+            self.offload,
+            self.split_layers,
+            config.model_len,
+            self.nets,
+            get_state_dict_fn=lambda: self.uninet.state_dict()
+        )
 
     def prepare_aggregation_local_weights(self, client_ips, edge_weights):
         local_weights_list = []

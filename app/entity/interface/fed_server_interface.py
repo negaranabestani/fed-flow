@@ -183,5 +183,6 @@ class FedServerInterface(Node, ABC, Communicator):
     def edge_based_state(self):
         pass
 
-    def prepare_aggregation_local_weights(self, client_ips, eweights):
+    @abstractmethod
+    def prepare_aggregation_local_weights(self, client_ips, edge_weights):
         pass

@@ -9,6 +9,28 @@ class Aggregator:
         self.uninet = uninet
 
     @staticmethod
+    def prepare_aggregation_local_weights(
+            client_ips, weights, offload, split_layers, model_len, nets, get_state_dict_fn):
+        local_weights_list = []
+        for i in range(len(weights)):
+            if offload:
+                split_point = split_layers[i]
+                if split_point != (model_len - 1):
+                    local_weights = (
+                        model_utils.concat_weights(
+                            get_state_dict_fn(), weights[i], nets[client_ips[i]].state_dict()),
+                        config.N / config.K
+                    )
+                else:
+                    local_weights = (weights[i], config.N / config.K)
+            else:
+                local_weights = (weights[i], config.N / config.K)
+
+            local_weights_list.append(local_weights)
+
+        return local_weights_list
+
+    @staticmethod
     def get_aggregate_method(aggregation_method_name):
         aggregate_method = fl_method_parser.fl_methods.get(aggregation_method_name)
         if aggregate_method is None:
@@ -25,5 +47,3 @@ class Aggregator:
         aggregated_model = aggregate_method(zero_model, local_weights_list, config.N)
         self.uninet.load_state_dict(aggregated_model)
         return aggregated_model
-
-

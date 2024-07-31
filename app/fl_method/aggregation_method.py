@@ -11,3 +11,4 @@ def fed_avg(zero_model, w_local_list, total_data_size):
                 zero_model[k] += (w[0][k] * beta)
 
     return zero_model
+
