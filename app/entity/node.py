@@ -1,5 +1,4 @@
 from typing import List
-
 from app.entity.neighbor import Neighbor
 
 
@@ -17,5 +16,3 @@ class Node:
     def get_neighbors(self) -> List[Neighbor]:
         return self.neighbors
 
-    # def broadcast(self, message: str):
-    #     for neighbor in self.neighbors:

@@ -5,6 +5,7 @@ from torch import multiprocessing
 
 from app.config import config
 from app.dto.message import BaseMessage
+from app.entity.aggregator import Aggregator
 from app.entity.communicator import Communicator
 from app.entity.node import Node
 from app.util import data_utils, model_utils
@@ -26,6 +27,7 @@ class FedEdgeServerInterface(Node, ABC, Communicator):
         self.threads = None
         self.net_threads = None
         self.central_server_communicator = Communicator()
+        self.offload = offload
 
         if offload:
             model_len = model_utils.get_unit_model_len()
@@ -33,6 +35,9 @@ class FedEdgeServerInterface(Node, ABC, Communicator):
 
             self.testset = data_utils.get_testset()
             self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
+
+        self.aggregator = Aggregator(uninet=self.uninet)
+
 
     @abstractmethod
     def test_client_network(self, client_ips):
@@ -106,4 +111,8 @@ class FedEdgeServerInterface(Node, ABC, Communicator):
 
     @abstractmethod
     def no_offload_global_weights(self):
+        pass
+
+    @abstractmethod
+    def prepare_aggregation_local_weights(self, client_ips, client_weights):
         pass

@@ -10,6 +10,7 @@ from colorama import Fore
 
 from app.dto.message import JsonMessage, GlobalWeightMessage, NetworkTestMessage, SplitLayerConfigMessage, \
     IterationFlagMessage
+from app.entity.aggregator import Aggregator
 from app.entity.interface.fed_server_interface import FedServerInterface
 from app.fl_method import fl_method_parser
 
@@ -180,30 +181,6 @@ class FedServer(FedServerInterface):
         fed_logger.info(str(client_ip) + ' offloading training end')
         return 'Finish'
 
-    def aggregate(self, client_ips, aggregate_method, eweights):
-        w_local_list = []
-        # fed_logger.info("aggregation start")
-        for i in range(len(eweights)):
-            if self.offload:
-                sp = self.split_layers[i]
-                if self.edge_based:
-                    sp = self.split_layers[i][0]
-                if sp != (config.model_len - 1):
-                    w_local = (
-                        model_utils.concat_weights(self.uninet.state_dict(), eweights[i],
-                                                   self.nets[client_ips[i]].state_dict()),
-                        config.N / config.K)
-                    w_local_list.append(w_local)
-                else:
-                    w_local = (eweights[i], config.N / config.K)
-            else:
-                w_local = (eweights[i], config.N / config.K)
-            w_local_list.append(w_local)
-        zero_model = model_utils.zero_init(self.uninet).state_dict()
-        aggregated_model = aggregate_method(zero_model, w_local_list, config.N)
-        self.uninet.load_state_dict(aggregated_model)
-        return aggregated_model
-
     def test_network(self, connection_ips):
         """
         send message to test network speed
@@ -228,7 +205,7 @@ class FedServer(FedServerInterface):
         fed_logger.info("server test network received")
         network_time_end = time.time()
         self.edge_bandwidth[connection_ip] = data_utils.sizeofmessage(msg.weights) / (
-                    network_time_end - network_time_start)
+                network_time_end - network_time_start)
 
     def client_network(self, edge_ips):
         """
@@ -281,7 +258,8 @@ class FedServer(FedServerInterface):
     def c_local_weights(self, client_ips):
         cweights = []
         for i in range(len(client_ips)):
-            msg: GlobalWeightMessage = self.recv_msg(config.SERVER_INDEX_TO_NAME[config.index], config.mq_url, GlobalWeightMessage.MESSAGE_TYPE)
+            msg: GlobalWeightMessage = self.recv_msg(config.SERVER_INDEX_TO_NAME[config.index], config.mq_url,
+                                                     GlobalWeightMessage.MESSAGE_TYPE)
             self.tt_end[client_ips[i]] = time.time()
             cweights.append(msg.weights[0])
         return cweights
@@ -341,3 +319,14 @@ class FedServer(FedServerInterface):
         data.append(total_tt)
         data.extend(tt)
         return data
+
+    def prepare_aggregation_local_weights(self, client_ips, edge_weights):
+        return self.aggregator.prepare_aggregation_local_weights(
+            client_ips,
+            edge_weights,
+            self.offload,
+            self.split_layers,
+            config.model_len,
+            self.nets,
+            self.edge_based
+        )

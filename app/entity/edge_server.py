@@ -8,6 +8,7 @@ from app.config import config
 from app.config.logger import fed_logger
 from app.dto.message import JsonMessage, GlobalWeightMessage, NetworkTestMessage, IterationFlagMessage, \
     SplitLayerConfigMessage
+from app.entity.aggregator import Aggregator
 from app.entity.interface.fed_edgeserver_interface import FedEdgeServerInterface
 from app.util import model_utils, energy_estimation, data_utils
 
@@ -36,9 +37,6 @@ class FedEdgeServer(FedEdgeServerInterface):
                 else:
                     self.nets[client_ip] = model_utils.get_model('Edge', split_layers[i], self.device, True)
         self.criterion = nn.CrossEntropyLoss()
-
-    def aggregate(self, client_ips, aggregate_method):
-        pass
 
     def forward_propagation(self, client_ip):
         i = 0
@@ -220,3 +218,14 @@ class FedEdgeServer(FedEdgeServerInterface):
 
     def thread_no_offload_training(self, client_ip):
         self.local_weights(client_ip)
+
+    def prepare_aggregation_local_weights(self, client_ips, client_weights):
+        return self.aggregator.prepare_aggregation_local_weights(
+            client_ips,
+            client_weights,
+            self.offload,
+            self.split_layers,
+            config.model_len,
+            self.nets,
+            edge_based=True
+        )

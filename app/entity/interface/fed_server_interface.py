@@ -8,6 +8,7 @@ from torch import nn
 from app.config import config
 from app.config.logger import fed_logger
 from app.dto.message import BaseMessage
+from app.entity.aggregator import Aggregator
 from app.entity.communicator import Communicator
 from app.entity.node import Node
 from app.fl_method import fl_method_parser
@@ -35,12 +36,15 @@ class FedServerInterface(Node, ABC, Communicator):
         self.offloading = None
         self.tt_start = {}
         self.tt_end = {}
+        self.nets = {}
+
 
         self.uninet = model_utils.get_model('Unit', None, self.device, self.edge_based)
 
         self.testset = data_utils.get_testset()
         self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
         self.criterion = nn.CrossEntropyLoss()
+        self.aggregator = Aggregator(uninet=self.uninet)
 
     @abstractmethod
     def edge_offloading_train(self, client_ips):
@@ -107,16 +111,6 @@ class FedServerInterface(Node, ABC, Communicator):
     @abstractmethod
     def initialize(self, split_layers, LR):
         pass
-
-    @abstractmethod
-    def aggregate(self, client_ips, aggregate_method, eweights):
-        pass
-
-    def call_aggregation(self, options: dict, eweights):
-        method = fl_method_parser.fl_methods.get(options.get('aggregation'))
-        if method is None:
-            fed_logger.error("aggregate method is none")
-        self.aggregate(config.CLIENTS_LIST, method, eweights)
 
     @abstractmethod
     def cluster(self, options: dict):
@@ -189,4 +183,8 @@ class FedServerInterface(Node, ABC, Communicator):
 
     @abstractmethod
     def edge_based_state(self):
+        pass
+
+    @abstractmethod
+    def prepare_aggregation_local_weights(self, client_ips, edge_weights):
         pass

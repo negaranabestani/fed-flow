@@ -1,8 +1,8 @@
-from app.fl_method import aggregation, clustering, splitting
+from app.fl_method import clustering, splitting, aggregation_method
 
 # a mapping of fl methods to make function call easier
 fl_methods = {
-    "fed_avg": aggregation.fed_avg,
+    "fed_avg": aggregation_method.fed_avg,
     "bandwidth": clustering.bandwidth,
     "none_clustering": clustering.none,
     "none_splitting": splitting.none,
