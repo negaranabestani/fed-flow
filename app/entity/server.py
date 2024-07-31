@@ -269,7 +269,6 @@ class FedServer(FedServerInterface):
         send global weights
         """
         msg = GlobalWeightMessage([self.uninet.state_dict()])
-        print("model state dict:", self.uninet.state_dict())
         self.scatter(msg)
 
     def no_offloading_global_weights(self):
