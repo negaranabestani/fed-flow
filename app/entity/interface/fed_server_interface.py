@@ -36,6 +36,8 @@ class FedServerInterface(Node, ABC, Communicator):
         self.offloading = None
         self.tt_start = {}
         self.tt_end = {}
+        self.nets = {}
+
 
         self.uninet = model_utils.get_model('Unit', None, self.device, self.edge_based)
 

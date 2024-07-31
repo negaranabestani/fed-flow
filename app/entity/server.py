@@ -330,4 +330,3 @@ class FedServer(FedServerInterface):
             self.nets,
             self.edge_based
         )
-
