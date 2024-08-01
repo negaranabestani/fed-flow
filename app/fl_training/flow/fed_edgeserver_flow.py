@@ -4,6 +4,7 @@ import threading
 
 from colorama import Fore
 
+from app.entity.node import NodeIdentifier
 from app.util import energy_estimation
 
 sys.path.append('../../../')
@@ -89,20 +90,19 @@ def run(options_ins):
     LR = config.LR
     fed_logger.info('Preparing Sever.')
     offload = options_ins.get('offload')
-    estimate_energy = False
-    if options_ins.get('energy') == "True":
-        estimate_energy = True
+    decentralized = options_ins.get('decentralized')
+    estimate_energy = options_ins.get('energy') == "True"
+    edge_server = FedEdgeServer(
+        options_ins.get('ip'), options_ins.get('port'), options_ins.get('model'),
+        options_ins.get('dataset'), offload=offload)
+
+    if decentralized:
+        edge_server.add_neighbors(config.EDGE_SERVER_INDEX_TO_NAME)
+
+    fed_logger.info("start mode: " + str(options_ins.values()))
     if offload:
-        edge_server_ins = FedEdgeServer(
-            options_ins.get('ip'), options_ins.get('port'), options_ins.get('model'),
-            options_ins.get('dataset'), offload=offload)
-        fed_logger.info("start mode: " + str(options_ins.values()))
-        run_offload(edge_server_ins, LR, estimate_energy)
+        run_offload(edge_server, LR, estimate_energy)
     else:
-        edge_server_ins = FedEdgeServer(
-            options_ins.get('ip'), options_ins.get('port'), options_ins.get('model'),
-            options_ins.get('dataset'), offload=offload)
-        fed_logger.info("start mode: " + str(options_ins.values()))
-        run_no_offload(edge_server_ins, LR)
-    # msg = edge_server_ins.recv_msg(config.SERVER_ADDR, message_utils.finish)
-    # edge_server_ins.scatter(msg)
+        run_no_offload(edge_server, LR)
+    # msg = edge_server.recv_msg(config.SERVER_ADDR, message_utils.finish)
+    # edge_server.scatter(msg)

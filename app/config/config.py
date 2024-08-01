@@ -1,6 +1,8 @@
 import os
 import sys
 
+from app.entity.node import NodeIdentifier
+
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 CLIENTS_BANDWIDTH = []
 index = 0
@@ -80,3 +82,6 @@ EDGE_SERVER_INDEX_TO_NAME = {0: 'edge1'}
 EDGE_NAME_TO_CLIENTS_NAME = {'edge1': ['client1']}
 
 SERVER_INDEX_TO_NAME = {0: 'server1'}
+
+# Topology configration for decentralized mode
+CURRENT_NODE_NEIGHBORS: list[NodeIdentifier] = []  # (ip, port)

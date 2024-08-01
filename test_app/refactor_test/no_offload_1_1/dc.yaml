@@ -30,6 +30,8 @@ services:
     hostname: broker
 
   client1:
+    ports:
+      - "8080:8080"
     deploy:
 #      resources:
 #        limits:

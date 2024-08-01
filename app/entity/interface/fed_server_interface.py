@@ -9,14 +9,14 @@ from app.config import config
 from app.config.logger import fed_logger
 from app.dto.message import BaseMessage
 from app.entity.communicator import Communicator
-from app.entity.node import Node
+from app.entity.node import Node, NodeType
 from app.fl_method import fl_method_parser
 from app.util import data_utils, model_utils
 
 
 class FedServerInterface(Node, ABC, Communicator):
     def __init__(self, ip: str, port: int, model_name, dataset, offload, edge_based):
-        Node.__init__(self, ip, port)
+        Node.__init__(self, ip, port, NodeType.SERVER)
         Communicator.__init__(self)
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'

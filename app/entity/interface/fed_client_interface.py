@@ -4,15 +4,16 @@ import torch
 from torch import nn, optim
 
 from app.entity.communicator import Communicator
-from app.entity.node import Node
+from app.entity.node import Node, NodeType
 from app.util import model_utils
 
 
-class FedClientInterface(Node, ABC, Communicator):
+class FedClientInterface(Node, Communicator, ABC):
     def __init__(self, ip: str, port: int, server, datalen, model_name, dataset,
                  train_loader, LR, edge_based):
-        Node.__init__(self, ip, port)
+        Node.__init__(self, ip, port, NodeType.CLIENT)
         Communicator.__init__(self)
+
 
         self.datalen = datalen
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -27,8 +28,7 @@ class FedClientInterface(Node, ABC, Communicator):
         # self.uninet = model_utils.get_model('Unit', config.split_layer[config.index], self.device, edge_based)
         self.net = self.uninet
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
-                                   momentum=0.9)
+        self.optimizer = optim.SGD(self.net.parameters(), lr=LR, momentum=0.9)
 
     @abstractmethod
     def initialize(self, split_layer, LR):

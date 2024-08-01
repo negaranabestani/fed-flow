@@ -5,6 +5,8 @@ import sys
 import time
 import warnings
 
+from app.entity import node
+
 sys.path.append('../../../')
 from app.entity.client import Client
 from app.config import config
@@ -168,42 +170,38 @@ def run(options_ins):
     part_tr = indices[int((N / K) * index): int((N / K) * (index + 1))]
     trainloader = data_utils.get_trainloader(data_utils.get_trainset(), part_tr, 0)
 
-    estimate_energy = False
+    estimate_energy = options_ins.get("energy") == "True"
     offload = options_ins.get('offload')
     edge_based = options_ins.get('edgebased')
-    if options_ins.get("energy") == "True":
+    decentralized = options_ins.get('decentralized')
+    if estimate_energy:
         energy_estimation.init(os.getpid())
-        estimate_energy = True
-    if edge_based and offload:
 
-        client_ins = Client(ip=options_ins.get('ip'), port=options_ins.get('port'),
-                            server=config.CLIENT_NAME_TO_EDGE_NAME[config.CLIENTS_INDEX_TO_NAME[index]],
-                            datalen=datalen,
-                            model_name=options_ins.get('model'),
-                            dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
-                            )
-        run_edge_based(client_ins, LR, estimate_energy)
-    elif edge_based and not offload:
-        client_ins = Client(ip=options_ins.get('ip'), port=options_ins.get('port'),
-                            server=config.CLIENT_NAME_TO_EDGE_NAME[config.CLIENTS_INDEX_TO_NAME[index]],
-                            datalen=datalen, model_name=options_ins.get('model'),
-                            dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
-                            )
-        run_no_offload_edge(client_ins, LR, estimate_energy)
-    elif offload:
-        client_ins = Client(ip=options_ins.get('ip'), port=options_ins.get('port'), server=config.SERVER_ADDR,
-                            datalen=datalen, model_name=options_ins.get('model'),
-                            dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
-                            )
-        run_no_edge_offload(client_ins, LR, estimate_energy)
+    ip = options_ins.get('ip')
+    port = options_ins.get('port')
+
+    client = None
+    if edge_based:
+        client = Client(ip=ip, port=port,
+                        server=config.CLIENT_NAME_TO_EDGE_NAME[config.CLIENTS_INDEX_TO_NAME[index]],
+                        datalen=datalen,
+                        model_name=options_ins.get('model'),
+                        dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
+                        )
     else:
-        client_ins = Client(ip=options_ins.get('ip'), port=options_ins.get('port'), server=config.SERVER_ADDR,
-                            datalen=datalen, model_name=options_ins.get('model'),
-                            dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
-                            )
-        run_no_edge(client_ins, LR, estimate_energy)
-    # client_ins.recv_msg(config.CLIENTS_INDEX[index], message_utils.finish)
+        client = Client(ip=ip, port=port, server=config.SERVER_ADDR,
+                        datalen=datalen, model_name=options_ins.get('model'),
+                        dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
+                        )
 
-# parser = argparse.ArgumentParser()
-# options = input_utils.parse_argument(parser)
-# run(options)
+    if decentralized:
+        client.add_neighbors(config.CLIENTS_INDEX_TO_NAME)
+
+    if edge_based and offload:
+        run_edge_based(client, LR, estimate_energy)
+    elif edge_based and not offload:
+        run_no_offload_edge(client, LR, estimate_energy)
+    elif offload:
+        run_no_edge_offload(client, LR, estimate_energy)
+    else:
+        run_no_edge(client, LR, estimate_energy)
