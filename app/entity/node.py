@@ -52,6 +52,9 @@ class Node:
         self._setup_routes()
         self._start_server_in_thread(port)
 
+    def __str__(self):
+        return f'{self.ip}:{self.port}'
+
     def _setup_routes(self):
         self._app.add_route("/get-node-type", self.get_node_type, methods=["GET"])
         self._app.add_route("/get-rabbitmq-url", self.get_rabbitmq_url, methods=["GET"])

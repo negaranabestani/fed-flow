@@ -153,7 +153,7 @@ def run_decentralized_offload(server: FedDecentralizedEdgeServer, learning_rate,
         training_times.append(training_time)
 
         res['training_time'].append(training_time)
-        res['bandwidth_record'].append(server.bandwith())
+        res['bandwidth_record'].append(server.bandwidth())
 
         directory = os.path.join(config.home, 'results')
         file_path = os.path.join(directory, 'FedAdapt_res.pkl')

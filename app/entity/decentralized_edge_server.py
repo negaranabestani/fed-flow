@@ -34,8 +34,8 @@ class FedDecentralizedEdgeServer(FedEdgeServer):
                 continue
             client_id = str(neighbor)
             if client_id not in self.split_layers:
-                self.split_layers[client_id] = [len(self.uninet.cfg) - 2]
-            split_point = self.split_layers[client_id][0]
+                self.split_layers[client_id] = len(self.uninet.cfg) - 2
+            split_point = self.split_layers[client_id]
             if split_point < len(self.uninet.cfg) - 1:
                 self.nets[client_id] = model_utils.get_model('Edge', split_point, self.device, False)
                 cweights = model_utils.get_model('Client', split_point, self.device, False).state_dict()
@@ -101,14 +101,14 @@ class FedDecentralizedEdgeServer(FedEdgeServer):
 
     def _thread_offload_training(self, neighbor: NodeIdentifier):
         neighbor_rabbitmq_url = NodeCommunicator.get_rabbitmq_url(neighbor)
-        flag: bool = self.recv_msg(self.get_exchange_name(), neighbor_rabbitmq_url,
+        flag: bool = self.recv_msg(neighbor.get_exchange_name(), neighbor_rabbitmq_url,
                                    IterationFlagMessage.MESSAGE_TYPE).flag
         while flag:
-            flag = self.recv_msg(self.get_exchange_name(), neighbor_rabbitmq_url,
+            flag = self.recv_msg(neighbor.get_exchange_name(), neighbor_rabbitmq_url,
                                  IterationFlagMessage.MESSAGE_TYPE).flag
             if not flag:
                 break
-            msg: GlobalWeightMessage = self.recv_msg(self.get_exchange_name(), neighbor_rabbitmq_url,
+            msg: GlobalWeightMessage = self.recv_msg(neighbor.get_exchange_name(), neighbor_rabbitmq_url,
                                                      GlobalWeightMessage.MESSAGE_TYPE)
             smashed_layers = msg.weights[0]
             labels = msg.weights[1]
@@ -125,7 +125,7 @@ class FedDecentralizedEdgeServer(FedEdgeServer):
 
             fed_logger.info(str(neighbor) + " sending gradients")
             msg = GlobalWeightMessage([inputs.grad])
-            self.send_msg(str(neighbor), config.mq_url, msg)
+            self.send_msg(self.get_exchange_name(), config.mq_url, msg)
 
         fed_logger.info(str(neighbor) + ' offloading training end')
 
@@ -166,3 +166,6 @@ class FedDecentralizedEdgeServer(FedEdgeServer):
         aggregated_model = aggregate_method(zero_model, w_local_list, config.N)
         self.uninet.load_state_dict(aggregated_model)
         return aggregated_model
+
+    def bandwidth(self) -> dict[str, float]:
+        return self.neighbor_bandwidth

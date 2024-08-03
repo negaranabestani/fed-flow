@@ -1,3 +1,5 @@
+import torch.nn as nn
+from torch import optim
 from tqdm import tqdm
 
 from app.config.logger import fed_logger
@@ -14,6 +16,18 @@ class DecentralizedClient(Client):
     def __init__(self, ip: str, port: int, model_name, dataset, train_loader, LR):
         super().__init__(ip, port, model_name, dataset, train_loader, LR, True)
         self.edge_based = False
+
+    def initialize(self, split_layer, LR):
+
+        self.split_layers = split_layer
+
+        fed_logger.debug('Building Model.')
+        self.net = model_utils.get_model('Client', self.split_layers, self.device, self.edge_based)
+        fed_logger.debug(self.net)
+        self.criterion = nn.CrossEntropyLoss()
+        if len(list(self.net.parameters())) != 0:
+            self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
+                                       momentum=0.9)
 
     def gather_global_weights(self):
         msgs: list[ReceivedMessage] = self.gather_msgs(GlobalWeightMessage.MESSAGE_TYPE, [NodeType.EDGE])
@@ -38,7 +52,7 @@ class DecentralizedClient(Client):
         self.net.to(self.device)
         self.net.train()
         i = 0
-        if self.split_layers[0] == model_utils.get_unit_model_len() - 1:
+        if self.split_layers == model_utils.get_unit_model_len() - 1:
             fed_logger.info("no offloding training start----------------------------")
             self.scatter_msg(IterationFlagMessage(False), [NodeType.EDGE])
             i += 1
@@ -50,7 +64,7 @@ class DecentralizedClient(Client):
                 loss.backward()
                 self.optimizer.step()
 
-        if self.split_layers[0] < model_utils.get_unit_model_len() - 1:
+        if self.split_layers < model_utils.get_unit_model_len() - 1:
             fed_logger.info(f"offloding training start {self.split_layers}----------------------------")
             self.scatter_msg(IterationFlagMessage(True), [NodeType.EDGE])
             i += 1
