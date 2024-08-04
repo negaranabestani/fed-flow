@@ -1,0 +1,55 @@
+version: '3'
+services:
+  broker:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq
+      RABBITMQ_MAX_MESSAGE_SIZE: 536870912
+
+  edge1:
+    image: autlpdslab/fedflow:mega-v0.0.1
+    hostname: edge1
+    working_dir: /fed-flow/app/rl_training/runner
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -o True -s fake_decentralized_splitting --decentralized True --ip edge1 --port 8080 --neighbors "client1,8081" --rabbitmq-url amqp://rabbitmq:rabbitmq@broker:5672/edge1"
+    ports:
+      - "5003:5001"
+      - "8080:8080"
+    volumes:
+      - ./config.py:/fed-flow/app/config/config.py
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: '2G'
+        reservations:
+          cpus: '1'
+          memory: '1G'
+      restart_policy:
+        condition: on-failure
+    depends_on:
+      - broker
+
+  client1:
+    image: autlpdslab/fedflow:mega-v0.0.1
+    hostname: client1
+    working_dir: /fed-flow/app/fl_training/runner
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_client_run.py -o True -s fake_splitting --decentralized True --neighbors "edge1,8080" --ip client1 --port 8081 --rabbitmq-url amqp://rabbitmq:rabbitmq@broker:5672/client1"
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./config.py:/fed-flow/app/config/config.py
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: '1G'
+        reservations:
+          cpus: '0.5'
+          memory: '1G'
+      restart_policy:
+        condition: on-failure
