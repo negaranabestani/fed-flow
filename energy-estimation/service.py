@@ -16,7 +16,7 @@ from process import Process
 warnings.filterwarnings('ignore')
 
 app = FastAPI()
-config.process = Process(0)
+config.process = Process(0,config.init_energy)
 
 excluded_endpoints = ["/init/", "/", "/computation-start/", "/computation-end/", "/start-transmission/",
                       "/end-transmission/", "/get-cpu-utilization/"]
@@ -61,27 +61,12 @@ async def end_transmission(bits):
 
 @app.get("/energy/")
 async def energy():
-    energy_logger.info(
-        Fore.GREEN + f"conputation: {config.process.comp_time}, trasmission: {config.process.transmission_time}")
-    comp = system_utils.estimate_computation_energy(config.process)
-    tr = system_utils.estimate_communication_energy(config, config.process)
-    energy_logger.info(
-        Fore.MAGENTA + f"energy-conputation: {comp}, energy-trasmission: {tr}")
-    ene = comp + tr
+    return system_utils.estimate_total_energy(config, config.process)
 
-    cores = int(subprocess.run("nproc", capture_output=True, shell=True, text=True).stdout)
-    # energy_logger.info(f"cpus: {cores}")
-    print(f"config.process.cpu_u_count : {config.process.cpu_u_count}")
-    print(f"cores : {cores}")
 
-    utilization = config.process.cpu_utilization / config.process.cpu_u_count / 100 / cores
-
-    config.process.comp_time = 0
-    config.process.cpu_u_count = 0
-    config.process.end_comp = False
-    config.process.cpu_utilization = 0
-    config.process.transmission_time = 0
-    return utilization
+@app.get("/remaining-energy/")
+async def energy():
+    return system_utils.remaining_energy(config.process)
 
 
 @app.get("/energy/time/comp_tr")

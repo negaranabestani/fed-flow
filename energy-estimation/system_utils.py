@@ -31,6 +31,32 @@ def estimate_communication_energy(config, process):
     return process.transmission_time * config.tx_power
 
 
+def estimate_total_energy(config, process):
+    energy_logger.info(
+        Fore.GREEN + f"conputation: {config.process.comp_time}, trasmission: {config.process.transmission_time}")
+    comp = estimate_computation_energy(process)
+    tr = estimate_communication_energy(config, process)
+    energy_logger.info(
+        Fore.MAGENTA + f"energy-conputation: {comp}, energy-trasmission: {tr}")
+    ene = comp + tr
+
+    cores = int(subprocess.run("nproc", capture_output=True, shell=True, text=True).stdout)
+    # energy_logger.info(f"cpus: {cores}")
+    print(f"config.process.cpu_u_count : {config.process.cpu_u_count}")
+    print(f"cores : {cores}")
+
+    utilization = config.process.cpu_utilization / config.process.cpu_u_count / 100 / cores
+
+    config.process.comp_time = 0
+    config.process.cpu_u_count = 0
+    config.process.end_comp = False
+    config.process.cpu_utilization = 0
+    config.process.transmission_time = 0
+    config.process.remaining_energy -= ene
+
+    return ene
+
+
 def start_transmission(process):
     process.start_tr_time = time.time()
 
@@ -107,3 +133,7 @@ def computation_end(process):
     process.end_comp = True
     process.end_comp_time = time.time()
     process.comp_time += process.end_comp_time - process.start_comp_time
+
+
+def remaining_energy(process):
+    return process.remaining_energy

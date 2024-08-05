@@ -54,6 +54,7 @@ def run_edge_based(client: FedClientInterface, LR):
         # energy /= batch_num
         fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}")
         client.energy_tt(energy, tt)
+        fed_logger.info(Fore.MAGENTA+f"remaining energy: {energy_estimation.remaining_energy()}")
         # final.append(energy)
 
         if r > 49:

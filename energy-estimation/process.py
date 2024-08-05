@@ -1,5 +1,6 @@
 class Process:
-    def __init__(self, pid):
+    def __init__(self, pid, init_energy):
+        self.remaining_energy = init_energy
         self.pid = pid
         self.start_comp_time = 0
         self.end_comp_time = 0
