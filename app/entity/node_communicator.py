@@ -7,7 +7,7 @@ from app.entity.node import NodeIdentifier, NodeType
 
 class NodeCommunicator:
     MAX_RETRIES = 5
-    WAIT_DURATION_SECONDS = 1
+    WAIT_DURATION_SECONDS = 20
 
     @staticmethod
     def _wait_for_neighbor_to_get_ready(node_identifier: NodeIdentifier):
