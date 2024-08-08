@@ -35,9 +35,6 @@ model_flops = 32.902
 total_flops = 8488192
 # split_layer = [6]  # Initial split layers for no edge base
 split_layer = [[6, 6]]  # Initial split layers
-# split_layer_by_edge = {  # Initial split layers for decentralized
-#     'edge1': [6]
-# }
 model_len = 7
 
 # FL training configration
