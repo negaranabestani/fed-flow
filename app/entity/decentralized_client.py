@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from torch import optim
 from tqdm import tqdm
@@ -5,16 +6,31 @@ from tqdm import tqdm
 from app.config.logger import fed_logger
 from app.dto.message import GlobalWeightMessage, NetworkTestMessage, SplitLayerConfigMessage, IterationFlagMessage
 from app.dto.received_message import ReceivedMessage
-from app.entity.client import Client
-from app.entity.node import NodeType
+from app.entity.communicator import Communicator
+from app.entity.fed_base_node_interface import FedBaseNodeInterface
+from app.entity.node import NodeType, Node
 from app.util import model_utils
 
 
 # noinspection PyTypeChecker
-class DecentralizedClient(Client):
+class DecentralizedClient(FedBaseNodeInterface):
 
     def __init__(self, ip: str, port: int, model_name, dataset, train_loader, LR):
-        super().__init__(ip, port, model_name, dataset, train_loader, LR, True)
+        Node.__init__(self, ip, port, NodeType.CLIENT)
+        Communicator.__init__(self)
+
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.model_name = model_name
+        self.edge_based = True
+        self.dataset = dataset
+        self.train_loader = train_loader
+        self.split_layers = None
+        self.net = {}
+        self.uninet = model_utils.get_model('Unit', None, self.device, True)
+        # self.uninet = model_utils.get_model('Unit', config.split_layer[config.index], self.device, edge_based)
+        self.net = self.uninet
+        self.criterion = nn.CrossEntropyLoss()
+        self.optimizer = optim.SGD(self.net.parameters(), lr=LR, momentum=0.9)
         self.edge_based = False
 
     def initialize(self, split_layer, LR):

@@ -2,23 +2,21 @@ import threading
 import time
 
 import torch
-from colorama import Fore
 from torch import optim, nn, multiprocessing
 
 from app.config import config
 from app.config.logger import fed_logger
 from app.dto.message import NetworkTestMessage, IterationFlagMessage, GlobalWeightMessage
 from app.entity.communicator import Communicator
-from app.entity.edge_server import FedEdgeServer
-from app.entity.node import NodeType, NodeIdentifier, Node
+from app.entity.fed_base_node_interface import FedBaseNodeInterface
 from app.entity.http_communicator import HTTPCommunicator
+from app.entity.node import NodeType, NodeIdentifier, Node
 from app.fl_method import fl_method_parser
-from app.fl_method.splitting import fake_decentralized
 from app.util import model_utils, data_utils
 
 
 # noinspection PyTypeChecker
-class FedDecentralizedEdgeServer(FedEdgeServer):
+class FedDecentralizedEdgeServer(FedBaseNodeInterface):
 
     def __init__(self, ip: str, port: int, model_name, dataset, offload):
         Node.__init__(self, ip, port, NodeType.EDGE)
@@ -43,7 +41,6 @@ class FedDecentralizedEdgeServer(FedEdgeServer):
 
             self.testset = data_utils.get_testset()
             self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
-
         self.neighbor_bandwidth = {}
         self.optimizers = None
         self.nets = None
