@@ -12,10 +12,9 @@ sys.path.append('../../../')
 from app.config import config
 from app.config.logger import fed_logger
 from app.entity.edge_server import FedEdgeServer
-from app.entity.interface.fed_edgeserver_interface import FedEdgeServerInterface
 
 
-def run_offload(server: FedEdgeServerInterface, LR, estimate_energy):
+def run_offload(server: FedEdgeServer, LR, estimate_energy):
     server.initialize(config.split_layer, LR,
                       config.EDGE_NAME_TO_CLIENTS_NAME[config.EDGE_SERVER_INDEX_TO_NAME[config.index]])
 
@@ -58,7 +57,7 @@ def run_offload(server: FedEdgeServerInterface, LR, estimate_energy):
         fed_logger.info('==> Round {:} End'.format(r + 1))
 
 
-def run_no_offload(server: FedEdgeServerInterface, LR):
+def run_no_offload(server: FedEdgeServer, LR):
     server.initialize(config.split_layer, LR,
                       config.EDGE_NAME_TO_CLIENTS_NAME[config.EDGE_SERVER_INDEX_TO_NAME[config.index]])
     res = {}
@@ -178,7 +177,7 @@ def run_decentralized_offload(server: FedDecentralizedEdgeServer, learning_rate,
                             "edge_bw", True)
 
 
-def run_decentralized_no_offload(server: FedEdgeServerInterface, LR):
+def run_decentralized_no_offload(server: FedEdgeServer, LR):
     pass
 
 

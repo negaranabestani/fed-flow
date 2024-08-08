@@ -3,18 +3,15 @@ import pickle
 import sys
 import time
 
-from app.dto.message import JsonMessage
-
 sys.path.append('../../../')
 from app.config import config
 from app.util import model_utils
 from app.entity.server import FedServer
 from app.config.logger import fed_logger
-from app.entity.interface.fed_server_interface import FedServerInterface
 from app.util import rl_utils
 
 
-def run_edge_based_no_offload(server: FedServerInterface, LR, options):
+def run_edge_based_no_offload(server: FedServer, LR, options):
     res = {}
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
 
@@ -44,7 +41,7 @@ def run_edge_based_no_offload(server: FedServerInterface, LR, options):
         fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
 
-def run_edge_based_offload(server: FedServerInterface, LR, options, estimate_energy):
+def run_edge_based_offload(server: FedServer, LR, options, estimate_energy):
     server.initialize(config.split_layer, LR)
     training_time = 0
     energy_tt_list = []
@@ -163,7 +160,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options, estimate_ene
                             "edgeBW", True)
 
 
-def run_no_edge_offload(server: FedServerInterface, LR, options):
+def run_no_edge_offload(server: FedServer, LR, options):
     server.initialize(config.split_layer, LR)
     res = {}
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
@@ -221,7 +218,7 @@ def run_no_edge_offload(server: FedServerInterface, LR, options):
         fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
 
-def run_no_edge(server: FedServerInterface, options):
+def run_no_edge(server: FedServer, options):
     res = {}
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
 

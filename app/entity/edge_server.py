@@ -1,19 +1,46 @@
 import threading
 import time
 
+import torch
 from colorama import Fore
-from torch import optim, nn
+from torch import optim, nn, multiprocessing
 
 from app.config import config
 from app.config.logger import fed_logger
 from app.dto.message import JsonMessage, GlobalWeightMessage, NetworkTestMessage, IterationFlagMessage, \
     SplitLayerConfigMessage
-from app.entity.interface.fed_edgeserver_interface import FedEdgeServerInterface
-from app.util import model_utils, energy_estimation, data_utils
+from app.entity.communicator import Communicator
+from app.entity.fed_base_node_interface import FedBaseNodeInterface
+from app.entity.node import NodeType, Node
+from app.util import model_utils, data_utils
 
 
 # noinspection PyTypeChecker
-class FedEdgeServer(FedEdgeServerInterface):
+class FedEdgeServer(FedBaseNodeInterface):
+    def __init__(self, ip: str, port: int, model_name, dataset, offload):
+        Node.__init__(self, ip, port, NodeType.EDGE)
+        Communicator.__init__(self)
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.model_name = model_name
+        self.nets = {}
+        self.group_labels = None
+        self.criterion = None
+        self.split_layers = None
+        self.state = None
+        self.client_bandwidth = {}
+        self.dataset = dataset
+        self.threads = None
+        self.net_threads = None
+        self.central_server_communicator = Communicator()
+        self.offload = offload
+
+        if offload:
+            model_len = model_utils.get_unit_model_len()
+            self.uninet = model_utils.get_model('Unit', [model_len - 1, model_len - 1], self.device, True)
+
+            self.testset = data_utils.get_testset()
+            self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
+
     def initialize(self, split_layers, LR, client_ips):
         self.split_layers = split_layers
         self.optimizers = {}

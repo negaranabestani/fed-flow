@@ -5,7 +5,7 @@ import torch
 from stable_baselines3 import PPO
 
 from app.config import config
-from app.entity.interface.fed_base_node_interface import FedBaseNodeInterface
+from app.entity.fed_base_node_interface import FedBaseNodeInterface
 from app.util import model_utils, rl_utils
 
 

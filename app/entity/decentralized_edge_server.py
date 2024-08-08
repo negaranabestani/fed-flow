@@ -1,12 +1,14 @@
 import threading
 import time
 
+import torch
 from colorama import Fore
-from torch import optim, nn
+from torch import optim, nn, multiprocessing
 
 from app.config import config
 from app.config.logger import fed_logger
 from app.dto.message import NetworkTestMessage, IterationFlagMessage, GlobalWeightMessage
+from app.entity.communicator import Communicator
 from app.entity.edge_server import FedEdgeServer
 from app.entity.node import NodeType, NodeIdentifier, Node
 from app.entity.http_communicator import HTTPCommunicator
@@ -19,7 +21,29 @@ from app.util import model_utils, data_utils
 class FedDecentralizedEdgeServer(FedEdgeServer):
 
     def __init__(self, ip: str, port: int, model_name, dataset, offload):
-        super().__init__(ip, port, model_name, dataset, offload)
+        Node.__init__(self, ip, port, NodeType.EDGE)
+        Communicator.__init__(self)
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.model_name = model_name
+        self.nets = {}
+        self.group_labels = None
+        self.criterion = None
+        self.split_layers = None
+        self.state = None
+        self.client_bandwidth = {}
+        self.dataset = dataset
+        self.threads = None
+        self.net_threads = None
+        self.central_server_communicator = Communicator()
+        self.offload = offload
+
+        if offload:
+            model_len = model_utils.get_unit_model_len()
+            self.uninet = model_utils.get_model('Unit', [model_len - 1, model_len - 1], self.device, True)
+
+            self.testset = data_utils.get_testset()
+            self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
+
         self.neighbor_bandwidth = {}
         self.optimizers = None
         self.nets = None

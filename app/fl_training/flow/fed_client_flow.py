@@ -1,11 +1,9 @@
 import logging
 import multiprocessing
-import os
 import sys
 import time
 import warnings
 
-from app.entity import node
 from app.entity.decentralized_client import DecentralizedClient
 
 sys.path.append('../../../')
@@ -14,14 +12,13 @@ from app.config import config
 from app.config.config import *
 from app.util import data_utils, energy_estimation
 from app.config.logger import fed_logger
-from app.entity.interface.fed_client_interface import FedClientInterface
 from colorama import Fore
 
 warnings.filterwarnings('ignore')
 logging.getLogger("requests").setLevel(logging.WARNING)
 
 
-def run_edge_based(client: FedClientInterface, LR, estimate_energy):
+def run_edge_based(client: Client, LR, estimate_energy):
     mx: int = int((N / K) * (index + 1))
     mn: int = int((N / K) * index)
     data_size = mx - mn
@@ -65,7 +62,7 @@ def run_edge_based(client: FedClientInterface, LR, estimate_energy):
     # fed_logger.info(f"test network{final}")
 
 
-def run_no_offload_edge(client: FedClientInterface, LR, estimate_energy):
+def run_no_offload_edge(client: Client, LR, estimate_energy):
     mx: int = int((N / K) * (index + 1))
     mn: int = int((N / K) * index)
     data_size = mx - mn
@@ -96,7 +93,7 @@ def run_no_offload_edge(client: FedClientInterface, LR, estimate_energy):
             fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}" + Fore.RESET)
 
 
-def run_no_edge_offload(client: FedClientInterface, LR, estimate_energy):
+def run_no_edge_offload(client: Client, LR, estimate_energy):
     for r in range(config.R):
         config.current_round = r
         fed_logger.info('====================================>')
@@ -132,7 +129,7 @@ def run_no_edge_offload(client: FedClientInterface, LR, estimate_energy):
             fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}" + Fore.RESET)
 
 
-def run_no_edge(client: FedClientInterface, LR, estimate_energy):
+def run_no_edge(client: Client, LR, estimate_energy):
     for r in range(config.R):
         config.current_round = r
         fed_logger.info('====================================>')
