@@ -9,7 +9,7 @@ from app.config.logger import fed_logger
 from app.dto.message import NetworkTestMessage, IterationFlagMessage, GlobalWeightMessage
 from app.entity.edge_server import FedEdgeServer
 from app.entity.node import NodeType, NodeIdentifier, Node
-from app.entity.node_communicator import NodeCommunicator
+from app.entity.http_communicator import HTTPCommunicator
 from app.fl_method import fl_method_parser
 from app.fl_method.splitting import fake_decentralized
 from app.util import model_utils, data_utils
@@ -29,7 +29,7 @@ class FedDecentralizedEdgeServer(FedEdgeServer):
         self.nets = {}
         self.optimizers = {}
         for neighbor in self.get_neighbors():
-            neighbor_type = NodeCommunicator.get_node_type(neighbor)
+            neighbor_type = HTTPCommunicator.get_node_type(neighbor)
             if neighbor_type != NodeType.CLIENT:
                 continue
             client_id = str(neighbor)
@@ -53,7 +53,7 @@ class FedDecentralizedEdgeServer(FedEdgeServer):
     def gather_neighbors_network_bandwidth(self, neighbors_type: NodeType = None):
         net_threads = {}
         for neighbor in self.get_neighbors():
-            neighbor_type = NodeCommunicator.get_node_type(neighbor)
+            neighbor_type = HTTPCommunicator.get_node_type(neighbor)
             if neighbors_type is None or neighbor_type == neighbors_type:
                 net_threads[str(neighbor)] = threading.Thread(target=self._thread_network_testing,
                                                               args=(neighbor,), name=str(neighbor))
@@ -65,7 +65,7 @@ class FedDecentralizedEdgeServer(FedEdgeServer):
     def _thread_network_testing(self, neighbor: NodeIdentifier):
         network_time_start = time.time()
         msg = NetworkTestMessage([self.uninet.cpu().state_dict()])
-        neighbor_rabbitmq_url = NodeCommunicator.get_rabbitmq_url(neighbor)
+        neighbor_rabbitmq_url = HTTPCommunicator.get_rabbitmq_url(neighbor)
         self.send_msg(self.get_exchange_name(), neighbor_rabbitmq_url, msg)
         fed_logger.info("server test network sent")
         msg: NetworkTestMessage = self.recv_msg(neighbor.get_exchange_name(), config.current_node_mq_url,
@@ -100,7 +100,7 @@ class FedDecentralizedEdgeServer(FedEdgeServer):
             self.threads[str(neighbor)].join()
 
     def _thread_offload_training(self, neighbor: NodeIdentifier):
-        neighbor_rabbitmq_url = NodeCommunicator.get_rabbitmq_url(neighbor)
+        neighbor_rabbitmq_url = HTTPCommunicator.get_rabbitmq_url(neighbor)
         flag: bool = self.recv_msg(neighbor.get_exchange_name(), neighbor_rabbitmq_url,
                                    IterationFlagMessage.MESSAGE_TYPE).flag
         while flag:
@@ -132,9 +132,9 @@ class FedDecentralizedEdgeServer(FedEdgeServer):
     def gather_local_weights(self) -> dict[any]:
         eweights = {}
         for neighbor in self.get_neighbors():
-            neighbor_type = NodeCommunicator.get_node_type(neighbor)
+            neighbor_type = HTTPCommunicator.get_node_type(neighbor)
             if neighbor_type == NodeType.CLIENT:
-                neighbor_rabbitmq_url = NodeCommunicator.get_rabbitmq_url(neighbor)
+                neighbor_rabbitmq_url = HTTPCommunicator.get_rabbitmq_url(neighbor)
                 msg: GlobalWeightMessage = self.recv_msg(neighbor.get_exchange_name(), neighbor_rabbitmq_url,
                                                          GlobalWeightMessage.MESSAGE_TYPE)
                 eweights[str(neighbor)] = msg.weights[0]
