@@ -7,6 +7,7 @@ fl_methods = {
     "none_clustering": clustering.none,
     "none_splitting": splitting.none,
     "fake_splitting": splitting.fake,
+    "fake_decentralized_splitting": splitting.fake_decentralized,
     "no_splitting": splitting.no_splitting,
     "no_edge_fake_splitting": splitting.no_edge_fake,
     "no_edge_rl_splitting": splitting.rl_splitting,

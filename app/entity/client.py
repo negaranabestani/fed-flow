@@ -8,10 +8,12 @@ import tqdm
 
 from app.dto.message import GlobalWeightMessage, JsonMessage, NetworkTestMessage, IterationFlagMessage, \
     SplitLayerConfigMessage
+from app.entity.communicator import Communicator
+from app.entity.fed_base_node_interface import FedBaseNodeInterface
+from app.entity.node import Node, NodeType
 
 sys.path.append('../../')
 from app.util import model_utils, data_utils
-from app.entity.interface.fed_client_interface import FedClientInterface
 from app.config.logger import fed_logger
 from app.util.energy_estimation import *
 
@@ -20,7 +22,24 @@ torch.manual_seed(0)
 
 
 # noinspection PyTypeChecker
-class Client(FedClientInterface):
+class Client(FedBaseNodeInterface):
+    def __init__(self, ip: str, port: int, model_name, dataset,
+                 train_loader, LR, edge_based):
+        Node.__init__(self, ip, port, NodeType.CLIENT)
+        Communicator.__init__(self)
+
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.model_name = model_name
+        self.edge_based = edge_based
+        self.dataset = dataset
+        self.train_loader = train_loader
+        self.split_layers = None
+        self.net = {}
+        self.uninet = model_utils.get_model('Unit', None, self.device, edge_based)
+        # self.uninet = model_utils.get_model('Unit', config.split_layer[config.index], self.device, edge_based)
+        self.net = self.uninet
+        self.criterion = nn.CrossEntropyLoss()
+        self.optimizer = optim.SGD(self.net.parameters(), lr=LR, momentum=0.9)
 
     def initialize(self, split_layer, LR):
 

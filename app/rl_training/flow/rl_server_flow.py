@@ -294,7 +294,7 @@ def preTrain(server, options) -> tuple[float, float]:
         server.send_split_layers_config_to_edges()
 
         # fed_logger.info("initializing server")
-        server.initialize(server.split_layers, 0.1)
+        server.initialize(server.split_layers)
 
         # fed_logger.info('==> Reinitialization Finish')
 
@@ -386,7 +386,7 @@ def rl_flow(server, options, r, LR):
         LR = config.LR * 0.1
 
     fed_logger.info("initializing server")
-    server.initialize(server.split_layers, LR)
+    server.initialize(server.split_layers)
 
     # fed_logger.info('==> Reinitialization Finish')
 

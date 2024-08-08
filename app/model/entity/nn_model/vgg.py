@@ -19,7 +19,7 @@ class VGG(NNModel):
             if self.location == 'Edge':
                 cfg = cfg[self.split_layer[0] + 1:self.split_layer[1] + 1]
         else:
-            if self.location == 'Server':
+            if self.location == 'Server' or self.location == 'Edge':
                 cfg = cfg[self.split_layer + 1:]
 
             if self.location == 'Client':
