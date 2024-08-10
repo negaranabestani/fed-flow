@@ -1,9 +1,12 @@
 # Communicator Object
 import logging
+from urllib.parse import urlparse
 
 import pika
+import requests
 from kombu import Connection
 from colorama import Fore
+from requests.auth import HTTPBasicAuth
 
 from app.config import config
 from app.config.logger import fed_logger
@@ -21,15 +24,17 @@ class Communicator(object):
         self.send_bug = False
 
     @staticmethod
-    def delete_all_queues():
-        mq_conn = Connection(config.mq_url)
+    def purge_all_queues():
+        url = config.current_node_mq_url or config.mq_url
+        parsed_uri = urlparse(url)
+        vhost = parsed_uri.path.lstrip('/')
+        mq_conn = Connection(url)
         mq_conn.connect()
 
         # Create a channel
         channel = mq_conn.channel()
 
         # Get all queues
-        vhost = "/"
         manager = mq_conn.get_manager()
         queues = manager.get_queues(vhost)
 
@@ -37,6 +42,7 @@ class Communicator(object):
         for queue in queues:
             queue_name = queue["name"]
             channel.queue_purge(queue_name)
+        fed_logger.info("All queues purged successfully.")
 
     def close_connection(self, ch, c):
         self.should_close = True
@@ -50,7 +56,8 @@ class Communicator(object):
 
     def open_connection(self, url=None):
         fed_logger.info("connecting")
-        url = config.mq_host
+        if not url:
+            url = config.mq_url
         self.url = url
         connection = None
         while connection is None:
@@ -69,13 +76,37 @@ class Communicator(object):
         fed_logger.info("connection established")
         return channel, connection
 
-    def connect(self, url):
+    @staticmethod
+    def ensure_vhost_exists(parsed_uri, vhost):
         try:
-            return pika.BlockingConnection(pika.ConnectionParameters(host=url, port=config.mq_port,
-                                                                     credentials=pika.PlainCredentials(
-                                                                         username=config.mq_user,
-                                                                         password=config.mq_pass,
-                                                                     )))
+            response = requests.put(
+                f'http://{parsed_uri.hostname}:15672/api/vhosts/{vhost}',
+                auth=HTTPBasicAuth(parsed_uri.username, parsed_uri.password)
+            )
+            if response.status_code == 201:
+                fed_logger.info(f"Vhost '{vhost}' created successfully.")
+            elif response.status_code == 204:
+                fed_logger.info(f"Vhost '{vhost}' already exists.")
+            else:
+                fed_logger.info(f"Failed to create vhost. Status code: {response.status_code}")
+                fed_logger.info(f"Response: {response.text}")
+        except Exception as e:
+            fed_logger.error(Fore.RED + f"Failed to create vhost: {e}" + Fore.RESET)
+
+
+    def connect(self, url: str):
+        try:
+            parsed_uri = urlparse(url)
+            vhost = parsed_uri.path.lstrip('/')
+            credentials = pika.PlainCredentials(parsed_uri.username, parsed_uri.password)
+            self.ensure_vhost_exists(parsed_uri, vhost)
+            parameters = pika.ConnectionParameters(
+                host=parsed_uri.hostname,
+                port=parsed_uri.port or 5672,
+                credentials=credentials,
+                virtual_host=vhost
+            )
+            return pika.BlockingConnection(parameters)
         except Exception as e:
             fed_logger.error(Fore.RED + f"failed to connect to rabbitmq {url}: {e}" + Fore.RESET)
 

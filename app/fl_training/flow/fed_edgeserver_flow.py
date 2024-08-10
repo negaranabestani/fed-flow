@@ -146,7 +146,8 @@ def run_decentralized_offload(server: FedDecentralizedEdgeServer, learning_rate,
         fed_logger.info("aggregating weights")
         server.aggregate(local_weights)
 
-        fed_logger.info("start gossiping with other edges")
+        fed_logger.info("start gossiping with neighbors")
+        server.gossip_with_neighbors()
 
         e_time = time.time()
 
@@ -202,6 +203,7 @@ def run(options_ins):
 
     if decentralized:
         edge_server.add_neighbors(config.CURRENT_NODE_NEIGHBORS)
+        fed_logger.info("neighbors: " + str(config.CURRENT_NODE_NEIGHBORS))
 
     fed_logger.info("start mode: " + str(options_ins.values()))
     if decentralized:

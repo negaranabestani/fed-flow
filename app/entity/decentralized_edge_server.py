@@ -29,7 +29,7 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
         self.model_name = model_name
         self.nets = {}
         self.group_labels = None
-        self.criterion = None
+        self.criterion = nn.CrossEntropyLoss()
         self.split_layers = None
         self.state = None
         self.client_bandwidth = {}
@@ -45,19 +45,15 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
             self.uninet = model_utils.get_model('Unit', [model_len - 1, model_len - 1], self.device, True)
 
             self.testset = data_utils.get_testset()
-            self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
+            self.testloader = data_utils.get_testloader(self.testset, 0)
         self.neighbor_bandwidth = {}
         self.optimizers = None
-        self.nets = None
         self.split_layers = {}
 
     def initialize(self, learning_rate, **kwargs):
         self.nets = {}
         self.optimizers = {}
-        for neighbor in self.get_neighbors():
-            neighbor_type = HTTPCommunicator.get_node_type(neighbor)
-            if neighbor_type != NodeType.CLIENT:
-                continue
+        for neighbor in self.get_neighbors([NodeType.CLIENT]):
             client_id = str(neighbor)
             if client_id not in self.split_layers:
                 self.split_layers[client_id] = len(self.uninet.cfg) - 2
@@ -74,7 +70,6 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
                                                            momentum=0.9)
             else:
                 self.nets[client_id] = model_utils.get_model('Edge', split_point, self.device, False)
-        self.criterion = nn.CrossEntropyLoss()
 
     def gather_neighbors_network_bandwidth(self, neighbors_type: NodeType = None):
         net_threads = {}
@@ -116,25 +111,28 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
 
     def start_offloading_train(self):
         self.threads = {}
-        for neighbor in self.get_neighbors():
+        client_neighbors = self.get_neighbors([NodeType.CLIENT])
+        for neighbor in client_neighbors:
             self.threads[str(neighbor)] = threading.Thread(target=self._thread_offload_training,
                                                            args=(neighbor,), name=str(neighbor))
             fed_logger.info(str(neighbor) + ' offloading training start')
             self.threads[str(neighbor)].start()
 
-        for neighbor in self.get_neighbors():
+        fed_logger.info('waiting for offloading training to finish')
+        for neighbor in client_neighbors:
             self.threads[str(neighbor)].join()
+        fed_logger.info('offloading training finished')
 
     def _thread_offload_training(self, neighbor: NodeIdentifier):
         neighbor_rabbitmq_url = HTTPCommunicator.get_rabbitmq_url(neighbor)
-        flag: bool = self.recv_msg(neighbor.get_exchange_name(), neighbor_rabbitmq_url,
+        flag: bool = self.recv_msg(neighbor.get_exchange_name(), config.current_node_mq_url,
                                    IterationFlagMessage.MESSAGE_TYPE).flag
         while flag:
-            flag = self.recv_msg(neighbor.get_exchange_name(), neighbor_rabbitmq_url,
+            flag = self.recv_msg(neighbor.get_exchange_name(), config.current_node_mq_url,
                                  IterationFlagMessage.MESSAGE_TYPE).flag
             if not flag:
                 break
-            msg: GlobalWeightMessage = self.recv_msg(neighbor.get_exchange_name(), neighbor_rabbitmq_url,
+            msg: GlobalWeightMessage = self.recv_msg(neighbor.get_exchange_name(), config.current_node_mq_url,
                                                      GlobalWeightMessage.MESSAGE_TYPE)
             smashed_layers = msg.weights[0]
             labels = msg.weights[1]
@@ -151,7 +149,7 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
 
             fed_logger.info(str(neighbor) + " sending gradients")
             msg = GlobalWeightMessage([inputs.grad])
-            self.send_msg(self.get_exchange_name(), config.mq_url, msg)
+            self.send_msg(self.get_exchange_name(), neighbor_rabbitmq_url, msg)
 
         fed_logger.info(str(neighbor) + ' offloading training end')
 
@@ -159,7 +157,7 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
         client_local_weights = {}
         for neighbor in self.get_neighbors([NodeType.CLIENT]):
             neighbor_rabbitmq_url = HTTPCommunicator.get_rabbitmq_url(neighbor)
-            msg: GlobalWeightMessage = self.recv_msg(neighbor.get_exchange_name(), neighbor_rabbitmq_url,
+            msg: GlobalWeightMessage = self.recv_msg(neighbor.get_exchange_name(), config.current_node_mq_url,
                                                      GlobalWeightMessage.MESSAGE_TYPE)
             client_local_weights[str(neighbor)] = msg.weights[0]
         return client_local_weights
@@ -186,3 +184,12 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
 
     def bandwidth(self) -> dict[str, float]:
         return self.neighbor_bandwidth
+
+    def gossip_with_neighbors(self):
+        edge_neighbors = self.get_neighbors([NodeType.EDGE])
+        msg = GlobalWeightMessage([self.uninet.cpu().state_dict()])
+        self.scatter_msg(msg, [NodeType.EDGE])
+        gathered_msgs = self.gather_msgs(GlobalWeightMessage.MESSAGE_TYPE, [NodeType.EDGE])
+        gathered_models = [(msg.message.weights[0], config.N / len(edge_neighbors)) for msg in gathered_msgs]
+        aggregated_model = self.aggregator.aggregate(self.uninet.cpu().state_dict(), gathered_models)
+        self.uninet.load_state_dict(aggregated_model)
