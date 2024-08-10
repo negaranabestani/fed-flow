@@ -10,7 +10,8 @@ from app.dto.message import GlobalWeightMessage, JsonMessage, NetworkTestMessage
     SplitLayerConfigMessage
 from app.entity.communicator import Communicator
 from app.entity.fed_base_node_interface import FedBaseNodeInterface
-from app.entity.node import Node, NodeType
+from app.entity.node import Node
+from app.entity.node_type import NodeType
 
 sys.path.append('../../')
 from app.util import model_utils, data_utils

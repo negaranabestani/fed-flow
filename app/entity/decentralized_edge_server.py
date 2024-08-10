@@ -7,10 +7,14 @@ from torch import optim, nn, multiprocessing
 from app.config import config
 from app.config.logger import fed_logger
 from app.dto.message import NetworkTestMessage, IterationFlagMessage, GlobalWeightMessage
+from app.entity.aggregators.base_aggregator import BaseAggregator
+from app.dto.model import Model
 from app.entity.communicator import Communicator
 from app.entity.fed_base_node_interface import FedBaseNodeInterface
 from app.entity.http_communicator import HTTPCommunicator
-from app.entity.node import NodeType, NodeIdentifier, Node
+from app.entity.node import Node
+from app.entity.node_type import NodeType
+from app.entity.node_identifier import NodeIdentifier
 from app.fl_method import fl_method_parser
 from app.util import model_utils, data_utils
 
@@ -18,7 +22,7 @@ from app.util import model_utils, data_utils
 # noinspection PyTypeChecker
 class FedDecentralizedEdgeServer(FedBaseNodeInterface):
 
-    def __init__(self, ip: str, port: int, model_name, dataset, offload):
+    def __init__(self, ip: str, port: int, model_name, dataset, offload, aggregator: BaseAggregator):
         Node.__init__(self, ip, port, NodeType.EDGE)
         Communicator.__init__(self)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -34,6 +38,7 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
         self.net_threads = None
         self.central_server_communicator = Communicator()
         self.offload = offload
+        self.aggregator = aggregator
 
         if offload:
             model_len = model_utils.get_unit_model_len()
@@ -150,43 +155,34 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
 
         fed_logger.info(str(neighbor) + ' offloading training end')
 
-    def gather_local_weights(self) -> dict[any]:
-        eweights = {}
-        for neighbor in self.get_neighbors():
-            neighbor_type = HTTPCommunicator.get_node_type(neighbor)
-            if neighbor_type == NodeType.CLIENT:
-                neighbor_rabbitmq_url = HTTPCommunicator.get_rabbitmq_url(neighbor)
-                msg: GlobalWeightMessage = self.recv_msg(neighbor.get_exchange_name(), neighbor_rabbitmq_url,
-                                                         GlobalWeightMessage.MESSAGE_TYPE)
-                eweights[str(neighbor)] = msg.weights[0]
-        return eweights
+    def gather_local_weights(self) -> dict[str, Model]:
+        client_local_weights = {}
+        for neighbor in self.get_neighbors([NodeType.CLIENT]):
+            neighbor_rabbitmq_url = HTTPCommunicator.get_rabbitmq_url(neighbor)
+            msg: GlobalWeightMessage = self.recv_msg(neighbor.get_exchange_name(), neighbor_rabbitmq_url,
+                                                     GlobalWeightMessage.MESSAGE_TYPE)
+            client_local_weights[str(neighbor)] = msg.weights[0]
+        return client_local_weights
 
-    def call_aggregation(self, options: dict, eweights):
-        method = fl_method_parser.fl_methods.get(options.get('aggregation'))
-        if method is None:
-            fed_logger.error("aggregate method is none")
-        self.aggregate(method, eweights)
-
-    def aggregate(self, aggregate_method, eweights):
-        w_local_list = []
-        for neighbor in self.get_neighbors():
-            if self.offload:
-                split_point = self.split_layers[str(neighbor)]
-                if split_point != (config.model_len - 1):
-                    w_local = (
-                        model_utils.concat_weights(self.uninet.state_dict(), eweights[str(neighbor)],
-                                                   self.nets[str(neighbor)].state_dict()),
-                        config.N / config.K)
-                    w_local_list.append(w_local)
-                else:
-                    w_local = (eweights[str(neighbor)], config.N / config.K)
-            else:
-                w_local = (eweights[str(neighbor)], config.N / config.K)
-            w_local_list.append(w_local)
+    def aggregate(self, client_local_weights: dict[str, Model]) -> None:
         zero_model = model_utils.zero_init(self.uninet).state_dict()
-        aggregated_model = aggregate_method(zero_model, w_local_list, config.N)
+        w_local_list = self._concat_neighbor_local_weights(client_local_weights)
+        aggregated_model = self.aggregator.aggregate(zero_model, w_local_list)
         self.uninet.load_state_dict(aggregated_model)
-        return aggregated_model
+
+    def _concat_neighbor_local_weights(self, client_local_weights) -> list:
+        w_local_list = []
+        client_neighbors = self.get_neighbors([NodeType.CLIENT])
+        for neighbor in client_neighbors:
+            split_point = self.split_layers[str(neighbor)]
+            w_local = (client_local_weights[str(neighbor)], config.N / len(client_neighbors))
+            if self.offload and split_point != (config.model_len - 1):
+                w_local = (
+                    model_utils.concat_weights(self.uninet.state_dict(), client_local_weights[str(neighbor)],
+                                               self.nets[str(neighbor)].state_dict()),
+                    config.N / len(client_neighbors))
+            w_local_list.append(w_local)
+        return w_local_list
 
     def bandwidth(self) -> dict[str, float]:
         return self.neighbor_bandwidth

@@ -4,8 +4,9 @@ import sys
 import threading
 import time
 
+from app.entity.aggregators.factory import create_aggregator
 from app.entity.decentralized_edge_server import FedDecentralizedEdgeServer
-from app.entity.node import NodeType
+from app.entity.node_type import NodeType
 from app.util import rl_utils, model_utils
 
 sys.path.append('../../../')
@@ -143,7 +144,9 @@ def run_decentralized_offload(server: FedDecentralizedEdgeServer, learning_rate,
         local_weights = server.gather_local_weights()
 
         fed_logger.info("aggregating weights")
-        server.call_aggregation(options, local_weights)
+        server.aggregate(local_weights)
+
+        fed_logger.info("start gossiping with other edges")
 
         e_time = time.time()
 
@@ -192,9 +195,10 @@ def run(options_ins):
             options_ins.get('ip'), options_ins.get('port'), options_ins.get('model'),
             options_ins.get('dataset'), offload=offload)
     else:
+        aggregator = create_aggregator(options_ins.get('aggregation'))
         edge_server = FedDecentralizedEdgeServer(options_ins.get('ip'), options_ins.get('port'),
                                                  options_ins.get('model'),
-                                                 options_ins.get('dataset'), offload)
+                                                 options_ins.get('dataset'), offload, aggregator)
 
     if decentralized:
         edge_server.add_neighbors(config.CURRENT_NODE_NEIGHBORS)

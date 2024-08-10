@@ -1,6 +1,6 @@
 import argparse
 from app.config import config
-from app.entity.node import NodeIdentifier
+from app.entity.node_identifier import NodeIdentifier
 from app.util import model_utils
 
 options = {

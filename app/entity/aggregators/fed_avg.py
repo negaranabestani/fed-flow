@@ -1,0 +1,19 @@
+from app.entity.aggregators.base_aggregator import BaseAggregator
+from app.dto.model import Model
+
+
+class FedAvg(BaseAggregator):
+    def __init__(self, total_data_size: int):
+        self.total_data_size = total_data_size
+
+    def aggregate(self, base_model: Model, gathered_models: list[Model]) -> Model:
+        keys = gathered_models[0][0].keys()
+        for k in keys:
+            for w in gathered_models:
+                beta = float(w[1]) / float(self.total_data_size)
+                if 'num_batches_tracked' in k:
+                    base_model[k] = w[0][k]
+                else:
+                    base_model[k] += (w[0][k] * beta)
+
+        return base_model
