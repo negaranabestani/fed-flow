@@ -87,7 +87,7 @@ class Node:
     def _setup_routes(self):
         self._app.add_route("/get-node-type", self.get_node_type, methods=["GET"])
         self._app.add_route("/get-rabbitmq-url", self.get_rabbitmq_url, methods=["GET"])
-        self._app.add_route("/get-node-coordinate", self.get_node_coordinate, methods=["GET"])  # New route
+        self._app.add_route("/get-node-coordinate", self.get_node_coordinate, methods=["GET"])
 
     async def get_node_type(self, _: Request):
         return JSONResponse({'node_type': self._node_type.name}, http.HTTPStatus.OK)
