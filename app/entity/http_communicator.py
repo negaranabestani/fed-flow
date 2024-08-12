@@ -2,7 +2,8 @@ import time
 
 import requests
 
-from app.entity.node import NodeIdentifier, NodeType
+from app.entity.node_type import NodeType
+from app.entity.node_identifier import NodeIdentifier
 
 
 class HTTPCommunicator:

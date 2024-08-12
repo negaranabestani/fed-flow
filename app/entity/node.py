@@ -1,40 +1,14 @@
 import http
 import threading
-from dataclasses import dataclass
-from enum import Enum
 
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.config import config
-
-
-@dataclass
-class NodeIdentifier:
-    ip: str
-    port: int
-
-    def __str__(self):
-        return f"{self.ip}:{self.port}"
-
-    def get_exchange_name(self):
-        return self.__str__()
-
-
-class NodeType(Enum):
-    CLIENT = "client"
-    EDGE = "edge"
-    SERVER = "server"
-
-    @classmethod
-    def from_value(cls, value: str) -> 'NodeType':
-        """Get the NodeType enum member from its value"""
-        value = value.lower()
-        for member in cls:
-            if member.value == value:
-                return member
-        raise ValueError(f"No NodeType found for value '{value}'")
+from app.entity.http_communicator import HTTPCommunicator
+from app.entity.node_identifier import NodeIdentifier
+from app.entity.node_type import NodeType
 
 
 class Node:
@@ -74,8 +48,10 @@ class Node:
         for node_id in node_ids:
             self.add_neighbor(node_id)
 
-    def get_neighbors(self) -> list[NodeIdentifier]:
-        return self._neighbors
+    def get_neighbors(self, node_types: list[NodeType] = None) -> list[NodeIdentifier]:
+        if not node_types:
+            return self._neighbors
+        return [node for node in self._neighbors if HTTPCommunicator.get_node_type(node) in node_types]
 
     def get_exchange_name(self) -> str:
         return f"{self.ip}:{self.port}"

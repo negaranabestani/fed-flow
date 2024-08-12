@@ -4,7 +4,8 @@ from app.config import config
 from app.dto.message import BaseMessage, GlobalWeightMessage, SplitLayerConfigMessage, MessageType
 from app.dto.received_message import ReceivedMessage
 from app.entity.communicator import Communicator
-from app.entity.node import NodeType, Node
+from app.entity.node import Node
+from app.entity.node_type import NodeType
 from app.entity.http_communicator import HTTPCommunicator
 
 

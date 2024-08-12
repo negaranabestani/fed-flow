@@ -13,7 +13,8 @@ from app.dto.message import JsonMessage, GlobalWeightMessage, NetworkTestMessage
     IterationFlagMessage, BaseMessage
 from app.entity.communicator import Communicator
 from app.entity.fed_base_node_interface import FedBaseNodeInterface
-from app.entity.node import Node, NodeType
+from app.entity.node import Node
+from app.entity.node_type import NodeType
 from app.fl_method import fl_method_parser
 
 sys.path.append('../../')

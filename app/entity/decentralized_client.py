@@ -8,7 +8,8 @@ from app.dto.message import GlobalWeightMessage, NetworkTestMessage, SplitLayerC
 from app.dto.received_message import ReceivedMessage
 from app.entity.communicator import Communicator
 from app.entity.fed_base_node_interface import FedBaseNodeInterface
-from app.entity.node import NodeType, Node
+from app.entity.node import Node
+from app.entity.node_type import NodeType
 from app.util import model_utils
 
 

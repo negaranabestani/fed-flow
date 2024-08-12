@@ -174,7 +174,6 @@ def run_offload_decentralized(client: DecentralizedClient, learning_rate):
         fed_logger.info("sending local weights")
         client.scatter_local_weights()
         fed_logger.info('ROUND: {} END'.format(r + 1))
-        fed_logger.info('==> Waiting for aggregration')
 
         if r > 49:
             learning_rate = config.LR * 0.1

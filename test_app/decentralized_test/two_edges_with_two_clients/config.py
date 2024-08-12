@@ -1,7 +1,7 @@
 import os
 import sys
 
-from app.entity.node import NodeIdentifier
+from app.entity.node_identifier import NodeIdentifier
 
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 CLIENTS_BANDWIDTH = []
