@@ -34,3 +34,13 @@ class HTTPCommunicator:
         request_url = f"http://{node_identifier.ip}:{node_identifier.port}/get-rabbitmq-url"
         response = requests.get(request_url)
         return response.json()['rabbitmq_url']
+
+    @staticmethod
+    def get_node_coordinate(node_identifier: NodeIdentifier) -> dict:
+        HTTPCommunicator._wait_for_neighbor_to_get_ready(node_identifier)
+        request_url = f"http://{node_identifier.ip}:{node_identifier.port}/get-node-coordinate"
+        response = requests.get(request_url)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise Exception(f"Failed to get coordinates for node {node_identifier}, status code: {response.status_code}")

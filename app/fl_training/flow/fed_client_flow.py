@@ -5,6 +5,8 @@ import time
 import warnings
 
 from app.entity.decentralized_client import DecentralizedClient
+from app.fl_training.data_processing.data_processing import process_and_save_user
+from app.util.mobility_data_utils import load_user_data, start_simulation_thread
 
 sys.path.append('../../../')
 from app.entity.client import Client
@@ -206,6 +208,11 @@ def run(options_ins):
     if decentralized:
         client = DecentralizedClient(ip=ip, port=port, model_name=options_ins.get('model'),
                                      dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR)
+        # process_and_save_user('DATA', "003", client.ip, client.port)
+        specific_user_id = '003'
+        user_data = load_user_data(specific_user_id)
+        start_simulation_thread(client, user_data)
+
     elif edge_based:
         client = Client(ip=ip, port=port,
                         model_name=options_ins.get('model'),
