@@ -1,12 +1,12 @@
 from app.entity.aggregators.base_aggregator import BaseAggregator
-from app.dto.model import Model
+from app.dto.base_model import BaseModel
 
 
 class FedAvg(BaseAggregator):
     def __init__(self, total_data_size: int):
         self.total_data_size = total_data_size
 
-    def aggregate(self, base_model: Model, gathered_models: list[Model]) -> Model:
+    def aggregate(self, base_model: BaseModel, gathered_models: list[BaseModel]) -> BaseModel:
         keys = gathered_models[0][0].keys()
         for k in keys:
             for w in gathered_models:

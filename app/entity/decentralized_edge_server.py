@@ -8,7 +8,7 @@ from app.config import config
 from app.config.logger import fed_logger
 from app.dto.message import NetworkTestMessage, IterationFlagMessage, GlobalWeightMessage
 from app.entity.aggregators.base_aggregator import BaseAggregator
-from app.dto.model import Model
+from app.dto.base_model import BaseModel
 from app.entity.communicator import Communicator
 from app.entity.fed_base_node_interface import FedBaseNodeInterface
 from app.entity.http_communicator import HTTPCommunicator
@@ -155,7 +155,7 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
 
         fed_logger.info(str(neighbor) + ' offloading training end')
 
-    def gather_local_weights(self) -> dict[str, Model]:
+    def gather_local_weights(self) -> dict[str, BaseModel]:
         client_local_weights = {}
         for neighbor in self.get_neighbors([NodeType.CLIENT]):
             neighbor_rabbitmq_url = HTTPCommunicator.get_rabbitmq_url(neighbor)
@@ -164,7 +164,7 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
             client_local_weights[str(neighbor)] = msg.weights[0]
         return client_local_weights
 
-    def aggregate(self, client_local_weights: dict[str, Model]) -> None:
+    def aggregate(self, client_local_weights: dict[str, BaseModel]) -> None:
         zero_model = model_utils.zero_init(self.uninet).state_dict()
         w_local_list = self._concat_neighbor_local_weights(client_local_weights)
         aggregated_model = self.aggregator.aggregate(zero_model, w_local_list)
