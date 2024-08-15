@@ -43,7 +43,7 @@ services:
       - "8081:8081"
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-      - ./processed_data/003/003_data.csv:/fed-flow/app/dataset/mobility_data/data.csv
+      - ./processed_data/001/001_data.csv:/fed-flow/app/dataset/mobility_data/data.csv
     deploy:
       resources:
         limits:

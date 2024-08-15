@@ -34,12 +34,6 @@ class NodeCoordinate:
         self.altitude = altitude
         self.seconds_since_start = seconds_since_start
 
-    def update(self, new_latitude: float, new_longitude: float, new_altitude: float, new_seconds_since_start: float):
-        self.latitude = new_latitude
-        self.longitude = new_longitude
-        self.altitude = new_altitude
-        self.seconds_since_start = new_seconds_since_start
-
     def __str__(self):
         return (f"Latitude: {self.latitude}, Longitude: {self.longitude}, "
                 f"Altitude: {self.altitude}, Seconds Since Start: {self.seconds_since_start}")
@@ -107,20 +101,12 @@ class Node:
         }, http.HTTPStatus.OK)
 
     def update_coordinates(self, new_latitude, new_longitude, new_altitude, new_seconds_since_start):
-        if self.node_coordinate is None:
-            self.node_coordinate = NodeCoordinate(
-                latitude=new_latitude,
-                longitude=new_longitude,
-                altitude=new_altitude,
-                seconds_since_start=new_seconds_since_start
-            )
-        else:
-            self.node_coordinate.update(
-                new_latitude=new_latitude,
-                new_longitude=new_longitude,
-                new_altitude=new_altitude,
-                new_seconds_since_start=new_seconds_since_start
-            )
+        self.node_coordinate = NodeCoordinate(
+            latitude=new_latitude,
+            longitude=new_longitude,
+            altitude=new_altitude,
+            seconds_since_start=new_seconds_since_start
+        )
 
     def add_neighbor(self, node_id: NodeIdentifier):
         if node_id not in self._neighbors:
