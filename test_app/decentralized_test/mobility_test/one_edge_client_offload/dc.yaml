@@ -18,12 +18,13 @@ services:
     entrypoint: >
       bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py
       -o True
-      -s fake_decentralized_splitting 
+      -s fake_decentralized_splitting
       --decentralized True
       --ip edge1
       --port 8080
-      --neighbors client1,8081 
-      --rabbitmq-url amqp://rabbitmq:rabbitmq@broker:5672/edge1"
+      --neighbors client1,8081
+      --rabbitmq-url amqp://rabbitmq:rabbitmq@broker:5672/edge1
+      --mobility True"
     ports:
       - "5003:5001"
       - "8080:8080"
@@ -52,12 +53,15 @@ services:
       -s fake_splitting
       --decentralized True
       --neighbors edge1,8080
-      --ip client1 --port 8081
-      --rabbitmq-url amqp://rabbitmq:rabbitmq@broker:5672/client1"
+      --ip client1
+      --port 8081
+      --rabbitmq-url amqp://rabbitmq:rabbitmq@broker:5672/client1
+      --mobility True"
     ports:
       - "8081:8081"
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
+      - ./processed_data/001/001_data.csv:/fed-flow/app/dataset/mobility_data/data.csv
     deploy:
       resources:
         limits:
