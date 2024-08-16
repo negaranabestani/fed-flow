@@ -1,60 +1,16 @@
 import http
 import threading
-from dataclasses import dataclass
-from enum import Enum
 
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.config import config
-
-
-@dataclass
-class NodeIdentifier:
-    ip: str
-    port: int
-
-    def __str__(self):
-        return f"{self.ip}:{self.port}"
-
-    def get_exchange_name(self):
-        return self.__str__()
-
-
-class NodeCoordinate:
-    latitude: float
-    longitude: float
-    altitude: float
-    seconds_since_start: float
-
-    def __init__(self, latitude: float, longitude: float, altitude: float, seconds_since_start: float):
-        self.latitude = latitude
-        self.longitude = longitude
-        self.altitude = altitude
-        self.seconds_since_start = seconds_since_start
-
-    def __str__(self):
-        return (f"Latitude: {self.latitude}, Longitude: {self.longitude}, "
-                f"Altitude: {self.altitude}, Seconds Since Start: {self.seconds_since_start}")
-
-
-class NodeType(Enum):
-    CLIENT = "client"
-    EDGE = "edge"
-    SERVER = "server"
-
-    @classmethod
-    def from_value(cls, value: str) -> 'NodeType':
-        """Get the NodeType enum member from its value"""
-        value = value.lower()
-        for member in cls:
-            if member.value == value:
-                return member
-        raise ValueError(f"No NodeType found for value '{value}'")
 from app.entity.http_communicator import HTTPCommunicator
-from app.entity.node_identifier import NodeIdentifier
+from app.entity.node_coordinate import NodeCoordinate
 from app.entity.node_type import NodeType
+
+from app.entity.node_identifier import NodeIdentifier
 
 
 class Node:
