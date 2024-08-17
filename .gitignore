@@ -12,4 +12,5 @@ app/.DS_Store
 
 #dataset data
 app/dataset/data
+app/dataset/mobility_data/DATA
 venv

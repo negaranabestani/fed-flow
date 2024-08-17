@@ -5,6 +5,7 @@ import time
 import warnings
 
 from app.entity.decentralized_client import DecentralizedClient
+from app.util.mobility_data_utils import start_mobility_simulation_thread
 
 sys.path.append('../../../')
 from app.entity.client import Client
@@ -196,6 +197,8 @@ def run(options_ins):
     offload = options_ins.get('offload')
     edge_based = options_ins.get('edgebased')
     decentralized = options_ins.get('decentralized')
+    mobility = options_ins.get('mobility')
+
     if estimate_energy:
         energy_estimation.init(os.getpid())
 
@@ -206,6 +209,9 @@ def run(options_ins):
     if decentralized:
         client = DecentralizedClient(ip=ip, port=port, model_name=options_ins.get('model'),
                                      dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR)
+        if mobility:
+            start_mobility_simulation_thread(client)
+
     elif edge_based:
         client = Client(ip=ip, port=port,
                         model_name=options_ins.get('model'),

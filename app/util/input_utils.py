@@ -7,6 +7,7 @@ options = {
     '-a': ['--aggregation', 'fed_avg', 'name of the aggregation method'],
     '-e': ['--edgebased', False, 'True if edge servers are available otherwise, False'],
     '-dt': ['--decentralized', False, 'True if running in decentralized mode, False otherwise'],
+    '-mb': ['--mobility', False, 'True if mobility is enabled, False otherwise'],
     '-c': ['--clustering', 'none_clustering', 'name of the clustering method'],
     '-s': ['--splitting', 'none_splitting', 'name of the splitting method'],
     '-m': ['--model', 'VGG', 'class name of the training model'],
@@ -48,6 +49,7 @@ def parse_argument(parser: argparse.ArgumentParser):
     option["offload"] = option.get("offload", "False") == "True"
     option["edgebased"] = option.get("edgebased", "False") == "True"
     option["decentralized"] = option.get("decentralized", "False") == 'True'
+    option["mobility"] = option.get("mobility", "False") == 'True'
     if option["decentralized"] and option["edgebased"]:
         raise argparse.ArgumentTypeError("Decentralized and edgebased cannot be both True")
 
