@@ -173,11 +173,11 @@ def run_decentralized_offload(server: FedDecentralizedEdgeServer, learning_rate,
         fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
         rl_utils.draw_graph(10, 5, rounds, training_times, "Training time", "FL Rounds", "Training Time",
-                            "/fed-flow/Graphs",
+                            "/tmp/fed-flow/Graphs",
                             "trainingTime", True)
-        rl_utils.draw_graph(10, 5, rounds, iot_bw, "iot BW", "FL Rounds", "iot_bw", "/fed-flow/Graphs",
+        rl_utils.draw_graph(10, 5, rounds, iot_bw, "iot BW", "FL Rounds", "iot_bw", "/tmp/fed-flow/Graphs",
                             "iot_bw", True)
-        rl_utils.draw_graph(10, 5, rounds, edge_bw, "edge BW", "FL Rounds", "edge_bw", "/fed-flow/Graphs",
+        rl_utils.draw_graph(10, 5, rounds, edge_bw, "edge BW", "FL Rounds", "edge_bw", "/tmp/fed-flow/Graphs",
                             "edge_bw", True)
 
 
