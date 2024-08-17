@@ -235,3 +235,4 @@ def run(options_ins):
         run_no_edge_offload(client, LR, estimate_energy)
     else:
         run_no_edge(client, LR, estimate_energy)
+    client.stop_server()

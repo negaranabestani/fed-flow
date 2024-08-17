@@ -5,6 +5,7 @@ class NodeType(Enum):
     CLIENT = "client"
     EDGE = "edge"
     SERVER = "server"
+    UNKNOWN = "unknown"
 
     @classmethod
     def from_value(cls, value: str) -> 'NodeType':

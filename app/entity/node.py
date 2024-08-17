@@ -1,9 +1,11 @@
+import atexit
 import http
 import threading
 
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from uvicorn import Server
 
 from app.config import config
 from app.entity.http_communicator import HTTPCommunicator
@@ -28,6 +30,7 @@ class Node:
         self.node_coordinate = None
 
         self._app = FastAPI()
+        self._server: Server
         self._setup_routes()
         self._start_server_in_thread(port)
 
@@ -80,8 +83,13 @@ class Node:
     def get_exchange_name(self) -> str:
         return f"{self.ip}:{self.port}"
 
+    def stop_server(self):
+        self._server.should_exit = True
+
     def _run_server(self, port: int):
-        uvicorn.run(self._app, host="0.0.0.0", port=port)
+        self._server = uvicorn.Server(uvicorn.Config(self._app, host="0.0.0.0", port=port))
+        self._server.run()
+
 
     def _start_server_in_thread(self, port: int):
         if self._server_started:

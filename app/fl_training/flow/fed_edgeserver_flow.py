@@ -216,5 +216,4 @@ def run(options_ins):
             run_offload(edge_server, LR, estimate_energy)
         else:
             run_no_offload(edge_server, LR)
-    # msg = edge_server.recv_msg(config.SERVER_ADDR, message_utils.finish)
-    # edge_server.scatter(msg)
+    edge_server.stop_server()
