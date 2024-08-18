@@ -26,9 +26,7 @@ class DecentralizedClient(FedBaseNodeInterface):
         self.dataset = dataset
         self.train_loader = train_loader
         self.split_layers = None
-        self.net = {}
         self.uninet = model_utils.get_model('Unit', None, self.device, True)
-        # self.uninet = model_utils.get_model('Unit', config.split_layer[config.index], self.device, edge_based)
         self.net = self.uninet
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.SGD(self.net.parameters(), lr=LR, momentum=0.9)

@@ -146,7 +146,8 @@ def run_decentralized_offload(server: FedDecentralizedEdgeServer, learning_rate,
         fed_logger.info("aggregating weights")
         server.aggregate(local_weights)
 
-        fed_logger.info("start gossiping with other edges")
+        fed_logger.info("start gossiping with neighbors")
+        server.gossip_with_neighbors()
 
         e_time = time.time()
 
@@ -172,11 +173,11 @@ def run_decentralized_offload(server: FedDecentralizedEdgeServer, learning_rate,
         fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
         rl_utils.draw_graph(10, 5, rounds, training_times, "Training time", "FL Rounds", "Training Time",
-                            "/fed-flow/Graphs",
+                            "/tmp/fed-flow/Graphs",
                             "trainingTime", True)
-        rl_utils.draw_graph(10, 5, rounds, iot_bw, "iot BW", "FL Rounds", "iot_bw", "/fed-flow/Graphs",
+        rl_utils.draw_graph(10, 5, rounds, iot_bw, "iot BW", "FL Rounds", "iot_bw", "/tmp/fed-flow/Graphs",
                             "iot_bw", True)
-        rl_utils.draw_graph(10, 5, rounds, edge_bw, "edge BW", "FL Rounds", "edge_bw", "/fed-flow/Graphs",
+        rl_utils.draw_graph(10, 5, rounds, edge_bw, "edge BW", "FL Rounds", "edge_bw", "/tmp/fed-flow/Graphs",
                             "edge_bw", True)
 
 
@@ -202,6 +203,7 @@ def run(options_ins):
 
     if decentralized:
         edge_server.add_neighbors(config.CURRENT_NODE_NEIGHBORS)
+        fed_logger.info("neighbors: " + str(config.CURRENT_NODE_NEIGHBORS))
 
     fed_logger.info("start mode: " + str(options_ins.values()))
     if decentralized:
@@ -214,5 +216,4 @@ def run(options_ins):
             run_offload(edge_server, LR, estimate_energy)
         else:
             run_no_offload(edge_server, LR)
-    # msg = edge_server.recv_msg(config.SERVER_ADDR, message_utils.finish)
-    # edge_server.scatter(msg)
+    edge_server.stop_server()
