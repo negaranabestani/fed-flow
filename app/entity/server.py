@@ -280,8 +280,12 @@ class FedServer(FedServerInterface):
         for edge in list(config.EDGE_SERVER_LIST):
             msg = self.recv_msg(exchange=edge,
                                 expect_msg_type=message_utils.energy_tt_edge_to_server(), url=edge)
+            fed_logger.info(f"coming message: {msg[1]}")
             for i in range(len(config.EDGE_MAP[edge])):
                 energy_tt_list.append(msg[1][i])
+        self.client_remaining_energy = []
+        for i in range(len(energy_tt_list)):
+            self.client_remaining_energy.append(energy_tt_list[i][2])
         return energy_tt_list
 
     def c_local_weights(self, client_ips):
@@ -317,6 +321,14 @@ class FedServer(FedServerInterface):
             state.append(self.client_bandwidth[i])
         for i in self.edge_bandwidth:
             state.append(self.edge_bandwidth[i])
+        fed_logger.info(f"remainings: {self.client_remaining_energy}")
+        if len(self.client_remaining_energy) == 0:
+            for i in range(config.K):
+                state.append(0)
+        else:
+            for i in self.client_remaining_energy:
+                state.append(i)
+
         #
         # edge_offloading = []
         # server_offloading = 0

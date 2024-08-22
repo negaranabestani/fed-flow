@@ -50,7 +50,6 @@ class FedClientInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-
     def get_server_global_weights(self):
         pass
 
@@ -95,5 +94,5 @@ class FedClientInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def energy_tt(self, energy, tt):
+    def energy_tt(self, remaining_energy, energy, tt):
         pass

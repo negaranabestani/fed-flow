@@ -140,16 +140,17 @@ class FedEdgeServer(FedEdgeServerInterface):
     def _thread_client_network_testing(self, client_ip):
         network_time_start = time.time()
         msg = [message_utils.test_network_edge_to_client(), self.uninet.cpu().state_dict()]
-        self.send_msg(exchange=client_ip, msg=msg,is_weight=True)
-        msg = self.recv_msg(exchange=client_ip, expect_msg_type=message_utils.test_network_client_to_edge(),is_weight=True)
+        self.send_msg(exchange=client_ip, msg=msg, is_weight=True)
+        msg = self.recv_msg(exchange=client_ip, expect_msg_type=message_utils.test_network_client_to_edge(),
+                            is_weight=True)
         network_time_end = time.time()
-        self.client_bandwidth[client_ip] = data_utils.sizeofmessage(msg)/(network_time_end - network_time_start)
+        self.client_bandwidth[client_ip] = data_utils.sizeofmessage(msg) / (network_time_end - network_time_start)
 
     def test_server_network(self):
         msg = self.recv_msg(exchange=config.EDGE_SERVER_CONFIG[config.index],
-                           expect_msg_type= message_utils.test_server_network_from_server(),is_weight=True)
+                            expect_msg_type=message_utils.test_server_network_from_server(), is_weight=True)
         msg = [message_utils.test_server_network_from_connection(), self.uninet.cpu().state_dict()]
-        self.send_msg(exchange=config.EDGE_SERVER_CONFIG[config.index], msg=msg,is_weight=True)
+        self.send_msg(exchange=config.EDGE_SERVER_CONFIG[config.index], msg=msg, is_weight=True)
 
     def client_network(self):
         """
@@ -195,7 +196,8 @@ class FedEdgeServer(FedEdgeServerInterface):
         for client_ip in client_ips:
             ms = self.recv_msg(client_ip,
                                message_utils.energy_client_to_edge() + "_" + client_ip)
-            energy_tt_list.append([ms[1], ms[2]])
+            fed_logger.info(f"client message: {ms}")
+            energy_tt_list.append([ms[1], ms[2], ms[3]])
         # fed_logger.info(f"sending enery tt {socket.gethostname()}")
         msg = [message_utils.energy_tt_edge_to_server(), energy_tt_list]
         self.send_msg(config.EDGE_SERVER_CONFIG[config.index], msg)

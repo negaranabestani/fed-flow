@@ -24,6 +24,7 @@ class FedServerInterface(ABC, Communicator):
         self.split_layers = None
         # self.state = None
         self.client_bandwidth = {}
+        self.client_remaining_energy = []
         self.edge_bandwidth = {}
         self.dataset = dataset
         self.threads = None

@@ -53,8 +53,10 @@ def run_edge_based(client: FedClientInterface, LR):
         energy = float(energy_estimation.energy())
         # energy /= batch_num
         fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}")
-        client.energy_tt(energy, tt)
-        fed_logger.info(Fore.MAGENTA+f"remaining energy: {energy_estimation.remaining_energy()}")
+        remaining_energy = float(energy_estimation.remaining_energy())
+        fed_logger.info(Fore.MAGENTA + f"remaining energy: {remaining_energy}")
+        client.energy_tt(remaining_energy,energy, tt)
+
         # final.append(energy)
 
         if r > 49:
@@ -141,7 +143,6 @@ def run_no_edge(client: FedClientInterface, LR):
         client.no_offloading_train()
         fed_logger.info("sending local weights")
         client.send_local_weights_to_server()
-
 
         tt = time.time()
         fed_logger.info('ROUND: {} END'.format(r))

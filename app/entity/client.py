@@ -46,17 +46,20 @@ class Client(FedClientInterface):
         """
         send message to test network speed
         """
-        msg = self.recv_msg(exchange=config.CLIENTS_INDEX[config.index], expect_msg_type=message_utils.test_server_network_from_server(),is_weight=True)[1]
+        msg = self.recv_msg(exchange=config.CLIENTS_INDEX[config.index],
+                            expect_msg_type=message_utils.test_server_network_from_server(), is_weight=True)[1]
         fed_logger.info("test network received")
         msg = [message_utils.test_server_network_from_connection(), self.uninet.cpu().state_dict()]
-        self.send_msg(exchange=config.CLIENTS_INDEX[config.index], msg=msg,is_weight=True)
+        self.send_msg(exchange=config.CLIENTS_INDEX[config.index], msg=msg, is_weight=True)
         fed_logger.info("test network sent")
         return msg
+
     def edge_test_network(self):
         """
         send message to test network speed
         """
-        msg = self.recv_msg(exchange=config.CLIENTS_INDEX[config.index], expect_msg_type=message_utils.test_network_edge_to_client(),is_weight=True)[1]
+        msg = self.recv_msg(exchange=config.CLIENTS_INDEX[config.index],
+                            expect_msg_type=message_utils.test_network_edge_to_client(), is_weight=True)[1]
 
         fed_logger.info("test network received")
         msg = [message_utils.test_network_client_to_edge(), self.uninet.cpu().state_dict()]
@@ -226,6 +229,7 @@ class Client(FedClientInterface):
             self.optimizer.step()
             computation_end()
 
-    def energy_tt(self, energy, tt):
-        msg = [message_utils.energy_client_to_edge() + '_' + socket.gethostname(), energy, tt]
+    def energy_tt(self, remaining_energy, energy, tt):
+        msg = [message_utils.energy_client_to_edge() + '_' + socket.gethostname(), energy, tt, remaining_energy]
+        fed_logger.info(f"check message in client: {msg}")
         self.send_msg(config.CLIENTS_INDEX[config.index], msg)
