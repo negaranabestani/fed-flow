@@ -1,8 +1,8 @@
 import os
 import sys
 
+from app.entity.node import NodeIdentifier
 from app.entity.node_coordinate import NodeCoordinate
-from app.entity.node_identifier import NodeIdentifier
 
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 CLIENTS_BANDWIDTH = []
@@ -14,9 +14,9 @@ home = sys.path[0].split('fed-flow')[0] + 'fed-flow' + "/app"
 dataset_path = home + '/dataset/data/'
 N = 100  # data # length
 
-mq_url = "amqp://rabbitmq:rabbitmq@localhost:5672/"
+mq_url = "amqp://rabbitmq:rabbitmq@broker:5672/%2F"
 current_node_mq_url = "Will be set by input options"
-mq_host = "localhost"
+mq_host = "broker"
 mq_user = "rabbitmq"
 mq_pass = "rabbitmq"
 mq_port = "5672"
@@ -36,6 +36,9 @@ model_flops = 32.902
 total_flops = 8488192
 # split_layer = [6]  # Initial split layers for no edge base
 split_layer = [[6, 6]]  # Initial split layers
+# split_layer_by_edge = {  # Initial split layers for decentralized
+#     'edge1': [6]
+# }
 model_len = 7
 
 # FL training configration
@@ -88,3 +91,6 @@ SERVER_INDEX_TO_NAME = {0: 'server1'}
 # Topology configration for decentralized mode
 CURRENT_NODE_NEIGHBORS: list[NodeIdentifier] = []  # (ip, port)
 INITIAL_NODE_COORDINATE = NodeCoordinate
+
+
+

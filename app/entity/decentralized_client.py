@@ -1,5 +1,9 @@
+import threading
+import time
+
 import torch
 import torch.nn as nn
+from geopy.distance import geodesic
 from torch import optim
 from tqdm import tqdm
 
@@ -8,7 +12,10 @@ from app.dto.message import GlobalWeightMessage, NetworkTestMessage, SplitLayerC
 from app.dto.received_message import ReceivedMessage
 from app.entity.communicator import Communicator
 from app.entity.fed_base_node_interface import FedBaseNodeInterface
+from app.entity.http_communicator import HTTPCommunicator
+from app.entity.mobility_manager import MobilityManager
 from app.entity.node import Node
+from app.entity.node_identifier import NodeIdentifier
 from app.entity.node_type import NodeType
 from app.util import model_utils
 
@@ -31,6 +38,7 @@ class DecentralizedClient(FedBaseNodeInterface):
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.SGD(self.net.parameters(), lr=LR, momentum=0.9)
         self.edge_based = False
+        self.mobility_manager = MobilityManager(self)
 
     def initialize(self, split_layer, LR):
 
