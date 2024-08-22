@@ -213,8 +213,8 @@ def run(options_ins):
 
         if mobility:
             start_mobility_simulation_thread(client)
-            client.mobility_manager.discover_edges()
-            client.mobility_manager.monitor_and_migrate()
+            # client.mobility_manager.discover_edges()
+            # client.mobility_manager.monitor_and_migrate()
 
     elif edge_based:
         client = Client(ip=ip, port=port,

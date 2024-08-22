@@ -91,7 +91,7 @@ services:
       --decentralized True
       --ip client1
       --port 8081
-      --neighbors edge1,8079 client3,8083
+      --neighbors edge1,8079
       --mobility True
       --rabbitmq-url amqp://rabbitmq:rabbitmq@broker:5672/client1"
     ports:
@@ -110,7 +110,7 @@ services:
       --decentralized True
       --ip client2
       --port 8082
-      --neighbors edge2,8080 client4,8084
+      --neighbors edge2,8080
       --mobility True
       --rabbitmq-url amqp://rabbitmq:rabbitmq@broker:5672/client2"
     ports:
@@ -129,7 +129,7 @@ services:
       --decentralized True
       --ip client3
       --port 8083
-      --neighbors client1,8081 edge1,8079
+      --neighbors edge1,8079
       --mobility True
       --rabbitmq-url amqp://rabbitmq:rabbitmq@broker:5672/client3"
     ports:
@@ -148,7 +148,7 @@ services:
       --decentralized True
       --ip client4
       --port 8084
-      --neighbors client2,8082 edge2,8080
+      --neighbors edge2,8080
       --mobility True
       --rabbitmq-url amqp://rabbitmq:rabbitmq@broker:5672/client4"
     ports:
