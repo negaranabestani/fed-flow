@@ -187,3 +187,11 @@ class FedServerInterface(ABC, Communicator):
     @abstractmethod
     def edge_based_state(self):
         pass
+
+    @abstractmethod
+    def client_attendance(self, client_ips):
+        pass
+
+    @abstractmethod
+    def e_client_attendance(self, client_ips):
+        pass

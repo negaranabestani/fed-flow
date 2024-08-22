@@ -105,3 +105,6 @@ class FedEdgeServerInterface(ABC, Communicator):
     @abstractmethod
     def no_offload_global_weights(self):
         pass
+    @abstractmethod
+    def client_attendance(self,client_ips):
+        pass

@@ -56,6 +56,7 @@ def run_edge_based(client: FedClientInterface, LR):
         remaining_energy = float(energy_estimation.remaining_energy())
         fed_logger.info(Fore.MAGENTA + f"remaining energy: {remaining_energy}")
         client.energy_tt(remaining_energy,energy, tt)
+        client.e_next_round_attendance(remaining_energy)
 
         # final.append(energy)
 
@@ -92,6 +93,9 @@ def run_no_offload_edge(client: FedClientInterface, LR):
         energy = float(energy_estimation.energy())
         # energy /= batch_num
         fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}")
+        remaining_energy = float(energy_estimation.remaining_energy())
+        fed_logger.info(Fore.MAGENTA + f"remaining energy: {remaining_energy}")
+        client.e_next_round_attendance(remaining_energy)
 
 
 def run_no_edge_offload(client: FedClientInterface, LR):
@@ -127,6 +131,9 @@ def run_no_edge_offload(client: FedClientInterface, LR):
         energy = float(energy_estimation.energy())
         # energy /= batch_num
         fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}")
+        remaining_energy = float(energy_estimation.remaining_energy())
+        fed_logger.info(Fore.MAGENTA + f"remaining energy: {remaining_energy}")
+        client.next_round_attendance(remaining_energy)
 
 
 def run_no_edge(client: FedClientInterface, LR):
@@ -152,7 +159,11 @@ def run_no_edge(client: FedClientInterface, LR):
             LR = config.LR * 0.1
 
         energy = float(energy_estimation.energy())
-        fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt - st}")
+        # energy /= batch_num
+        fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}")
+        remaining_energy = float(energy_estimation.remaining_energy())
+        fed_logger.info(Fore.MAGENTA + f"remaining energy: {remaining_energy}")
+        client.next_round_attendance(remaining_energy)
 
 
 def run(options_ins):

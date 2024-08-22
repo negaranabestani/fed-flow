@@ -96,3 +96,11 @@ class FedClientInterface(ABC, Communicator):
     @abstractmethod
     def energy_tt(self, remaining_energy, energy, tt):
         pass
+
+    @abstractmethod
+    def next_round_attendance(self, remaining_energy):
+        pass
+
+    @abstractmethod
+    def e_next_round_attendance(self, remaining_energy):
+        pass

@@ -360,3 +360,37 @@ class FedServer(FedServerInterface):
         data.append(total_tt)
         data.extend(tt)
         return data
+
+    def e_client_attendance(self, client_ips):
+        """
+        Returns: average energy consumption of clients
+        """
+        attend = {}
+        for edge in list(config.EDGE_SERVER_LIST):
+            msg = self.recv_msg(exchange=edge,
+                                expect_msg_type=message_utils.client_quit_edge_to_server(), url=edge)
+            attend.update(msg[1])
+
+        for client_ip in client_ips:
+            if attend[client_ip] == False:
+                config.CLIENTS_LIST.remove(client_ip)
+                config.K -= 1
+
+
+
+    def client_attendance(self, client_ips):
+        attend = {}
+        for i in range(len(client_ips)):
+            msg = self.recv_msg(client_ips[i],
+                                message_utils.client_quit_client_to_server())
+            attend.update({client_ips[i], msg[1]})
+            msg = [message_utils.client_quit_done(), True]
+            self.send_msg(client_ips[i], msg)
+
+        for client_ip in client_ips:
+            if attend[client_ip] == False:
+                config.CLIENTS_LIST.remove(client_ip)
+                config.K -= 1
+                config.S -= 1
+
+

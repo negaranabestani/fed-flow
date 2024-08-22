@@ -21,36 +21,42 @@ def run_offload(server: FedEdgeServerInterface, LR):
     res['trianing_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
     client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
     for r in range(config.R):
-        config.current_round = r
-        fed_logger.info('====================================>')
-        fed_logger.info('==> Round {:} Start'.format(config.current_round))
-        fed_logger.info("receiving global weights")
-        server.global_weights(client_ips)
-        fed_logger.info("test clients network")
-        server.test_client_network(client_ips)
-        fed_logger.info("sending clients network")
-        server.client_network()
-        fed_logger.info("test server network")
-        server.test_server_network()
-        fed_logger.info("receiving and sending splitting info")
-        server.get_split_layers_config(client_ips)
-        fed_logger.info("initializing server")
-        server.initialize(server.split_layers, LR, client_ips)
-        threads = {}
-        fed_logger.info("start training")
-        for i in range(len(client_ips)):
-            threads[client_ips[i]] = threading.Thread(target=server.thread_offload_training,
-                                                      args=(client_ips[i],), name=client_ips[i])
-            threads[client_ips[i]].start()
+        fed_logger.info(f" left clients {config.CLIENTS_LIST}")
+        if len(config.CLIENTS_LIST)>0:
+            config.current_round = r
+            fed_logger.info('====================================>')
+            fed_logger.info('==> Round {:} Start'.format(config.current_round))
+            fed_logger.info("receiving global weights")
+            server.global_weights(client_ips)
+            fed_logger.info("test clients network")
+            server.test_client_network(client_ips)
+            fed_logger.info("sending clients network")
+            server.client_network()
+            fed_logger.info("test server network")
+            server.test_server_network()
+            fed_logger.info("receiving and sending splitting info")
+            server.get_split_layers_config(client_ips)
+            fed_logger.info("initializing server")
+            server.initialize(server.split_layers, LR, client_ips)
+            threads = {}
+            fed_logger.info("start training")
+            for i in range(len(client_ips)):
+                threads[client_ips[i]] = threading.Thread(target=server.thread_offload_training,
+                                                          args=(client_ips[i],), name=client_ips[i])
+                threads[client_ips[i]].start()
 
-        for i in range(len(client_ips)):
-            threads[client_ips[i]].join()
-        server.energy(client_ips)
-        if r > 49:
-            LR = config.LR * 0.1
-        # energy = float(energy_estimation.energy())
-        # energy /= batch_num
-        # fed_logger.info(Fore.LIGHTBLUE_EX + f"Energy : {energy}")
+            for i in range(len(client_ips)):
+                threads[client_ips[i]].join()
+            server.energy(client_ips)
+            if r > 49:
+                LR = config.LR * 0.1
+            server.client_attendance(client_ips)
+            # energy = float(energy_estimation.energy())
+            # energy /= batch_num
+            # fed_logger.info(Fore.LIGHTBLUE_EX + f"Energy : {energy}")
+        else:
+            break
+    fed_logger.info(f"{socket.gethostname()} quit")
 
 
 def run_no_offload(server: FedEdgeServerInterface, LR):
@@ -59,28 +65,33 @@ def run_no_offload(server: FedEdgeServerInterface, LR):
     res['trianing_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
     client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
     for r in range(config.R):
-        config.current_round = r
-        fed_logger.info('====================================>')
-        fed_logger.info('==> Round {:} Start'.format(r))
-        fed_logger.info("receiving global weights")
-        server.no_offload_global_weights()
-        # fed_logger.info("test clients network")
-        # server.test_client_network(client_ips)
-        # fed_logger.info("sending clients network")
-        # server.client_network()
-        # fed_logger.info("test server network")
-        # server.test_server_network()
-        threads = {}
-        fed_logger.info("start training")
-        for i in range(len(client_ips)):
-            threads[client_ips[i]] = threading.Thread(target=server.thread_no_offload_training,
-                                                      args=(client_ips[i],), name=client_ips[i])
-            threads[client_ips[i]].start()
+        if len(config.CLIENTS_LIST)>0:
+            config.current_round = r
+            fed_logger.info('====================================>')
+            fed_logger.info('==> Round {:} Start'.format(r))
+            fed_logger.info("receiving global weights")
+            server.no_offload_global_weights()
+            # fed_logger.info("test clients network")
+            # server.test_client_network(client_ips)
+            # fed_logger.info("sending clients network")
+            # server.client_network()
+            # fed_logger.info("test server network")
+            # server.test_server_network()
+            threads = {}
+            fed_logger.info("start training")
+            for i in range(len(client_ips)):
+                threads[client_ips[i]] = threading.Thread(target=server.thread_no_offload_training,
+                                                          args=(client_ips[i],), name=client_ips[i])
+                threads[client_ips[i]].start()
 
-        for i in range(len(client_ips)):
-            threads[client_ips[i]].join()
-        if r > 49:
-            LR = config.LR * 0.1
+            for i in range(len(client_ips)):
+                threads[client_ips[i]].join()
+            if r > 49:
+                LR = config.LR * 0.1
+            server.client_attendance(client_ips)
+        else:
+            break
+    fed_logger.info(f"{socket.gethostname()} quit")
 
 
 def run(options_ins):
