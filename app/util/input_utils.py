@@ -1,5 +1,6 @@
 import argparse
 from app.config import config
+from app.entity.node_coordinate import NodeCoordinate
 from app.entity.node_identifier import NodeIdentifier
 from app.util import model_utils
 
@@ -32,6 +33,17 @@ def parse_neighbors(s) -> NodeIdentifier:
         raise argparse.ArgumentTypeError("Tuples must be string,int")
 
 
+def parse_coordinates(s) -> NodeCoordinate:
+    try:
+        parts = s.split(',')
+        latitude = float(parts[0].strip().strip("'\""))
+        longitude = float(parts[1].strip().strip("'\""))
+        altitude = float(parts[2].strip().strip("'\""))
+        return NodeCoordinate(latitude, longitude, altitude, seconds_since_start=0)
+    except:
+        raise argparse.ArgumentTypeError("Coordinates must be 'latitude,longitude,altitude'")
+
+
 def parse_argument(parser: argparse.ArgumentParser):
     """
     Args:
@@ -44,6 +56,10 @@ def parse_argument(parser: argparse.ArgumentParser):
     parser.add_argument('-p', '--port', type=int, help='Port number of the node', default=8080)
     parser.add_argument('--neighbors', type=parse_neighbors, nargs='+',
                         help='A list of neighbors in the format "string,int"', default=[])
+
+    parser.add_argument('--coordinates', type=parse_coordinates,
+                        help='Optional coordinates in the format "latitude,longitude,altitude"', default=None)
+
     args = parser.parse_args()
     option = vars(args)
     option["offload"] = option.get("offload", "False") == "True"
@@ -56,6 +72,10 @@ def parse_argument(parser: argparse.ArgumentParser):
     neighbors = option.get("neighbors")
     if neighbors:
         config.CURRENT_NODE_NEIGHBORS = neighbors
+
+    coordinates = option.get("coordinates")
+    if coordinates:
+        config.INITIAL_NODE_COORDINATE = coordinates
 
     config.current_node_mq_url = option["rabbitmq_url"]
     config.dataset_name = option.get('dataset')

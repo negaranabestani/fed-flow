@@ -209,8 +209,12 @@ def run(options_ins):
     if decentralized:
         client = DecentralizedClient(ip=ip, port=port, model_name=options_ins.get('model'),
                                      dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR)
+        client.add_neighbors(config.CURRENT_NODE_NEIGHBORS)
+
         if mobility:
             start_mobility_simulation_thread(client)
+            # client.mobility_manager.discover_edges()
+            # client.mobility_manager.monitor_and_migrate()
 
     elif edge_based:
         client = Client(ip=ip, port=port,
@@ -221,9 +225,6 @@ def run(options_ins):
         client = Client(ip=ip, port=port, model_name=options_ins.get('model'),
                         dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                         )
-
-    if decentralized:
-        client.add_neighbors(config.CURRENT_NODE_NEIGHBORS)
 
     if decentralized and offload:
         run_offload_decentralized(client, LR)

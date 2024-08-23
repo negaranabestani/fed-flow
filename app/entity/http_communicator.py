@@ -9,7 +9,7 @@ from app.entity.node_identifier import NodeIdentifier
 
 class HTTPCommunicator:
     MAX_RETRIES = 5
-    WAIT_DURATION_SECONDS = 5
+    WAIT_DURATION_SECONDS = 20
 
     @staticmethod
     def _wait_for_neighbor_to_get_ready(node_identifier: NodeIdentifier):
@@ -51,3 +51,41 @@ class HTTPCommunicator:
         else:
             raise Exception(
                 f"Failed to get coordinates for node {node_identifier}, status code: {response.status_code}")
+
+            raise Exception(
+                f"Failed to get coordinates for node {node_identifier}, status code: {response.status_code}")
+
+    @staticmethod
+    def get_neighbors_from_neighbor(neighbor: NodeIdentifier):
+        HTTPCommunicator._wait_for_neighbor_to_get_ready(neighbor)
+        request_url = f"http://{neighbor.ip}:{neighbor.port}/get-neighbors-info"
+        response = requests.get(request_url)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise Exception(
+                f"Failed to fetch neighbors from {neighbor}, status code: {response.status_code}")
+
+    @staticmethod
+    def add_neighbor(node_identifier: NodeIdentifier, neighbor_ip: str, neighbor_port: int):
+        HTTPCommunicator._wait_for_neighbor_to_get_ready(node_identifier)
+        request_url = f"http://{node_identifier.ip}:{node_identifier.port}/add-neighbor"
+        payload = {"ip": neighbor_ip, "port": neighbor_port}
+        response = requests.post(request_url, json=payload)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise Exception(
+                f"Failed to add neighbor to node {node_identifier}, status code: {response.status_code}, message: {response.text}")
+
+    @staticmethod
+    def remove_neighbor(node_identifier: NodeIdentifier, neighbor_ip: str, neighbor_port: int):
+        HTTPCommunicator._wait_for_neighbor_to_get_ready(node_identifier)
+        request_url = f"http://{node_identifier.ip}:{node_identifier.port}/remove-neighbor"
+        payload = {"ip": neighbor_ip, "port": neighbor_port}
+        response = requests.post(request_url, json=payload)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise Exception(
+                f"Failed to remove neighbor from node {node_identifier}, status code: {response.status_code}, message: {response.text}")
