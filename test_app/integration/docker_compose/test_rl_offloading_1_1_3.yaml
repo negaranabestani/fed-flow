@@ -4,7 +4,7 @@ services:
       - ./config.py:/fed-flow/app/config/config.py
       - ./../../../Graphs:/fed-flow/Graphs
       - ./../../../app/logs:/fed-flow/app/logs
-    image: negaranabestani/fedflow:rabbitmq
+    image: autlpdslab/fedflow:rabbitmq
     ports:
       - "5002:5002"
     hostname: server
@@ -19,7 +19,7 @@ services:
     working_dir: /fed-flow/app/fl_training/runner
     depends_on:
       - broker
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py -o True -s fake_splitting -e True "
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py -o True -s edge_base_rl_splitting -e True "
 
   broker:
     image: rabbitmq:3.13-management
@@ -34,7 +34,7 @@ services:
   edge1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: negaranabestani/fedflow:rabbitmq
+    image: autlpdslab/fedflow:rabbitmq
     ports:
       - "5001:5001"
     hostname: edge1
@@ -50,12 +50,12 @@ services:
     depends_on:
       - server
       - broker
-    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -o True -s fake_splitting -e True & python3 /fed-flow/energy/service.py & wait -n"
+    entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_edgeserver_run.py -o True -s edge_base_rl_splitting -e True & python3 /fed-flow/energy/service.py & wait -n"
 
   client1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: negaranabestani/fedflow:rabbitmq
+    image: autlpdslab/fedflow:rabbitmq
     hostname: client1
     deploy:
       resources:
@@ -70,12 +70,12 @@ services:
       - server
       - broker
       - edge1
-    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s fake_splitting -e True & wait -n"
+    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s edge_base_rl_splitting -e True & wait -n"
 
   client2:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: negaranabestani/fedflow:rabbitmq
+    image: autlpdslab/fedflow:rabbitmq
     hostname: client2
     deploy:
       resources:
@@ -90,12 +90,12 @@ services:
       - server
       - broker
       - edge1
-    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 1 -o True -s fake_splitting -e True & wait -n"
+    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 1 -o True -s edge_base_rl_splitting -e True & wait -n"
 
   client3:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: negaranabestani/fedflow:rabbitmq
+    image: autlpdslab/fedflow:rabbitmq
     hostname: client3
     deploy:
       resources:
@@ -110,4 +110,4 @@ services:
       - server
       - broker
       - edge1
-    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 2 -o True -s fake_splitting -e True & wait -n"
+    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 2 -o True -s edge_base_rl_splitting -e True & wait -n"
