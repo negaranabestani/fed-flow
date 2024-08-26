@@ -1,17 +1,20 @@
-import subprocess
+import random
 
 import numpy as np
 import torch
-import random
+from stable_baselines3 import PPO, DDPG
 
 from app.config import config
+from app.config.logger import fed_logger
+from app.rl_training.withBandwidth import CustomEnv
 # from app.model.entity.rl_model import PPO
 from app.util import model_utils, rl_utils
-from stable_baselines3 import PPO, A2C
 
 
 def edge_based_rl_splitting(state, labels):
-    agent = PPO.load(path='/fed-flow/app/agent/38.zip', env=None)
+    env = CustomEnv()
+    agent = DDPG.load('/fed-flow/app/agent/160.zip', env=CustomEnv(),
+                      custom_objects={'observation_space': env.observation_space, 'action_space': env.action_space})
     floatAction = agent.predict(observation=state, deterministic=True)
     actions = []
     for i in range(0, len(floatAction), 2):
