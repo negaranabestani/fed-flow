@@ -6,13 +6,12 @@ from stable_baselines3 import PPO, DDPG
 
 from app.config import config
 from app.config.logger import fed_logger
-from app.rl_training.withBandwidth import CustomEnv
 # from app.model.entity.rl_model import PPO
 from app.util import model_utils, rl_utils
 
 
 def edge_based_rl_splitting(state, labels):
-    env = CustomEnv()
+    env = rl_utils.CustomEnv()
     agent = DDPG.load('/fed-flow/app/agent/160.zip', env=env,
                       custom_objects={'observation_space': env.observation_space, 'action_space': env.action_space})
     floatAction, _ = agent.predict(observation=state, deterministic=True)
