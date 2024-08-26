@@ -161,7 +161,6 @@ def actionToLayerEdgeBase(splitDecision: list[float]) -> tuple[float, float]:
     op2: float  # Offloading points op1, op2
     workLoad = []
     model_state_flops = []
-    splitDecision = splitDecision[0]
     for l in model_utils.get_unit_model().cfg:
         workLoad.append(l[5])
         model_state_flops.append(sum(workLoad))

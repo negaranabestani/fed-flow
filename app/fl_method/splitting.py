@@ -13,9 +13,9 @@ from app.util import model_utils, rl_utils
 
 def edge_based_rl_splitting(state, labels):
     env = CustomEnv()
-    agent = DDPG.load('/fed-flow/app/agent/160.zip', env=CustomEnv(),
+    agent = DDPG.load('/fed-flow/app/agent/160.zip', env=env,
                       custom_objects={'observation_space': env.observation_space, 'action_space': env.action_space})
-    floatAction = agent.predict(observation=state, deterministic=True)
+    floatAction, _ = agent.predict(observation=state, deterministic=True)
     actions = []
     for i in range(0, len(floatAction), 2):
         actions.append([rl_utils.actionToLayerEdgeBase([floatAction[i], floatAction[i + 1]])[0],
