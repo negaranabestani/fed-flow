@@ -1,6 +1,6 @@
 import logging
 
-init_energy = 1
+init_energy = 25
 tx_power = 0.15849
 power = 15
 counter = 0

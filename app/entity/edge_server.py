@@ -239,6 +239,8 @@ class FedEdgeServer(FedEdgeServerInterface):
         for client_ip in client_ips:
             ms = self.recv_msg(client_ip,
                                message_utils.client_quit_client_to_edge() + "_" + client_ip)
+            msg = [message_utils.client_quit_done(), True]
+            self.send_msg(client_ip, msg)
             attend[client_ip] = ms[1]
             if ms[1] == False:
                 config.K -= 1
@@ -251,5 +253,4 @@ class FedEdgeServer(FedEdgeServerInterface):
         # fed_logger.info(f"sending enery tt {socket.gethostname()}")
         msg = [message_utils.client_quit_edge_to_server(), attend]
         self.send_msg(config.EDGE_SERVER_CONFIG[config.index], msg)
-        msg = [message_utils.client_quit_done(), True]
-        self.send_msg(client_ip, msg)
+
