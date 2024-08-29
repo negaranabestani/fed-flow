@@ -1,11 +1,10 @@
-import os
-import pickle
 import sys
 import threading
 import time
 
 from app.entity.aggregators.factory import create_aggregator
 from app.entity.decentralized_edge_server import FedDecentralizedEdgeServer
+from app.entity.http_communicator import HTTPCommunicator
 from app.entity.node_type import NodeType
 from app.util import rl_utils, model_utils
 
@@ -91,10 +90,10 @@ def run_no_offload(server: FedEdgeServer, LR):
 
 def run_decentralized_offload(server: FedDecentralizedEdgeServer, learning_rate, options: dict):
     server.initialize(learning_rate)
-    iot_bw, edge_bw = [], []
+    client_bw, edge_bw = [], []
     training_times = []
     rounds = []
-    res = {'training_time': [], 'test_acc_record': [], 'bandwidth_record': []}
+    accuracy = []
     for r in range(config.R):
         config.current_round = r
         rounds.append(r)
@@ -112,28 +111,27 @@ def run_decentralized_offload(server: FedDecentralizedEdgeServer, learning_rate,
         fed_logger.info("clustering")
         server.cluster(options)
 
-        fed_logger.info("getting state")
-        state = server.get_state()
-        fed_logger.info(f"STATE : {state}")
-        normalized_state = []
-        for bw in state:
-            if r < 50:
-                normalized_state.append(bw / 100_000_000)
-            else:
-                normalized_state.append(bw / 10_000_000)
-        iot_bw.append(normalized_state[0])
-        edge_bw.append(normalized_state[0])  # FIXME
+        fed_logger.info("getting neighbors bandwidth")
+        neighbors_bandwidth = server.get_neighbors_bandwidth()
+        fed_logger.info(f"NEIGHBORS BANDWIDTH : {neighbors_bandwidth}")
+        neighbors_bandwidth_by_type: dict[NodeType, list[float]] = {}
+        for neighbor, bw in neighbors_bandwidth.items():
+            neighbor_type = HTTPCommunicator.get_node_type(neighbor)
+            if neighbor_type not in neighbors_bandwidth_by_type:
+                neighbors_bandwidth_by_type[neighbor_type] = []
+            neighbors_bandwidth_by_type[neighbor_type].append(bw.bandwidth)
+        client_bw.append(
+            sum(neighbors_bandwidth_by_type[NodeType.CLIENT]) / len(neighbors_bandwidth_by_type[NodeType.CLIENT]))
+        edge_bw.append(
+            sum(neighbors_bandwidth_by_type[NodeType.EDGE]) / len(neighbors_bandwidth_by_type[NodeType.EDGE]))
 
         fed_logger.info("splitting")
-        server.split(normalized_state, options)
+        server.split(neighbors_bandwidth_by_type[NodeType.CLIENT], options)
         fed_logger.info(f"Split Config : {server.split_layers}")
         server.scatter_split_layers()
 
-        if r > 49:
-            learning_rate = config.LR * 0.1
-
         fed_logger.info("initializing server")
-        server.initialize(learning_rate)
+        # server.initialize(learning_rate * (0.1 ** (r // 10)))
 
         # fed_logger.info('==> Reinitialization Finish')
 
@@ -155,30 +153,31 @@ def run_decentralized_offload(server: FedDecentralizedEdgeServer, learning_rate,
         training_time = e_time - s_time
         training_times.append(training_time)
 
-        res['training_time'].append(training_time)
-        res['bandwidth_record'].append(server.bandwidth())
-
-        directory = os.path.join(config.home, 'results')
-        file_path = os.path.join(directory, 'FedAdapt_res.pkl')
-        os.makedirs(directory, exist_ok=True)
-        with open(file_path, 'wb') as f:
-            pickle.dump(res, f)
-
         fed_logger.info("testing accuracy")
         test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
-        res['test_acc_record'].append(test_acc)
-
+        fed_logger.info(f"Test Accuracy : {test_acc}")
+        accuracy.append(test_acc)
         fed_logger.info('Round Finish')
         fed_logger.info('==> Round {:} End'.format(r + 1))
         fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
-        rl_utils.draw_graph(10, 5, rounds, training_times, "Training time", "FL Rounds", "Training Time",
-                            "/tmp/fed-flow/Graphs",
-                            "trainingTime", True)
-        rl_utils.draw_graph(10, 5, rounds, iot_bw, "iot BW", "FL Rounds", "iot_bw", "/tmp/fed-flow/Graphs",
-                            "iot_bw", True)
-        rl_utils.draw_graph(10, 5, rounds, edge_bw, "edge BW", "FL Rounds", "edge_bw", "/tmp/fed-flow/Graphs",
-                            "edge_bw", True)
+    current_time = time.strftime("%Y-%m-%d %H:%M")
+    runtime_config = f'{config.N} {learning_rate} {current_time}'
+    rl_utils.draw_graph(10, 5, rounds, training_times, f"Edge {str(server)} Training time", "FL Rounds",
+                        "Training Time (s)",
+                        f"/tmp/fed-flow/Graphs/{runtime_config}",
+                        f"trainingTime-{str(server)}", True)
+    rl_utils.draw_graph(10, 5, rounds, client_bw, f"Edge {str(server)} Average clients BW", "FL Rounds",
+                        "clients BW (bytes / s)",
+                        f"/tmp/fed-flow/Graphs/{runtime_config}",
+                        f"client_bw-{str(server)}", True)
+    rl_utils.draw_graph(10, 5, rounds, edge_bw, f"Edge {str(server)} Average edges BW", "FL Rounds",
+                        "edges BW (bytes / s)",
+                        f"/tmp/fed-flow/Graphs/{runtime_config}",
+                        f"edge_bw-{str(server)}", True)
+    rl_utils.draw_graph(10, 5, rounds, accuracy, f"Edge {str(server)} Accuracy", "FL Rounds", "accuracy",
+                        f"/tmp/fed-flow/Graphs/{runtime_config}",
+                        f"accuracy-{str(server)}", True)
 
 
 def run_decentralized_no_offload(server: FedEdgeServer, LR):

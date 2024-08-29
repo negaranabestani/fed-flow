@@ -169,15 +169,12 @@ def run_offload_decentralized(client: DecentralizedClient, learning_rate):
         client.gather_split_config()
         fed_logger.info("initializing client")
 
-        client.initialize(client.split_layers, learning_rate)
+        client.initialize(client.split_layers, learning_rate * (0.1 ** (r // 10)))
         fed_logger.info("start training")
         client.start_offloading_train()
         fed_logger.info("sending local weights")
         client.scatter_local_weights()
         fed_logger.info('ROUND: {} END'.format(r + 1))
-
-        if r > 49:
-            learning_rate = config.LR * 0.1
 
 
 def run(options_ins):
@@ -235,4 +232,5 @@ def run(options_ins):
         run_no_edge_offload(client, LR, estimate_energy)
     else:
         run_no_edge(client, LR, estimate_energy)
+    time.sleep(10)
     client.stop_server()

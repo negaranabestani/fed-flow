@@ -6,6 +6,7 @@ from torch import optim, nn, multiprocessing
 
 from app.config import config
 from app.config.logger import fed_logger
+from app.dto.bandwidth import BandWidth
 from app.dto.message import NetworkTestMessage, IterationFlagMessage, GlobalWeightMessage
 from app.entity.aggregators.base_aggregator import BaseAggregator
 from app.dto.base_model import BaseModel
@@ -46,7 +47,7 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
 
             self.testset = data_utils.get_testset()
             self.testloader = data_utils.get_testloader(self.testset, 0)
-        self.neighbor_bandwidth = {}
+        self.neighbor_bandwidth: dict[NodeIdentifier, BandWidth] = {}
         self.optimizers = None
         self.split_layers = {}
 
@@ -93,17 +94,14 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
                                                 NetworkTestMessage.MESSAGE_TYPE)
         fed_logger.info("server test network received")
         network_time_end = time.time()
-        self.neighbor_bandwidth[str(neighbor)] = data_utils.sizeofmessage(msg.weights) / (
-                network_time_end - network_time_start)
+        self.neighbor_bandwidth[neighbor] = BandWidth(data_utils.sizeofmessage(msg.weights),
+                                                      network_time_end - network_time_start)
 
     def cluster(self, options: dict):
         self.group_labels = fl_method_parser.fl_methods.get(options.get('clustering'))()
 
-    def get_state(self):
-        state = []
-        for neighbor in self.get_neighbors():
-            state.append(self.neighbor_bandwidth[str(neighbor)])
-        return state
+    def get_neighbors_bandwidth(self) -> dict[NodeIdentifier, BandWidth]:
+        return self.neighbor_bandwidth
 
     def split(self, state, options: dict):
         self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(state, self.group_labels, self)
@@ -156,7 +154,6 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
     def gather_local_weights(self) -> dict[str, BaseModel]:
         client_local_weights = {}
         for neighbor in self.get_neighbors([NodeType.CLIENT]):
-            neighbor_rabbitmq_url = HTTPCommunicator.get_rabbitmq_url(neighbor)
             msg: GlobalWeightMessage = self.recv_msg(neighbor.get_exchange_name(), config.current_node_mq_url,
                                                      GlobalWeightMessage.MESSAGE_TYPE)
             client_local_weights[str(neighbor)] = msg.weights[0]
@@ -182,7 +179,7 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
             w_local_list.append(w_local)
         return w_local_list
 
-    def bandwidth(self) -> dict[str, float]:
+    def bandwidth(self) -> dict[NodeIdentifier, BandWidth]:
         return self.neighbor_bandwidth
 
     def gossip_with_neighbors(self):

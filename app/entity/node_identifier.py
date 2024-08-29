@@ -11,3 +11,9 @@ class NodeIdentifier:
 
     def get_exchange_name(self):
         return self.__str__()
+
+    def __eq__(self, other):
+        return self.ip == other.ip and self.port == other.port
+
+    def __hash__(self):
+        return hash(self.ip) + hash(self.port)

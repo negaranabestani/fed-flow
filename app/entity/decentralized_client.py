@@ -37,7 +37,7 @@ class DecentralizedClient(FedBaseNodeInterface):
         self.split_layers = split_layer
 
         fed_logger.debug('Building Model.')
-        self.net = model_utils.get_model('Client', self.split_layers, self.device, self.edge_based)
+        # self.net = model_utils.get_model('Client', self.split_layers, self.device, self.edge_based)
         fed_logger.debug(self.net)
         self.criterion = nn.CrossEntropyLoss()
         if len(list(self.net.parameters())) != 0:
