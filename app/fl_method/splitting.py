@@ -62,7 +62,7 @@ def fake(state, labels):
     a fake splitting list of tuples
     """
     split_list = []
-    for i in range(config.K):
+    for i in range(3):
         split_list.append([3, 4])
     return split_list
 

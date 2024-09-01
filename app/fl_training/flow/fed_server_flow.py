@@ -3,6 +3,8 @@ import socket
 import sys
 import time
 
+from colorama import Fore
+
 sys.path.append('../../../')
 from app.config import config
 from app.util import model_utils, message_utils
@@ -17,7 +19,8 @@ def run_edge_based_no_offload(server: FedServerInterface, LR, options):
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
 
     for r in range(config.R):
-        if config.K>0:
+        fed_logger.info(Fore.LIGHTBLUE_EX+f"left clients in server{config.K}")
+        if config.K > 0:
             config.current_round = r
             fed_logger.info('====================================>')
             fed_logger.info('==> Round {:} Start'.format(r))
@@ -64,7 +67,8 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
     fed_logger.info(f"OPTION: {options}")
     for r in range(config.R):
-        if config.K>0:
+        fed_logger.info(Fore.LIGHTBLUE_EX + f"number of final K: {config.K}")
+        if config.K > 0:
             config.current_round = r
             x.append(r)
             fed_logger.info('====================================>')
@@ -170,7 +174,7 @@ def run_no_edge_offload(server: FedServerInterface, LR, options):
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
 
     for r in range(config.R):
-        if config.K>0:
+        if config.K > 0:
             config.current_round = r
 
             fed_logger.info('====================================>')
@@ -227,7 +231,7 @@ def run_no_edge(server: FedServerInterface, options):
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
 
     for r in range(config.R):
-        if config.K>0:
+        if config.K > 0:
             config.current_round = r
 
             fed_logger.info('====================================>')

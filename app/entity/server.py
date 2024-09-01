@@ -27,19 +27,21 @@ class FedServer(FedServerInterface):
         self.nets = {}
         self.optimizers = {}
         for i in range(len(split_layers)):
-            client_ip = config.CLIENTS_LIST[i]
-            split_point = split_layers[i]
+            client_ip = config.CLIENTS_INDEX[i]
+            client_index = config.CLIENTS_CONFIG[client_ip]
+            split_point = split_layers[client_index]
             if self.edge_based:
-                split_point = split_layers[i][1]
+                split_point = split_layers[client_index][1]
             if split_point < len(
                     self.uninet.cfg) - 1:  # Only offloading client need initialize optimizer in server
                 if self.edge_based:
-                    self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device,
+                    self.nets[client_ip] = model_utils.get_model('Server', split_layers[client_index], self.device,
                                                                  self.edge_based)
 
                     # offloading weight in server also need to be initialized from the same global weight
-                    eweights = model_utils.get_model('Edge', split_layers[i], self.device, self.edge_based).state_dict()
-                    cweights = model_utils.get_model('Client', split_layers[i], self.device,
+                    eweights = model_utils.get_model('Edge', split_layers[client_index], self.device,
+                                                     self.edge_based).state_dict()
+                    cweights = model_utils.get_model('Client', split_layers[client_index], self.device,
                                                      self.edge_based).state_dict()
 
                     pweights = model_utils.split_weights_server(self.uninet.state_dict(), cweights,
@@ -50,11 +52,11 @@ class FedServer(FedServerInterface):
                         self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
                                                                momentum=0.9)
                 else:
-                    self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device,
+                    self.nets[client_ip] = model_utils.get_model('Server', split_layers[client_index], self.device,
                                                                  self.edge_based)
 
                     # offloading weight in server also need to be initialized from the same global weight
-                    cweights = model_utils.get_model('Client', split_layers[i], self.device,
+                    cweights = model_utils.get_model('Client', split_layers[client_index], self.device,
                                                      self.edge_based).state_dict()
                     pweights = model_utils.split_weights_server(self.uninet.state_dict(), cweights,
                                                                 self.nets[client_ip].state_dict(), [])
@@ -64,7 +66,8 @@ class FedServer(FedServerInterface):
                         self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
                                                                momentum=0.9)
             else:
-                self.nets[client_ip] = model_utils.get_model('Server', split_layers[i], self.device, self.edge_based)
+                self.nets[client_ip] = model_utils.get_model('Server', split_layers[client_index], self.device,
+                                                             self.edge_based)
         self.criterion = nn.CrossEntropyLoss()
 
     def edge_offloading_train(self, client_ips):
@@ -370,13 +373,18 @@ class FedServer(FedServerInterface):
             msg = self.recv_msg(exchange=edge,
                                 expect_msg_type=message_utils.client_quit_edge_to_server(), url=edge)
             attend.update(msg[1])
+            msg = [message_utils.client_quit_done(), True]
+            self.send_msg(exchange=edge, msg=msg, url=edge)
 
+        fed_logger.info(Fore.RED + f"{attend}")
+        temp_list = []
         for client_ip in client_ips:
-            if attend[client_ip] == False:
-                config.CLIENTS_LIST.remove(client_ip)
+            if not attend[client_ip]:
+                # config.CLIENTS_LIST.remove(client_ip)
                 config.K -= 1
-
-
+            else:
+                temp_list.append(client_ip)
+        config.CLIENTS_LIST = temp_list
 
     def client_attendance(self, client_ips):
         attend = {}
@@ -387,10 +395,12 @@ class FedServer(FedServerInterface):
             msg = [message_utils.client_quit_done(), True]
             self.send_msg(client_ips[i], msg)
 
+        temp_list = []
         for client_ip in client_ips:
             if attend[client_ip] == False:
-                config.CLIENTS_LIST.remove(client_ip)
+                # config.CLIENTS_LIST.remove(client_ip)
                 config.K -= 1
                 config.S -= 1
-
-
+            else:
+                temp_list.append(client_ip)
+        config.CLIENTS_LIST = temp_list

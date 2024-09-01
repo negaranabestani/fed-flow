@@ -143,11 +143,11 @@ class FedServerInterface(ABC, Communicator):
 
         group_max_index = [0 for i in range(config.G)]
         group_max_value = [0 for i in range(config.G)]
-        for i in range(len(config.CLIENTS_LIST)):
-            label = self.group_labels[i]
-            if ttpi_order[i] >= group_max_value[label]:
-                group_max_value[label] = ttpi_order[i]
-                group_max_index[label] = i
+        for c in config.CLIENTS_LIST:
+            label = self.group_labels[config.CLIENTS_CONFIG[c]]
+            if ttpi_order[config.CLIENTS_CONFIG[c]] >= group_max_value[label]:
+                group_max_value[label] = ttpi_order[config.CLIENTS_CONFIG[c]]
+                group_max_index[label] = config.CLIENTS_CONFIG[c]
 
         ttpi_order = np.array(ttpi_order)[np.array(group_max_index)]
         offloading_order = np.array(offloading_order)[np.array(group_max_index)]
@@ -157,24 +157,24 @@ class FedServerInterface(ABC, Communicator):
     def get_offloading(self, split_layer):
         offloading = {}
         workload = 0
-        assert len(split_layer) == len(config.CLIENTS_LIST)
-        for i in range(len(config.CLIENTS_LIST)):
+        # assert len(split_layer) == len(config.CLIENTS_LIST)
+        for c in config.CLIENTS_LIST:
             for l in range(model_utils.get_unit_model_len()):
-                split_point = split_layer[i]
+                split_point = split_layer[config.CLIENTS_CONFIG[c]]
                 if self.edge_based:
-                    split_point = split_layer[i][0]
+                    split_point = split_layer[config.CLIENTS_CONFIG[c]][0]
                 if l <= split_point:
                     workload += model_utils.get_class()().cfg[l][5]
-            offloading[config.CLIENTS_LIST[i]] = workload / config.total_flops
+            offloading[c] = workload / config.total_flops
             workload = 0
 
         return offloading
 
     def ttpi(self, client_ips):
         ttpi = {}
-        for i in range(len(client_ips)):
+        for c in client_ips:
             # ttpi[str(client_ips[i])] = self.tt_end[client_ips[i]] - self.tt_start[client_ips[i]]
-            ttpi[config.CLIENTS_LIST[i]] = 3
+            ttpi[c] = 3
         return ttpi
 
     def bandwith(self):

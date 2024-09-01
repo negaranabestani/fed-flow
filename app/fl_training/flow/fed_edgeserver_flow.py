@@ -21,8 +21,8 @@ def run_offload(server: FedEdgeServerInterface, LR):
     res['trianing_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
     client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
     for r in range(config.R):
-        fed_logger.info(f" left clients {config.CLIENTS_LIST}")
-        if len(config.CLIENTS_LIST)>0:
+        fed_logger.info(Fore.LIGHTRED_EX+f" left clients {client_ips}")
+        if len(config.CLIENTS_LIST) > 0:
             config.current_round = r
             fed_logger.info('====================================>')
             fed_logger.info('==> Round {:} Start'.format(config.current_round))
@@ -51,6 +51,7 @@ def run_offload(server: FedEdgeServerInterface, LR):
             if r > 49:
                 LR = config.LR * 0.1
             server.client_attendance(client_ips)
+            client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
             # energy = float(energy_estimation.energy())
             # energy /= batch_num
             # fed_logger.info(Fore.LIGHTBLUE_EX + f"Energy : {energy}")
@@ -65,7 +66,7 @@ def run_no_offload(server: FedEdgeServerInterface, LR):
     res['trianing_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
     client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
     for r in range(config.R):
-        if len(config.CLIENTS_LIST)>0:
+        if len(config.CLIENTS_LIST) > 0:
             config.current_round = r
             fed_logger.info('====================================>')
             fed_logger.info('==> Round {:} Start'.format(r))
@@ -89,6 +90,7 @@ def run_no_offload(server: FedEdgeServerInterface, LR):
             if r > 49:
                 LR = config.LR * 0.1
             server.client_attendance(client_ips)
+            client_ips = config.EDGE_MAP[config.EDGE_SERVER_CONFIG[config.index]]
         else:
             break
     fed_logger.info(f"{socket.gethostname()} quit")
