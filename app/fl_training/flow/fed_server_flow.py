@@ -7,11 +7,15 @@ from colorama import Fore
 
 sys.path.append('../../../')
 from app.config import config
-from app.util import model_utils, message_utils
+from app.util import model_utils
 from app.entity.server import FedServer
 from app.config.logger import fed_logger
 from app.entity.interface.fed_server_interface import FedServerInterface
 from app.util import rl_utils
+
+import matplotlib.pyplot as plt
+import random
+import os
 
 
 def run_edge_based_no_offload(server: FedServerInterface, LR, options):
@@ -19,7 +23,7 @@ def run_edge_based_no_offload(server: FedServerInterface, LR, options):
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
 
     for r in range(config.R):
-        fed_logger.info(Fore.LIGHTBLUE_EX+f"left clients in server{config.K}")
+        fed_logger.info(Fore.LIGHTBLUE_EX + f"left clients in server{config.K}")
         if config.K > 0:
             config.current_round = r
             fed_logger.info('====================================>')
@@ -58,7 +62,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
     energy_x = []
     training_y = []
     # split_list = [[[0, 1]], [[1, 2]], [[2, 3]], [[3, 4]], [[4, 5]], [[5, 6]]]
-    avgEnergy, tt = [], []
+    avgEnergy, tt, remainingEnergy = [], [], []
     iotBW, edgeBW = [], []
     x = []
     for c in config.CLIENTS_LIST:
@@ -95,16 +99,16 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
             offloading = server.split_layers
 
             state = server.edge_based_state()
-            print(f"STATE : {state}")
             fed_logger.info("state: " + str(state))
             normalizedState = []
-            for bw in state:
+            for bw in state[:config.K + config.S]:
                 if r < 50:
                     normalizedState.append(bw / 100_000_000)
                 else:
                     normalizedState.append(bw / 10_000_000)
-            iotBW.append(normalizedState[0])
-            edgeBW.append(normalizedState[1])
+            iotBW.append(normalizedState[:config.K])
+            edgeBW.append(normalizedState[config.K:config.K + config.S])
+            remainingEnergy.append(state[config.K + config.S:])
 
             fed_logger.info("splitting")
             server.split(normalizedState, options)
@@ -159,10 +163,61 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
                                 "trainingTime", True)
             rl_utils.draw_graph(10, 5, x, avgEnergy, "Energy time", "FL Rounds", "Energy", "/fed-flow/Graphs",
                                 "energy", True)
-            rl_utils.draw_graph(10, 5, x, iotBW, "iot BW", "FL Rounds", "iotBW", "/fed-flow/Graphs",
-                                "iotBW", True)
-            rl_utils.draw_graph(10, 5, x, edgeBW, "edge BW", "FL Rounds", "edgeBW", "/fed-flow/Graphs",
-                                "edgeBW", True)
+
+            x = [i for i in range(len(remainingEnergy) - 1)]
+            plt.figure(figsize=(int(25), int(5)))
+            iotDevice_K = []
+            for k in range(config.K):
+                for i in range(len(remainingEnergy)):
+                    iotDevice_K.append(remainingEnergy[i][k])
+                r = random.random()
+                b = random.random()
+                g = random.random()
+                color = (r, g, b)
+                plt.title(f"Remaining Energy of iot devices")
+                plt.xlabel("timestep")
+                plt.ylabel("remaining energy")
+                plt.plot(x, iotDevice_K, color=color, linewidth='3', label=f"Device {k}")
+            plt.legend()
+            plt.savefig(os.path.join("/fed-flow/Graphs", f"Remaining Energies"))
+            plt.close()
+
+            x = [i for i in range(len(iotBW) - 1)]
+            plt.figure(figsize=(int(25), int(5)))
+            iotDevice_K = []
+            for k in range(config.K):
+                for i in range(len(iotBW)):
+                    iotDevice_K.append(iotBW[i][k])
+                r = random.random()
+                b = random.random()
+                g = random.random()
+                color = (r, g, b)
+                plt.title(f"BW of iot devices")
+                plt.xlabel("timestep")
+                plt.ylabel("BW")
+                plt.plot(x, iotDevice_K, color=color, linewidth='3', label=f"Device {k}")
+            plt.legend()
+            plt.savefig(os.path.join("/fed-flow/Graphs", f"iotBW"))
+            plt.close()
+
+            x = [i for i in range(len(edgeBW) - 1)]
+            plt.figure(figsize=(int(25), int(5)))
+            edgeDevice_K = []
+            for k in range(config.S):
+                for i in range(len(edgeBW)):
+                    edgeDevice_K.append(edgeBW[i][k])
+                r = random.random()
+                b = random.random()
+                g = random.random()
+                color = (r, g, b)
+                plt.title(f"BW of edge devices")
+                plt.xlabel("timestep")
+                plt.ylabel("BW")
+                plt.plot(x, iotDevice_K, color=color, linewidth='3', label=f"Device {k}")
+            plt.legend()
+            plt.savefig(os.path.join("/fed-flow/Graphs", f"edgeBW"))
+            plt.close()
+
         else:
             break
     fed_logger.info(f"{socket.gethostname()} quit")
