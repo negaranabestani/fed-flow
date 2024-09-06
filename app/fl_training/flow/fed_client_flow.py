@@ -156,7 +156,7 @@ def run_no_edge(client: Client, LR, estimate_energy):
             fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt - st}" + Fore.RESET)
 
 
-def run_offload_decentralized(client: DecentralizedClient, learning_rate):
+def run_offload_decentralized(client: DecentralizedClient):
     for r in range(config.R):
         config.current_round = r
         fed_logger.info('====================================>')
@@ -167,17 +167,11 @@ def run_offload_decentralized(client: DecentralizedClient, learning_rate):
         client.scatter_network_speed_to_edges()
         fed_logger.info("receiving splitting info")
         client.gather_split_config()
-        fed_logger.info("initializing client")
-
-        client.initialize(client.split_layers, learning_rate)
         fed_logger.info("start training")
         client.start_offloading_train()
         fed_logger.info("sending local weights")
         client.scatter_local_weights()
         fed_logger.info('ROUND: {} END'.format(r + 1))
-
-        if r > 49:
-            learning_rate = config.LR * 0.1
 
 
 def run(options_ins):
@@ -227,7 +221,7 @@ def run(options_ins):
                         )
 
     if decentralized and offload:
-        run_offload_decentralized(client, LR)
+        run_offload_decentralized(client)
     elif edge_based and offload:
         run_edge_based(client, LR, estimate_energy)
     elif edge_based and not offload:
@@ -236,4 +230,5 @@ def run(options_ins):
         run_no_edge_offload(client, LR, estimate_energy)
     else:
         run_no_edge(client, LR, estimate_energy)
+    time.sleep(10)
     client.stop_server()

@@ -22,7 +22,7 @@ def draw_graph(figSizeX, figSizeY, x, y, title, xlabel, ylabel, savePath, pictur
 
     if saveFig:
         if not os.path.exists(savePath):
-            os.makedirs(savePath)
+            os.makedirs(savePath, exist_ok=True)
         plt.savefig(os.path.join(savePath, pictureName))
     # plt.show()
     plt.close()

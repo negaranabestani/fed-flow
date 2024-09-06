@@ -6,6 +6,7 @@ from torch import optim, nn, multiprocessing
 
 from app.config import config
 from app.config.logger import fed_logger
+from app.dto.bandwidth import BandWidth
 from app.dto.message import NetworkTestMessage, IterationFlagMessage, GlobalWeightMessage
 from app.entity.aggregators.base_aggregator import BaseAggregator
 from app.dto.base_model import BaseModel
@@ -25,7 +26,12 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
     def __init__(self, ip: str, port: int, model_name, dataset, offload, aggregator: BaseAggregator):
         Node.__init__(self, ip, port, NodeType.EDGE)
         Communicator.__init__(self)
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        if torch.backends.mps.is_available():
+            self.device = torch.device('mps')
+        elif torch.cuda.is_available():
+            self.device = torch.device('cuda')
+        else:
+            self.device = torch.device('cpu')
         self.model_name = model_name
         self.nets = {}
         self.group_labels = None
@@ -46,13 +52,14 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
 
             self.testset = data_utils.get_testset()
             self.testloader = data_utils.get_testloader(self.testset, 0)
-        self.neighbor_bandwidth = {}
+        self.neighbor_bandwidth: dict[NodeIdentifier, BandWidth] = {}
         self.optimizers = None
         self.split_layers = {}
 
-    def initialize(self, learning_rate, **kwargs):
+    def initialize(self, learning_rate):
         self.nets = {}
         self.optimizers = {}
+        self.scheduler = {}
         for neighbor in self.get_neighbors([NodeType.CLIENT]):
             client_id = str(neighbor)
             if client_id not in self.split_layers:
@@ -67,7 +74,9 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
 
                 if len(list(self.nets[client_id].parameters())) != 0:
                     self.optimizers[client_id] = optim.SGD(self.nets[client_id].parameters(), lr=learning_rate,
-                                                           momentum=0.9)
+                                                           momentum=0.9, weight_decay=5e-4)
+                    self.scheduler[client_id] = optim.lr_scheduler.StepLR(self.optimizers[client_id],
+                                                                          config.lr_step_size, config.lr_gamma)
             else:
                 self.nets[client_id] = model_utils.get_model('Edge', split_point, self.device, False)
 
@@ -85,7 +94,7 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
 
     def _thread_network_testing(self, neighbor: NodeIdentifier):
         network_time_start = time.time()
-        msg = NetworkTestMessage([self.uninet.cpu().state_dict()])
+        msg = NetworkTestMessage([self.uninet.to(self.device).state_dict()])
         neighbor_rabbitmq_url = HTTPCommunicator.get_rabbitmq_url(neighbor)
         self.send_msg(self.get_exchange_name(), neighbor_rabbitmq_url, msg)
         fed_logger.info("server test network sent")
@@ -93,17 +102,14 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
                                                 NetworkTestMessage.MESSAGE_TYPE)
         fed_logger.info("server test network received")
         network_time_end = time.time()
-        self.neighbor_bandwidth[str(neighbor)] = data_utils.sizeofmessage(msg.weights) / (
-                network_time_end - network_time_start)
+        self.neighbor_bandwidth[neighbor] = BandWidth(data_utils.sizeofmessage(msg.weights),
+                                                      network_time_end - network_time_start)
 
     def cluster(self, options: dict):
         self.group_labels = fl_method_parser.fl_methods.get(options.get('clustering'))()
 
-    def get_state(self):
-        state = []
-        for neighbor in self.get_neighbors():
-            state.append(self.neighbor_bandwidth[str(neighbor)])
-        return state
+    def get_neighbors_bandwidth(self) -> dict[NodeIdentifier, BandWidth]:
+        return self.neighbor_bandwidth
 
     def split(self, state, options: dict):
         self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(state, self.group_labels, self)
@@ -146,6 +152,7 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
             if self.split_layers[str(neighbor)] < len(self.uninet.cfg) - 1:
                 if str(neighbor) in self.optimizers.keys():
                     self.optimizers[str(neighbor)].step()
+                    self.scheduler[str(neighbor)].step()
 
             fed_logger.info(str(neighbor) + " sending gradients")
             msg = GlobalWeightMessage([inputs.grad])
@@ -156,7 +163,6 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
     def gather_local_weights(self) -> dict[str, BaseModel]:
         client_local_weights = {}
         for neighbor in self.get_neighbors([NodeType.CLIENT]):
-            neighbor_rabbitmq_url = HTTPCommunicator.get_rabbitmq_url(neighbor)
             msg: GlobalWeightMessage = self.recv_msg(neighbor.get_exchange_name(), config.current_node_mq_url,
                                                      GlobalWeightMessage.MESSAGE_TYPE)
             client_local_weights[str(neighbor)] = msg.weights[0]
@@ -182,14 +188,16 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
             w_local_list.append(w_local)
         return w_local_list
 
-    def bandwidth(self) -> dict[str, float]:
+    def bandwidth(self) -> dict[NodeIdentifier, BandWidth]:
         return self.neighbor_bandwidth
 
     def gossip_with_neighbors(self):
         edge_neighbors = self.get_neighbors([NodeType.EDGE])
-        msg = GlobalWeightMessage([self.uninet.cpu().state_dict()])
+        msg = GlobalWeightMessage([self.uninet.to(self.device).state_dict()])
         self.scatter_msg(msg, [NodeType.EDGE])
         gathered_msgs = self.gather_msgs(GlobalWeightMessage.MESSAGE_TYPE, [NodeType.EDGE])
-        gathered_models = [(msg.message.weights[0], config.N / len(edge_neighbors)) for msg in gathered_msgs]
-        aggregated_model = self.aggregator.aggregate(self.uninet.cpu().state_dict(), gathered_models)
+        gathered_models = [(msg.message.weights[0], config.N / (len(edge_neighbors) + 1)) for msg in gathered_msgs]
+        zero_model = model_utils.zero_init(self.uninet).state_dict()
+        gathered_models.append((self.uninet.to(self.device).state_dict(), config.N / (len(edge_neighbors) + 1)))
+        aggregated_model = self.aggregator.aggregate(zero_model, gathered_models)
         self.uninet.load_state_dict(aggregated_model)

@@ -28,6 +28,7 @@ class Communicator(object):
         url = config.current_node_mq_url or config.mq_url
         parsed_uri = urlparse(url)
         vhost = parsed_uri.path.lstrip('/')
+        Communicator.ensure_vhost_exists(parsed_uri, vhost)
         mq_conn = Connection(url)
         mq_conn.connect()
 
