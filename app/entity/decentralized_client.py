@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch import optim
 from tqdm import tqdm
 
+from app.config import config
 from app.config.logger import fed_logger
 from app.dto.message import GlobalWeightMessage, NetworkTestMessage, SplitLayerConfigMessage, IterationFlagMessage
 from app.dto.received_message import ReceivedMessage
@@ -20,7 +21,12 @@ class DecentralizedClient(FedBaseNodeInterface):
         Node.__init__(self, ip, port, NodeType.CLIENT)
         Communicator.__init__(self)
 
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        if torch.backends.mps.is_available():
+            self.device = torch.device("mps")
+        elif torch.cuda.is_available():
+            self.device = torch.device('cuda')
+        else:
+            self.device = torch.device('cpu')
         self.model_name = model_name
         self.edge_based = True
         self.dataset = dataset
@@ -29,20 +35,9 @@ class DecentralizedClient(FedBaseNodeInterface):
         self.uninet = model_utils.get_model('Unit', None, self.device, True)
         self.net = self.uninet
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.SGD(self.net.parameters(), lr=LR, momentum=0.9)
+        self.optimizer = optim.SGD(self.net.parameters(), lr=LR, momentum=0.9, weight_decay=5e-4)
+        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, config.lr_step_size, config.lr_gamma)
         self.edge_based = False
-
-    def initialize(self, split_layer, LR):
-
-        self.split_layers = split_layer
-
-        fed_logger.debug('Building Model.')
-        # self.net = model_utils.get_model('Client', self.split_layers, self.device, self.edge_based)
-        fed_logger.debug(self.net)
-        self.criterion = nn.CrossEntropyLoss()
-        if len(list(self.net.parameters())) != 0:
-            self.optimizer = optim.SGD(self.net.parameters(), lr=LR,
-                                       momentum=0.9)
 
     def gather_global_weights(self):
         msgs: list[ReceivedMessage] = self.gather_msgs(GlobalWeightMessage.MESSAGE_TYPE, [NodeType.EDGE])
@@ -78,8 +73,9 @@ class DecentralizedClient(FedBaseNodeInterface):
                 loss = self.criterion(outputs, targets)
                 loss.backward()
                 self.optimizer.step()
+            self.scheduler.step()
 
-        if self.split_layers < model_utils.get_unit_model_len() - 1:
+        elif self.split_layers < model_utils.get_unit_model_len() - 1:
             fed_logger.info(f"offloding training start {self.split_layers}----------------------------")
             self.scatter_msg(IterationFlagMessage(True), [NodeType.EDGE])
             i += 1
@@ -107,6 +103,7 @@ class DecentralizedClient(FedBaseNodeInterface):
                 if self.optimizer is not None:
                     self.optimizer.step()
                 i += 1
+            self.scheduler.step()
             self.scatter_msg(IterationFlagMessage(False), [NodeType.EDGE])
 
     def scatter_local_weights(self):

@@ -130,11 +130,6 @@ def run_decentralized_offload(server: FedDecentralizedEdgeServer, learning_rate,
         fed_logger.info(f"Split Config : {server.split_layers}")
         server.scatter_split_layers()
 
-        fed_logger.info("initializing server")
-        # server.initialize(learning_rate * (0.1 ** (r // 10)))
-
-        # fed_logger.info('==> Reinitialization Finish')
-
         fed_logger.info("start training")
         server.start_offloading_train()
 
@@ -162,21 +157,21 @@ def run_decentralized_offload(server: FedDecentralizedEdgeServer, learning_rate,
         fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
     current_time = time.strftime("%Y-%m-%d %H:%M")
-    runtime_config = f'{config.N} {learning_rate} {current_time}'
+    runtime_config = f'{current_time} offload decentralized'
     rl_utils.draw_graph(10, 5, rounds, training_times, f"Edge {str(server)} Training time", "FL Rounds",
                         "Training Time (s)",
-                        f"/tmp/fed-flow/Graphs/{runtime_config}",
+                        f"Graphs/{runtime_config}",
                         f"trainingTime-{str(server)}", True)
     rl_utils.draw_graph(10, 5, rounds, client_bw, f"Edge {str(server)} Average clients BW", "FL Rounds",
                         "clients BW (bytes / s)",
-                        f"/tmp/fed-flow/Graphs/{runtime_config}",
+                        f"Graphs/{runtime_config}",
                         f"client_bw-{str(server)}", True)
     rl_utils.draw_graph(10, 5, rounds, edge_bw, f"Edge {str(server)} Average edges BW", "FL Rounds",
                         "edges BW (bytes / s)",
-                        f"/tmp/fed-flow/Graphs/{runtime_config}",
+                        f"Graphs/{runtime_config}",
                         f"edge_bw-{str(server)}", True)
     rl_utils.draw_graph(10, 5, rounds, accuracy, f"Edge {str(server)} Accuracy", "FL Rounds", "accuracy",
-                        f"/tmp/fed-flow/Graphs/{runtime_config}",
+                        f"Graphs/{runtime_config}",
                         f"accuracy-{str(server)}", True)
 
 
