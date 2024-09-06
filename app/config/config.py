@@ -38,7 +38,7 @@ split_layer = [[6, 6]]  # Initial split layers
 model_len = 7
 
 # FL training configration
-R = 30  # FL rounds
+R = 100  # FL rounds
 LR = 0.01  # Learning rate
 B = 100  # Batch size
 lr_step_size = 20

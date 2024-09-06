@@ -20,7 +20,6 @@ class DecentralizedClient(FedBaseNodeInterface):
     def __init__(self, ip: str, port: int, model_name, dataset, train_loader, LR):
         Node.__init__(self, ip, port, NodeType.CLIENT)
         Communicator.__init__(self)
-
         if torch.backends.mps.is_available():
             self.device = torch.device("mps")
         elif torch.cuda.is_available():
@@ -46,7 +45,7 @@ class DecentralizedClient(FedBaseNodeInterface):
         self.net.load_state_dict(pweights)
 
     def scatter_network_speed_to_edges(self):
-        msg = NetworkTestMessage([self.uninet.cpu().state_dict()])
+        msg = NetworkTestMessage([self.uninet.to(self.device).state_dict()])
         self.scatter_msg(msg, [NodeType.EDGE])
         fed_logger.info("test network sent")
 
@@ -89,8 +88,8 @@ class DecentralizedClient(FedBaseNodeInterface):
 
                 self.scatter_msg(IterationFlagMessage(True), [NodeType.EDGE])
 
-                msg = GlobalWeightMessage([outputs.cpu(),
-                                           targets.cpu()])
+                msg = GlobalWeightMessage([outputs.to(self.device),
+                                           targets.to(self.device)])
                 self.scatter_msg(msg, [NodeType.EDGE])
 
                 fed_logger.info("receiving gradients")
@@ -107,4 +106,4 @@ class DecentralizedClient(FedBaseNodeInterface):
             self.scatter_msg(IterationFlagMessage(False), [NodeType.EDGE])
 
     def scatter_local_weights(self):
-        self.scatter_msg(GlobalWeightMessage([self.net.cpu().state_dict()]), [NodeType.EDGE])
+        self.scatter_msg(GlobalWeightMessage([self.net.to(self.device).state_dict()]), [NodeType.EDGE])

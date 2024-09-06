@@ -26,7 +26,12 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
     def __init__(self, ip: str, port: int, model_name, dataset, offload, aggregator: BaseAggregator):
         Node.__init__(self, ip, port, NodeType.EDGE)
         Communicator.__init__(self)
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        if torch.backends.mps.is_available():
+            self.device = torch.device('mps')
+        elif torch.cuda.is_available():
+            self.device = torch.device('cuda')
+        else:
+            self.device = torch.device('cpu')
         self.model_name = model_name
         self.nets = {}
         self.group_labels = None
@@ -89,7 +94,7 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
 
     def _thread_network_testing(self, neighbor: NodeIdentifier):
         network_time_start = time.time()
-        msg = NetworkTestMessage([self.uninet.cpu().state_dict()])
+        msg = NetworkTestMessage([self.uninet.to(self.device).state_dict()])
         neighbor_rabbitmq_url = HTTPCommunicator.get_rabbitmq_url(neighbor)
         self.send_msg(self.get_exchange_name(), neighbor_rabbitmq_url, msg)
         fed_logger.info("server test network sent")
@@ -188,11 +193,11 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
 
     def gossip_with_neighbors(self):
         edge_neighbors = self.get_neighbors([NodeType.EDGE])
-        msg = GlobalWeightMessage([self.uninet.cpu().state_dict()])
+        msg = GlobalWeightMessage([self.uninet.to(self.device).state_dict()])
         self.scatter_msg(msg, [NodeType.EDGE])
         gathered_msgs = self.gather_msgs(GlobalWeightMessage.MESSAGE_TYPE, [NodeType.EDGE])
         gathered_models = [(msg.message.weights[0], config.N / (len(edge_neighbors) + 1)) for msg in gathered_msgs]
         zero_model = model_utils.zero_init(self.uninet).state_dict()
-        gathered_models.append((self.uninet.cpu().state_dict(), config.N / (len(edge_neighbors) + 1)))
+        gathered_models.append((self.uninet.to(self.device).state_dict(), config.N / (len(edge_neighbors) + 1)))
         aggregated_model = self.aggregator.aggregate(zero_model, gathered_models)
         self.uninet.load_state_dict(aggregated_model)

@@ -141,7 +141,7 @@ def run_decentralized_offload(server: FedDecentralizedEdgeServer, learning_rate,
 
         fed_logger.info("start gossiping with neighbors")
         server.gossip_with_neighbors()
-
+        #
         e_time = time.time()
 
         # Recording each round training time, bandwidth and test_app accuracy
