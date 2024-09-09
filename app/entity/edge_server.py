@@ -18,23 +18,26 @@ class FedEdgeServer(FedEdgeServerInterface):
         for i in range(len(split_layers)):
             if client_ips.__contains__(config.CLIENTS_INDEX[i]):
                 client_ip = config.CLIENTS_INDEX[i]
-                client_index = config.CLIENTS_CONFIG[client_ip]
-                if split_layers[client_index][0] < split_layers[client_index][
-                    1]:  # Only offloading client need initialize optimizer in server
-                    self.nets[client_ip] = model_utils.get_model('Edge', split_layers[client_index], self.device, True)
+                if client_ip in client_ips:
+                    client_index = config.CLIENTS_CONFIG[client_ip]
+                    if split_layers[client_index][0] < split_layers[client_index][
+                        1]:  # Only offloading client need initialize optimizer in server
+                        self.nets[client_ip] = model_utils.get_model('Edge', split_layers[client_index], self.device,
+                                                                     True)
 
-                    # offloading weight in server also need to be initialized from the same global weight
-                    cweights = model_utils.get_model('Client', split_layers[client_index], self.device,
-                                                     True).state_dict()
+                        # offloading weight in server also need to be initialized from the same global weight
+                        cweights = model_utils.get_model('Client', split_layers[client_index], self.device,
+                                                         True).state_dict()
 
-                    pweights = model_utils.split_weights_edgeserver(self.uninet.state_dict(), cweights,
-                                                                    self.nets[client_ip].state_dict())
-                    self.nets[client_ip].load_state_dict(pweights)
-                    if len(list(self.nets[client_ip].parameters())) != 0:
-                        self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
-                                                               momentum=0.9)
-                else:
-                    self.nets[client_ip] = model_utils.get_model('Edge', split_layers[client_index], self.device, True)
+                        pweights = model_utils.split_weights_edgeserver(self.uninet.state_dict(), cweights,
+                                                                        self.nets[client_ip].state_dict())
+                        self.nets[client_ip].load_state_dict(pweights)
+                        if len(list(self.nets[client_ip].parameters())) != 0:
+                            self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
+                                                                   momentum=0.9)
+                    else:
+                        self.nets[client_ip] = model_utils.get_model('Edge', split_layers[client_index], self.device,
+                                                                     True)
         self.criterion = nn.CrossEntropyLoss()
 
     def aggregate(self, client_ips, aggregate_method):

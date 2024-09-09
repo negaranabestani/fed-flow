@@ -28,46 +28,47 @@ class FedServer(FedServerInterface):
         self.optimizers = {}
         for i in range(len(split_layers)):
             client_ip = config.CLIENTS_INDEX[i]
-            client_index = config.CLIENTS_CONFIG[client_ip]
-            split_point = split_layers[client_index]
-            if self.edge_based:
-                split_point = split_layers[client_index][1]
-            if split_point < len(
-                    self.uninet.cfg) - 1:  # Only offloading client need initialize optimizer in server
+            if client_ip in config.CLIENTS_LIST:
+                client_index = config.CLIENTS_CONFIG[client_ip]
+                split_point = split_layers[client_index]
                 if self.edge_based:
-                    self.nets[client_ip] = model_utils.get_model('Server', split_layers[client_index], self.device,
-                                                                 self.edge_based)
+                    split_point = split_layers[client_index][1]
+                if split_point < len(
+                        self.uninet.cfg) - 1:  # Only offloading client need initialize optimizer in server
+                    if self.edge_based:
+                        self.nets[client_ip] = model_utils.get_model('Server', split_layers[client_index], self.device,
+                                                                     self.edge_based)
 
-                    # offloading weight in server also need to be initialized from the same global weight
-                    eweights = model_utils.get_model('Edge', split_layers[client_index], self.device,
-                                                     self.edge_based).state_dict()
-                    cweights = model_utils.get_model('Client', split_layers[client_index], self.device,
-                                                     self.edge_based).state_dict()
+                        # offloading weight in server also need to be initialized from the same global weight
+                        eweights = model_utils.get_model('Edge', split_layers[client_index], self.device,
+                                                         self.edge_based).state_dict()
+                        cweights = model_utils.get_model('Client', split_layers[client_index], self.device,
+                                                         self.edge_based).state_dict()
 
-                    pweights = model_utils.split_weights_server(self.uninet.state_dict(), cweights,
-                                                                self.nets[client_ip].state_dict(), eweights)
-                    self.nets[client_ip].load_state_dict(pweights)
+                        pweights = model_utils.split_weights_server(self.uninet.state_dict(), cweights,
+                                                                    self.nets[client_ip].state_dict(), eweights)
+                        self.nets[client_ip].load_state_dict(pweights)
 
-                    if len(list(self.nets[client_ip].parameters())) != 0:
-                        self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
-                                                               momentum=0.9)
+                        if len(list(self.nets[client_ip].parameters())) != 0:
+                            self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
+                                                                   momentum=0.9)
+                    else:
+                        self.nets[client_ip] = model_utils.get_model('Server', split_layers[client_index], self.device,
+                                                                     self.edge_based)
+
+                        # offloading weight in server also need to be initialized from the same global weight
+                        cweights = model_utils.get_model('Client', split_layers[client_index], self.device,
+                                                         self.edge_based).state_dict()
+                        pweights = model_utils.split_weights_server(self.uninet.state_dict(), cweights,
+                                                                    self.nets[client_ip].state_dict(), [])
+                        self.nets[client_ip].load_state_dict(pweights)
+
+                        if len(list(self.nets[client_ip].parameters())) != 0:
+                            self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
+                                                                   momentum=0.9)
                 else:
                     self.nets[client_ip] = model_utils.get_model('Server', split_layers[client_index], self.device,
                                                                  self.edge_based)
-
-                    # offloading weight in server also need to be initialized from the same global weight
-                    cweights = model_utils.get_model('Client', split_layers[client_index], self.device,
-                                                     self.edge_based).state_dict()
-                    pweights = model_utils.split_weights_server(self.uninet.state_dict(), cweights,
-                                                                self.nets[client_ip].state_dict(), [])
-                    self.nets[client_ip].load_state_dict(pweights)
-
-                    if len(list(self.nets[client_ip].parameters())) != 0:
-                        self.optimizers[client_ip] = optim.SGD(self.nets[client_ip].parameters(), lr=LR,
-                                                               momentum=0.9)
-            else:
-                self.nets[client_ip] = model_utils.get_model('Server', split_layers[client_index], self.device,
-                                                             self.edge_based)
         self.criterion = nn.CrossEntropyLoss()
 
     def edge_offloading_train(self, client_ips):
@@ -186,24 +187,25 @@ class FedServer(FedServerInterface):
         fed_logger.info(str(client_ip) + ' offloading training end')
         return 'Finish'
 
-    def aggregate(self, client_ips, aggregate_method, eweights):
+    def aggregate(self, client_ips, aggregate_method, eweights: dict):
         w_local_list = []
         # fed_logger.info("aggregation start")
-        for i in range(len(eweights)):
+        for client in eweights.keys():
             if self.offload:
+                i = config.CLIENTS_CONFIG[client]
                 sp = self.split_layers[i]
                 if self.edge_based:
                     sp = self.split_layers[i][0]
                 if sp != (config.model_len - 1):
                     w_local = (
-                        model_utils.concat_weights(self.uninet.state_dict(), eweights[i],
-                                                   self.nets[client_ips[i]].state_dict()),
+                        model_utils.concat_weights(self.uninet.state_dict(), eweights[client],
+                                                   self.nets[client].state_dict()),
                         config.N / config.K)
                     w_local_list.append(w_local)
                 else:
-                    w_local = (eweights[i], config.N / config.K)
+                    w_local = (eweights[client], config.N / config.K)
             else:
-                w_local = (eweights[i], config.N / config.K)
+                w_local = (eweights[client], config.N / config.K)
             w_local_list.append(w_local)
         zero_model = model_utils.zero_init(self.uninet).state_dict()
         aggregated_model = aggregate_method(zero_model, w_local_list, config.N)
@@ -266,13 +268,13 @@ class FedServer(FedServerInterface):
         """
         send final weights for aggregation
         """
-        eweights = []
+        eweights = {}
         for i in range(len(client_ips)):
             msg = self.recv_msg(config.CLIENT_MAP[client_ips[i]],
                                 message_utils.local_weights_edge_to_server() + "_" + client_ips[i], True,
                                 config.CLIENT_MAP[client_ips[i]])
             self.tt_end[client_ips[i]] = time.time()
-            eweights.append(msg[1])
+            eweights[client_ips[i]] = msg[1]
         return eweights
 
     def e_energy_tt(self, client_ips):
