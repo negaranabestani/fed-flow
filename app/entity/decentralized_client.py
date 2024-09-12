@@ -1,9 +1,5 @@
-import threading
-import time
-
 import torch
 import torch.nn as nn
-from geopy.distance import geodesic
 from torch import optim
 from tqdm import tqdm
 
@@ -13,11 +9,10 @@ from app.dto.message import GlobalWeightMessage, NetworkTestMessage, SplitLayerC
 from app.dto.received_message import ReceivedMessage
 from app.entity.communicator import Communicator
 from app.entity.fed_base_node_interface import FedBaseNodeInterface
-from app.entity.http_communicator import HTTPCommunicator
 from app.entity.mobility_manager import MobilityManager
 from app.entity.node import Node
-from app.entity.node_identifier import NodeIdentifier
 from app.entity.node_type import NodeType
+from app.model.utils import get_available_torch_device
 from app.util import model_utils
 
 
@@ -27,12 +22,7 @@ class DecentralizedClient(FedBaseNodeInterface):
     def __init__(self, ip: str, port: int, model_name, dataset, train_loader, LR):
         Node.__init__(self, ip, port, NodeType.CLIENT)
         Communicator.__init__(self)
-        if torch.backends.mps.is_available():
-            self.device = torch.device("mps")
-        elif torch.cuda.is_available():
-            self.device = torch.device('cuda')
-        else:
-            self.device = torch.device('cpu')
+        self.device = get_available_torch_device()
         self.model_name = model_name
         self.edge_based = True
         self.dataset = dataset
