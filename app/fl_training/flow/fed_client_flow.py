@@ -156,7 +156,7 @@ def run_no_edge(client: Client, LR, estimate_energy):
             fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt - st}" + Fore.RESET)
 
 
-def run_offload_decentralized(client: DecentralizedClient):
+def run_decentralized(client: DecentralizedClient):
     for r in range(config.R):
         config.current_round = r
         fed_logger.info('====================================>')
@@ -220,8 +220,8 @@ def run(options_ins):
                         dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
                         )
 
-    if decentralized and offload:
-        run_offload_decentralized(client)
+    if decentralized:
+        run_decentralized(client)
     elif edge_based and offload:
         run_edge_based(client, LR, estimate_energy)
     elif edge_based and not offload:

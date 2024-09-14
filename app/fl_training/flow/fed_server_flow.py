@@ -3,6 +3,8 @@ import pickle
 import sys
 import time
 
+from app.entity.centralized_server import CentralizedServer
+
 sys.path.append('../../../')
 from app.config import config
 from app.util import model_utils
@@ -258,6 +260,74 @@ def run_no_edge(server: FedServer, options):
         fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
 
+def run_centralized(server: CentralizedServer, learning_rate, options):
+    server.initialize(config.split_layer, learning_rate)
+    training_time = []
+    transferred_data = []
+    rounds = []
+    accuracy = []
+    for r in range(config.R):
+        rounds.append(r)
+        fed_logger.info('====================================>')
+        fed_logger.info('==> Round {:} Start'.format(r + 1))
+
+        fed_logger.info("sending global weights")
+        server.scatter_global_weights()
+
+        s_time = time.time()
+
+        fed_logger.info("test neighbors network")
+        server.gather_neighbors_network_bandwidth()
+
+        fed_logger.info("getting bandwidth")
+        neighbors_bandwidth = server.get_neighbors_bandwidth()
+        bw = [bw[1].bandwidth for bw in neighbors_bandwidth.items()]
+        if len(neighbors_bandwidth) == 0:
+            transferred_data.append(0)
+        else:
+            transferred_data.append(sum(bw) / len(bw))
+
+        fed_logger.info("splitting")
+        server.split(bw, options)
+        server.scatter_split_layers()
+
+        fed_logger.info("start training")
+        server.start_edge_training(config.CLIENTS_LIST)
+
+        fed_logger.info("receiving local weights")
+        local_weights = server.e_local_weights(config.CLIENTS_LIST)
+
+        fed_logger.info("aggregating weights")
+        server.call_aggregation(options, local_weights)
+
+        e_time = time.time()
+
+        elapsed_time = e_time - s_time
+        training_time.append(elapsed_time)
+
+        fed_logger.info("testing accuracy")
+        test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
+        accuracy.append(test_acc)
+
+        fed_logger.info('Round Finish')
+        fed_logger.info('==> Round {:} End'.format(r + 1))
+        fed_logger.info('==> Round Training Time: {:}'.format(elapsed_time))
+
+    current_time = time.strftime("%Y-%m-%d %H:%M")
+    runtime_config = f'{current_time} offload decentralized'
+    rl_utils.draw_graph(10, 5, rounds, training_time, f"Server {str(server)} Training time", "FL Rounds",
+                        "Training Time (s)",
+                        f"Graphs/{runtime_config}",
+                        f"trainingTime-{str(server)}", True)
+    rl_utils.draw_graph(10, 5, rounds, transferred_data, f"Server {str(server)} Average clients BW", "FL Rounds",
+                        "clients BW (bytes / s)",
+                        f"Graphs/{runtime_config}",
+                        f"client_bw-{str(server)}", True)
+    rl_utils.draw_graph(10, 5, rounds, accuracy, f"Server {str(server)} Accuracy", "FL Rounds", "accuracy",
+                        f"Graphs/{runtime_config}",
+                        f"accuracy-{str(server)}", True)
+
+
 def run(options_ins):
     LR = config.LR
     fed_logger.info('Preparing Sever.')
@@ -265,7 +335,12 @@ def run(options_ins):
     offload = options_ins.get('offload')
     edge_based = options_ins.get('edgebased')
     estimate_energy = options_ins.get('energy') == "True"
-    if edge_based and offload:
+    decentralized = options_ins.get('decentralized') == 'True'
+    if decentralized:
+        server_ins = CentralizedServer(options_ins.get('ip'), options_ins.get('port'), options_ins.get('model'),
+                                       options_ins.get('dataset'), offload, edge_based)
+        run_centralized(server_ins, LR, options_ins)
+    elif edge_based and offload:
         server_ins = FedServer(options_ins.get('ip'), options_ins.get('port'), options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)
         run_edge_based_offload(server_ins, LR, options_ins, estimate_energy)

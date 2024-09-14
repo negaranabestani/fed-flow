@@ -119,7 +119,9 @@ class Node:
         response = HTTPCommunicator.get_neighbors_from_neighbor(neighbor)
         return response
 
-    def get_exchange_name(self) -> str:
+    def get_exchange_name(self, extra_target: str = '') -> str:
+        if extra_target:
+            return f"{self.ip}:{self.port}_{extra_target}"
         return f"{self.ip}:{self.port}"
 
     def stop_server(self):
@@ -128,7 +130,6 @@ class Node:
     def _run_server(self, port: int):
         self._server = uvicorn.Server(uvicorn.Config(self._app, host="0.0.0.0", port=port, log_level="warning"))
         self._server.run()
-
 
     def _start_server_in_thread(self, port: int):
         if self._server_started:

@@ -88,8 +88,8 @@ def run_no_offload(server: FedEdgeServer, LR):
             LR = config.LR * 0.1
 
 
-def run_decentralized_offload(server: FedDecentralizedEdgeServer, learning_rate, options: dict):
-    server.initialize(learning_rate)
+def run_decentralized(edge_server: FedDecentralizedEdgeServer, learning_rate, options: dict):
+    edge_server.initialize(learning_rate)
     client_bw, edge_bw = [], []
     training_times = []
     rounds = []
@@ -101,19 +101,18 @@ def run_decentralized_offload(server: FedDecentralizedEdgeServer, learning_rate,
         fed_logger.info('==> Round {:} Start'.format(r + 1))
 
         fed_logger.info("sending global weights")
-        server.scatter_global_weights([NodeType.CLIENT])
+        edge_server.scatter_global_weights([NodeType.CLIENT])
 
         s_time = time.time()
 
         fed_logger.info("gathering neighbors network speed")
-        server.gather_neighbors_network_bandwidth()
+        edge_server.gather_neighbors_network_bandwidth()
 
         fed_logger.info("clustering")
-        server.cluster(options)
+        edge_server.cluster(options)
 
         fed_logger.info("getting neighbors bandwidth")
-        neighbors_bandwidth = server.get_neighbors_bandwidth()
-        fed_logger.info(f"NEIGHBORS BANDWIDTH : {neighbors_bandwidth}")
+        neighbors_bandwidth = edge_server.get_neighbors_bandwidth()
         neighbors_bandwidth_by_type: dict[NodeType, list[float]] = {}
         for neighbor, bw in neighbors_bandwidth.items():
             neighbor_type = HTTPCommunicator.get_node_type(neighbor)
@@ -126,21 +125,21 @@ def run_decentralized_offload(server: FedDecentralizedEdgeServer, learning_rate,
             sum(neighbors_bandwidth_by_type[NodeType.EDGE]) / len(neighbors_bandwidth_by_type[NodeType.EDGE]))
 
         fed_logger.info("splitting")
-        server.split(neighbors_bandwidth_by_type[NodeType.CLIENT], options)
-        fed_logger.info(f"Split Config : {server.split_layers}")
-        server.scatter_split_layers()
+        edge_server.split(neighbors_bandwidth_by_type[NodeType.CLIENT], options)
+        fed_logger.info(f"Split Config : {edge_server.split_layers}")
+        edge_server.scatter_split_layers()
 
         fed_logger.info("start training")
-        server.start_offloading_train()
+        edge_server.start_decentralized_training()
 
         fed_logger.info("receiving local weights")
-        local_weights = server.gather_local_weights()
+        local_weights = edge_server.gather_local_weights()
 
         fed_logger.info("aggregating weights")
-        server.aggregate(local_weights)
+        edge_server.aggregate(local_weights)
 
         fed_logger.info("start gossiping with neighbors")
-        server.gossip_with_neighbors()
+        edge_server.gossip_with_neighbors()
         #
         e_time = time.time()
 
@@ -149,7 +148,7 @@ def run_decentralized_offload(server: FedDecentralizedEdgeServer, learning_rate,
         training_times.append(training_time)
 
         fed_logger.info("testing accuracy")
-        test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
+        test_acc = model_utils.test(edge_server.uninet, edge_server.testloader, edge_server.device, edge_server.criterion)
         fed_logger.info(f"Test Accuracy : {test_acc}")
         accuracy.append(test_acc)
         fed_logger.info('Round Finish')
@@ -158,25 +157,38 @@ def run_decentralized_offload(server: FedDecentralizedEdgeServer, learning_rate,
 
     current_time = time.strftime("%Y-%m-%d %H:%M")
     runtime_config = f'{current_time} offload decentralized'
-    rl_utils.draw_graph(10, 5, rounds, training_times, f"Edge {str(server)} Training time", "FL Rounds",
+    rl_utils.draw_graph(10, 5, rounds, training_times, f"Edge {str(edge_server)} Training time", "FL Rounds",
                         "Training Time (s)",
                         f"Graphs/{runtime_config}",
-                        f"trainingTime-{str(server)}", True)
-    rl_utils.draw_graph(10, 5, rounds, client_bw, f"Edge {str(server)} Average clients BW", "FL Rounds",
+                        f"trainingTime-{str(edge_server)}", True)
+    rl_utils.draw_graph(10, 5, rounds, client_bw, f"Edge {str(edge_server)} Average clients BW", "FL Rounds",
                         "clients BW (bytes / s)",
                         f"Graphs/{runtime_config}",
-                        f"client_bw-{str(server)}", True)
-    rl_utils.draw_graph(10, 5, rounds, edge_bw, f"Edge {str(server)} Average edges BW", "FL Rounds",
+                        f"client_bw-{str(edge_server)}", True)
+    rl_utils.draw_graph(10, 5, rounds, edge_bw, f"Edge {str(edge_server)} Average edges BW", "FL Rounds",
                         "edges BW (bytes / s)",
                         f"Graphs/{runtime_config}",
-                        f"edge_bw-{str(server)}", True)
-    rl_utils.draw_graph(10, 5, rounds, accuracy, f"Edge {str(server)} Accuracy", "FL Rounds", "accuracy",
+                        f"edge_bw-{str(edge_server)}", True)
+    rl_utils.draw_graph(10, 5, rounds, accuracy, f"Edge {str(edge_server)} Accuracy", "FL Rounds", "accuracy",
                         f"Graphs/{runtime_config}",
-                        f"accuracy-{str(server)}", True)
+                        f"accuracy-{str(edge_server)}", True)
 
 
-def run_decentralized_no_offload(server: FedEdgeServer, LR):
-    pass
+def run_centralized(edge_server: FedDecentralizedEdgeServer, learning_rate):
+    edge_server.initialize(learning_rate)
+    for r in range(config.R):
+        config.current_round = r
+        fed_logger.info('====================================>')
+        fed_logger.info('==> Round {:} Start'.format(r + 1))
+        fed_logger.info("receiving and sending global weights")
+        edge_server.gather_and_scatter_global_weight()
+        fed_logger.info("test clients network")
+        edge_server.gather_neighbors_network_bandwidth()
+        fed_logger.info("receiving and sending splitting info")
+        edge_server.gather_and_scatter_split_config()
+        fed_logger.info("start training")
+        edge_server.start_centralized_training()
+        fed_logger.info('==> Round {:} End'.format(r + 1))
 
 
 def run(options_ins):
@@ -201,10 +213,7 @@ def run(options_ins):
 
     fed_logger.info("start mode: " + str(options_ins.values()))
     if decentralized:
-        if offload:
-            run_decentralized_offload(edge_server, LR, options_ins)
-        else:
-            run_decentralized_no_offload(edge_server, LR)
+        run_decentralized(edge_server, LR, options_ins)
     else:
         if offload:
             run_offload(edge_server, LR, estimate_energy)

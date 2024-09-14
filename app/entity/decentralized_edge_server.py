@@ -7,7 +7,7 @@ from app.config import config
 from app.config.logger import fed_logger
 from app.dto.bandwidth import BandWidth
 from app.dto.base_model import BaseModel
-from app.dto.message import NetworkTestMessage, IterationFlagMessage, GlobalWeightMessage
+from app.dto.message import NetworkTestMessage, IterationFlagMessage, GlobalWeightMessage, SplitLayerConfigMessage
 from app.entity.aggregators.base_aggregator import BaseAggregator
 from app.entity.communicator import Communicator
 from app.entity.fed_base_node_interface import FedBaseNodeInterface
@@ -75,30 +75,16 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
             else:
                 self.nets[client_id] = model_utils.get_model('Edge', split_point, self.device, False)
 
-    def gather_neighbors_network_bandwidth(self, neighbors_type: NodeType = None):
-        net_threads = {}
-        for neighbor in self.get_neighbors():
-            neighbor_type = HTTPCommunicator.get_node_type(neighbor)
-            if neighbors_type is None or neighbor_type == neighbors_type:
-                net_threads[str(neighbor)] = threading.Thread(target=self._thread_network_testing,
-                                                              args=(neighbor,), name=str(neighbor))
-                net_threads[str(neighbor)].start()
-
-        for _, thread in net_threads.items():
-            thread.join()
-
-    def _thread_network_testing(self, neighbor: NodeIdentifier):
-        network_time_start = time.time()
-        msg = NetworkTestMessage([self.uninet.to(self.device).state_dict()])
-        neighbor_rabbitmq_url = HTTPCommunicator.get_rabbitmq_url(neighbor)
-        self.send_msg(self.get_exchange_name(), neighbor_rabbitmq_url, msg)
-        fed_logger.info("server test network sent")
-        msg: NetworkTestMessage = self.recv_msg(neighbor.get_exchange_name(), config.current_node_mq_url,
-                                                NetworkTestMessage.MESSAGE_TYPE)
-        fed_logger.info("server test network received")
-        network_time_end = time.time()
-        self.neighbor_bandwidth[neighbor] = BandWidth(data_utils.sizeofmessage(msg.weights),
-                                                      network_time_end - network_time_start)
+    def gather_and_scatter_global_weight(self):
+        received_messages = self.gather_msgs(GlobalWeightMessage.MESSAGE_TYPE, [NodeType.SERVER])
+        msg: GlobalWeightMessage = received_messages[0].message
+        weights = msg.weights[0]
+        for neighbor in self.get_neighbors([NodeType.CLIENT]):
+            cweights = model_utils.get_model('Client', self.split_layers[neighbor], self.device, True).state_dict()
+            pweights = model_utils.split_weights_edgeserver(weights, cweights,
+                                                            self.nets[neighbor].state_dict())
+            self.nets[neighbor].load_state_dict(pweights)
+        self.scatter_msg(GlobalWeightMessage([weights]), [NodeType.CLIENT])
 
     def cluster(self, options: dict):
         self.group_labels = fl_method_parser.fl_methods.get(options.get('clustering'))()
@@ -110,11 +96,17 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
         self.split_layers = fl_method_parser.fl_methods.get(options.get('splitting'))(state, self.group_labels, self)
         fed_logger.info('Next Round OPs: ' + str(self.split_layers))
 
-    def start_offloading_train(self):
+    def gather_and_scatter_split_config(self):
+        received_messages = self.gather_msgs(SplitLayerConfigMessage.MESSAGE_TYPE, [NodeType.SERVER])
+        msg: SplitLayerConfigMessage = received_messages[0].message
+        self.split_layers = msg.data
+        self.scatter_split_layers([NodeType.CLIENT])
+
+    def start_decentralized_training(self):
         self.threads = {}
         client_neighbors = self.get_neighbors([NodeType.CLIENT])
         for neighbor in client_neighbors:
-            self.threads[str(neighbor)] = threading.Thread(target=self._thread_offload_training,
+            self.threads[str(neighbor)] = threading.Thread(target=self._thread_decentralized_training,
                                                            args=(neighbor,), name=str(neighbor))
             fed_logger.info(str(neighbor) + ' offloading training start')
             self.threads[str(neighbor)].start()
@@ -124,7 +116,7 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
             self.threads[str(neighbor)].join()
         fed_logger.info('offloading training finished')
 
-    def _thread_offload_training(self, neighbor: NodeIdentifier):
+    def _thread_decentralized_training(self, neighbor: NodeIdentifier):
         neighbor_rabbitmq_url = HTTPCommunicator.get_rabbitmq_url(neighbor)
         flag: bool = self.recv_msg(neighbor.get_exchange_name(), config.current_node_mq_url,
                                    IterationFlagMessage.MESSAGE_TYPE).flag
@@ -154,6 +146,108 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
             self.send_msg(self.get_exchange_name(), neighbor_rabbitmq_url, msg)
 
         fed_logger.info(str(neighbor) + ' offloading training end')
+
+    def start_centralized_training(self):
+        self.threads = {}
+        client_neighbors = self.get_neighbors([NodeType.CLIENT])
+        for neighbor in client_neighbors:
+            self.threads[str(neighbor)] = threading.Thread(target=self._thread_centralized_training,
+                                                           args=(neighbor,), name=str(neighbor))
+            fed_logger.info(str(neighbor) + ' offloading training start')
+            self.threads[str(neighbor)].start()
+
+        fed_logger.info('waiting for offloading training to finish')
+        for neighbor in client_neighbors:
+            self.threads[str(neighbor)].join()
+        fed_logger.info('offloading training finished')
+
+    def _thread_centralized_training(self, neighbor: NodeIdentifier):
+        self._forward_propagation(neighbor)
+        self._send_back_local_weight(neighbor)
+
+    def _forward_propagation(self, neighbor: NodeIdentifier):
+        msg: IterationFlagMessage = self.recv_msg(neighbor.get_exchange_name(), config.current_node_mq_url,
+                                                  IterationFlagMessage.MESSAGE_TYPE)
+        server_neighbor = self.get_neighbors([NodeType.SERVER])[0]
+        flag: bool = msg.flag
+        if self.split_layers[neighbor][1] < model_utils.get_unit_model_len() - 1:
+            self.send_msg(self.get_exchange_name(neighbor), HTTPCommunicator.get_rabbitmq_url(server_neighbor),
+                          IterationFlagMessage(flag))
+        else:
+            self.send_msg(self.get_exchange_name(neighbor), HTTPCommunicator.get_rabbitmq_url(server_neighbor),
+                          IterationFlagMessage(False))
+
+        while flag:
+            if self.split_layers[neighbor][0] < model_utils.get_unit_model_len() - 1:
+                msg: IterationFlagMessage = self.recv_msg(neighbor.get_exchange_name(), config.current_node_mq_url,
+                                                          IterationFlagMessage.MESSAGE_TYPE)
+                flag: bool = msg.flag
+
+                if not flag:
+                    self.send_msg(self.get_exchange_name(neighbor), HTTPCommunicator.get_rabbitmq_url(server_neighbor),
+                                  IterationFlagMessage(flag))
+                    break
+
+                msg: GlobalWeightMessage = self.recv_msg(neighbor,
+                                                         config.current_node_mq_url,
+                                                         GlobalWeightMessage.MESSAGE_TYPE)
+                smashed_layers = msg.weights[0]
+                labels = msg.weights[1]
+
+                inputs, targets = smashed_layers.to(self.device), labels.to(self.device)
+                if self.split_layers[neighbor][0] < self.split_layers[neighbor][1]:
+                    if neighbor in self.optimizers.keys():
+                        self.optimizers[neighbor].zero_grad()
+                    outputs = self.nets[neighbor](inputs)
+                    if self.split_layers[neighbor][1] < model_utils.get_unit_model_len() - 1:
+                        self.send_msg(self.get_exchange_name(neighbor), HTTPCommunicator.get_rabbitmq_url(server_neighbor),
+                                      IterationFlagMessage(flag))
+                        msg: list = [outputs.cpu(), targets.cpu()]
+                        self.send_msg(self.get_exchange_name(neighbor), HTTPCommunicator.get_rabbitmq_url(server_neighbor),
+                                      GlobalWeightMessage(msg))
+                        msg: GlobalWeightMessage = self.recv_msg(neighbor.get_exchange_name(),
+                                                                 config.current_node_mq_url,
+                                                                 GlobalWeightMessage.MESSAGE_TYPE)
+                        gradients = msg.weights[0].to(self.device)
+                        # fed_logger.info(client_ip + " training model backward")
+                        outputs.backward(gradients)
+                        msg: list = [inputs.grad]
+                        self.send_msg(self.get_exchange_name(), HTTPCommunicator.get_rabbitmq_url(neighbor),
+                                      GlobalWeightMessage(msg))
+                    else:
+                        outputs = self.nets[neighbor](inputs)
+                        loss = self.criterion(outputs, targets)
+                        loss.backward()
+                        if neighbor in self.optimizers.keys():
+                            self.optimizers[neighbor].step()
+                        msg: list = [inputs.grad]
+                        self.send_msg(self.get_exchange_name(), HTTPCommunicator.get_rabbitmq_url(neighbor),
+                                      GlobalWeightMessage(msg))
+                else:
+                    self.send_msg(self.get_exchange_name(neighbor), HTTPCommunicator.get_rabbitmq_url(server_neighbor),
+                                  IterationFlagMessage(flag))
+                    msg: list = [inputs.cpu(), targets.cpu()]
+                    self.send_msg(self.get_exchange_name(neighbor), HTTPCommunicator.get_rabbitmq_url(server_neighbor),
+                                  GlobalWeightMessage(msg))
+                    # fed_logger.info(client_ip + " edge receiving gradients")
+                    msg: GlobalWeightMessage = self.recv_msg(neighbor.get_exchange_name(),
+                                                             config.current_node_mq_url,
+                                                             GlobalWeightMessage.MESSAGE_TYPE)
+                    # fed_logger.info(client_ip + " edge received gradients")
+                    self.send_msg(self.get_exchange_name(), HTTPCommunicator.get_rabbitmq_url(neighbor), msg)
+        fed_logger.info(str(neighbor) + ' offloading training end')
+
+    def _send_back_local_weight(self, neighbor: NodeIdentifier):
+        cweights = self.recv_msg(neighbor, config.current_node_mq_url, GlobalWeightMessage.MESSAGE_TYPE).weights[0]
+        server_neighbor = self.get_neighbors([NodeType.SERVER])[0]
+        sp = self.split_layers[config.CLIENTS_NAME_TO_INDEX[neighbor]][0]
+        if sp != (config.model_len - 1):
+            w_local = model_utils.concat_weights(self.uninet.state_dict(), cweights,
+                                                 self.nets[neighbor].state_dict())
+        else:
+            w_local = cweights
+        msg = GlobalWeightMessage([w_local])
+        self.send_msg(self.get_exchange_name(neighbor), HTTPCommunicator.get_rabbitmq_url(server_neighbor), msg)
 
     def gather_local_weights(self) -> dict[str, BaseModel]:
         client_local_weights = {}
