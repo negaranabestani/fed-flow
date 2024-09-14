@@ -264,9 +264,7 @@ def run(options_ins):
     fed_logger.info("start mode: " + str(options_ins.values()))
     offload = options_ins.get('offload')
     edge_based = options_ins.get('edgebased')
-    estimate_energy = False
-    if options_ins.get('energy') == "True":
-        estimate_energy = True
+    estimate_energy = options_ins.get('energy') == "True"
     if edge_based and offload:
         server_ins = FedServer(options_ins.get('ip'), options_ins.get('port'), options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)

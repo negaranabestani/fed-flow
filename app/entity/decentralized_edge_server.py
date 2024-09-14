@@ -1,22 +1,22 @@
 import threading
 import time
 
-import torch
-from torch import optim, nn, multiprocessing
+from torch import optim, nn
 
 from app.config import config
 from app.config.logger import fed_logger
 from app.dto.bandwidth import BandWidth
+from app.dto.base_model import BaseModel
 from app.dto.message import NetworkTestMessage, IterationFlagMessage, GlobalWeightMessage
 from app.entity.aggregators.base_aggregator import BaseAggregator
-from app.dto.base_model import BaseModel
 from app.entity.communicator import Communicator
 from app.entity.fed_base_node_interface import FedBaseNodeInterface
 from app.entity.http_communicator import HTTPCommunicator
 from app.entity.node import Node
-from app.entity.node_type import NodeType
 from app.entity.node_identifier import NodeIdentifier
+from app.entity.node_type import NodeType
 from app.fl_method import fl_method_parser
+from app.model.utils import get_available_torch_device
 from app.util import model_utils, data_utils
 
 
@@ -26,12 +26,7 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
     def __init__(self, ip: str, port: int, model_name, dataset, offload, aggregator: BaseAggregator):
         Node.__init__(self, ip, port, NodeType.EDGE)
         Communicator.__init__(self)
-        if torch.backends.mps.is_available():
-            self.device = torch.device('mps')
-        elif torch.cuda.is_available():
-            self.device = torch.device('cuda')
-        else:
-            self.device = torch.device('cpu')
+        self.device = get_available_torch_device()
         self.model_name = model_name
         self.nets = {}
         self.group_labels = None
@@ -196,8 +191,7 @@ class FedDecentralizedEdgeServer(FedBaseNodeInterface):
         msg = GlobalWeightMessage([self.uninet.to(self.device).state_dict()])
         self.scatter_msg(msg, [NodeType.EDGE])
         gathered_msgs = self.gather_msgs(GlobalWeightMessage.MESSAGE_TYPE, [NodeType.EDGE])
-        gathered_models = [(msg.message.weights[0], config.N / (len(edge_neighbors) + 1)) for msg in gathered_msgs]
+        gathered_models = [(msg.message.weights[0], config.N / len(edge_neighbors)) for msg in gathered_msgs]
         zero_model = model_utils.zero_init(self.uninet).state_dict()
-        gathered_models.append((self.uninet.to(self.device).state_dict(), config.N / (len(edge_neighbors) + 1)))
         aggregated_model = self.aggregator.aggregate(zero_model, gathered_models)
         self.uninet.load_state_dict(aggregated_model)
