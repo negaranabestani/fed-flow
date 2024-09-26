@@ -16,30 +16,27 @@ from app.util import data_utils
 
 # noinspection PyTypeChecker
 class FedBaseNodeInterface(ABC, Node, Communicator):
-    def __init__(self, ip: str, port: int, node_type: NodeType):
-        super().__init__(ip, port, node_type)
+    def __init__(self, ip: str, port: int, node_type: NodeType, neighbors: list[NodeIdentifier] = None):
+        Node.__init__(self, ip, port, node_type, neighbors)
+        Communicator.__init__(self)
         self.neighbor_bandwidth: dict[NodeIdentifier, BandWidth] = {}
         self.uninet = None
         self.split_layers = None
         self.device = None
 
     def scatter_msg(self, msg: BaseMessage, neighbors_types: list[NodeType] = None):
-        for neighbor in self.get_neighbors():
-            neighbor_type = HTTPCommunicator.get_node_type(neighbor)
-            if neighbors_types is None or neighbor_type in neighbors_types:
-                rabbitmq_url = HTTPCommunicator.get_rabbitmq_url(neighbor)
-                self.send_msg(self.get_exchange_name(), rabbitmq_url, msg)
+        for neighbor in self.get_neighbors(neighbors_types):
+            rabbitmq_url = HTTPCommunicator.get_rabbitmq_url(neighbor)
+            self.send_msg(self.get_exchange_name(), rabbitmq_url, msg)
 
     def scatter_global_weights(self, neighbors_types: list[NodeType] = None):
         msg = GlobalWeightMessage([self.uninet.state_dict()])
         self.scatter_msg(msg, neighbors_types)
 
     def scatter_split_layers(self, neighbors_types: list[NodeType] = None):
-        for neighbor in self.get_neighbors():
-            neighbor_type = HTTPCommunicator.get_node_type(neighbor)
-            if neighbors_types is None or neighbor_type in neighbors_types:
-                msg = SplitLayerConfigMessage(self.split_layers[str(neighbor)])
-                self.send_msg(self.get_exchange_name(), HTTPCommunicator.get_rabbitmq_url(neighbor), msg)
+        for neighbor in self.get_neighbors(neighbors_types):
+            msg = SplitLayerConfigMessage(self.split_layers[neighbor])
+            self.send_msg(self.get_exchange_name(), HTTPCommunicator.get_rabbitmq_url(neighbor), msg)
 
     def gather_msgs(self, msg_type: MessageType, neighbors_types: list[NodeType] = None) -> list[
             ReceivedMessage]:  # (ip, msg)
@@ -56,9 +53,9 @@ class FedBaseNodeInterface(ABC, Node, Communicator):
         for neighbor in self.get_neighbors():
             neighbor_type = HTTPCommunicator.get_node_type(neighbor)
             if neighbors_type is None or neighbor_type == neighbors_type:
-                net_threads[str(neighbor)] = threading.Thread(target=self._thread_network_testing,
+                net_threads[neighbor] = threading.Thread(target=self._thread_network_testing,
                                                               args=(neighbor,), name=str(neighbor))
-                net_threads[str(neighbor)].start()
+                net_threads[neighbor].start()
 
         for _, thread in net_threads.items():
             thread.join()

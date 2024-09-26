@@ -11,7 +11,7 @@ from app.entity.edge_server import FedEdgeServer
 
 
 def run(options_ins):
-    LR = config.LR
+    LR = config.learning_rate
     ip_address = socket.gethostname()
     # fed_logger.info('Preparing Sever.')
     edge_server = FedEdgeServer(options_ins.get('model'),options_ins.get('dataset'),offload=options_ins.get('offload'))
@@ -56,7 +56,7 @@ def run(options_ins):
             threads[client_ips[i]].join()
 
         if r > 49:
-            LR = config.LR * 0.1
+            LR = config.learning_rate * 0.1
         edge_server.energy(client_ips)
 
         for i in range(config.max_timesteps):
@@ -92,7 +92,7 @@ def run(options_ins):
                 threads[client_ips[i]].join()
             edge_server.energy(client_ips)
             if r > 49:
-                LR = config.LR * 0.1
+                LR = config.learning_rate * 0.1
 
     # msg = edge_server.recv_msg(edge_server.central_server_communicator.sock, message_utils.finish)
     # edge_server.scatter(msg)

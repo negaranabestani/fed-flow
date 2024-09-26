@@ -20,7 +20,7 @@ def run(options_ins):
 
     index = config.index
     datalen = config.N / config.K
-    LR = config.LR
+    LR = config.learning_rate
     mx: int = int((N / K) * (index + 1))
     mn: int = int((N / K) * index)
     data_size = mx - mn
@@ -113,7 +113,7 @@ def run(options_ins):
             client.energy_tt(float(energy()) / batch_num, tt)
 
             if r > 49:
-                LR = config.LR * 0.1
+                LR = config.learning_rate * 0.1
     msg = client.recv_msg('client', config.mq_url, JsonMessage.MESSAGE_TYPE)
 
 

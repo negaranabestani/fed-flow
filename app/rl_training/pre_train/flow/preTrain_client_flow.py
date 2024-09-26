@@ -20,7 +20,7 @@ def run(options_ins):
 
     index = config.index
     datalen = config.N / config.K
-    LR = config.LR
+    LR = config.learning_rate
     mx: int = int((N / K) * (index + 1))
     mn: int = int((N / K) * index)
     data_size = mx - mn

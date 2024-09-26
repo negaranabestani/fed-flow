@@ -23,7 +23,7 @@ class Node:
     node_coordinate: NodeCoordinate
     discovered_edges: set[NodeIdentifier]
 
-    def __init__(self, ip: str, port: int, node_type: NodeType):
+    def __init__(self, ip: str, port: int, node_type: NodeType, neighbors: list[NodeIdentifier] = None):
         self._server_started = False
         self.ip = ip
         self.port = port
@@ -33,6 +33,8 @@ class Node:
         self.discovered_edges = set()
         self._app = FastAPI()
         self._server: Server
+        if neighbors:
+            self.add_neighbors(neighbors)
         self._setup_routes()
         self._start_server_in_thread(port)
 

@@ -9,7 +9,7 @@ from app.entity.node_identifier import NodeIdentifier
 
 class HTTPCommunicator:
     MAX_RETRIES = 5
-    WAIT_DURATION_SECONDS = 20
+    WAIT_DURATION_SECONDS = 5
 
     @staticmethod
     def _wait_for_neighbor_to_get_ready(node_identifier: NodeIdentifier):

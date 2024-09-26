@@ -15,13 +15,14 @@ from app.dto.message import BaseMessage, MessageType
 logging.getLogger("pika").setLevel(logging.FATAL)
 
 
-class Communicator(object):
+class Communicator:
     def __init__(self):
         self.connection = None
         self.channel = None
         self.url = None
         self.should_close = False
         self.send_bug = False
+
 
     @staticmethod
     def purge_all_queues():
@@ -93,7 +94,6 @@ class Communicator(object):
                 fed_logger.info(f"Response: {response.text}")
         except Exception as e:
             fed_logger.error(Fore.RED + f"Failed to create vhost: {e}" + Fore.RESET)
-
 
     def connect(self, url: str):
         try:
@@ -195,7 +195,8 @@ class Communicator(object):
                     channel.cancel()
                     channel.basic_ack(method_frame.delivery_tag)
                     self.close_connection(channel, connection)
-                    fed_logger.info(Fore.CYAN + f"received {msg.get_message_type()} using {rabbitmq_endpoint}" + Fore.RESET)
+                    fed_logger.info(
+                        Fore.CYAN + f"received {msg.get_message_type()} using {rabbitmq_endpoint}" + Fore.RESET)
                     return msg
             except Exception as e:
                 fed_logger.info(Fore.RED + f"exception occurred while consuming {msg_type}: {e}" + Fore.RESET)

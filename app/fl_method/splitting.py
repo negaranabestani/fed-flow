@@ -64,10 +64,7 @@ def fake(state, labels, **kwargs):
 
 
 def fake_decentralized(state, labels, node: FedBaseNodeInterface):
-    split_layers = {}
-    for neighbor in node.get_neighbors():
-        split_layers[str(neighbor)] = len(node.uninet.cfg) - 1
-    return split_layers
+    return node.split_layers
 
 
 def no_splitting(state, labels, **kwargs):

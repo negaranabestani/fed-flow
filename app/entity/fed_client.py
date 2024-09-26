@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 from torch import optim
 from tqdm import tqdm
@@ -7,34 +6,49 @@ from app.config import config
 from app.config.logger import fed_logger
 from app.dto.message import GlobalWeightMessage, NetworkTestMessage, SplitLayerConfigMessage, IterationFlagMessage
 from app.dto.received_message import ReceivedMessage
-from app.entity.communicator import Communicator
 from app.entity.fed_base_node_interface import FedBaseNodeInterface
+from app.entity.http_communicator import HTTPCommunicator
 from app.entity.mobility_manager import MobilityManager
-from app.entity.node import Node
+from app.entity.node_identifier import NodeIdentifier
 from app.entity.node_type import NodeType
 from app.model.utils import get_available_torch_device
 from app.util import model_utils
 
 
 # noinspection PyTypeChecker
-class DecentralizedClient(FedBaseNodeInterface):
+class FedClient(FedBaseNodeInterface):
 
-    def __init__(self, ip: str, port: int, model_name, dataset, train_loader, LR):
-        Node.__init__(self, ip, port, NodeType.CLIENT)
-        Communicator.__init__(self)
+    def __init__(self, ip: str, port: int, model_name, dataset, train_loader, LR,
+                 neighbors: list[NodeIdentifier] = None):
+        super().__init__(ip, port, NodeType.CLIENT, neighbors)
+        self._edge_based = None
+        self.scheduler = None
+        self.optimizer = None
         self.device = get_available_torch_device()
         self.model_name = model_name
-        self.edge_based = True
         self.dataset = dataset
         self.train_loader = train_loader
         self.split_layers = None
-        self.uninet = model_utils.get_model('Unit', None, self.device, True)
-        self.net = self.uninet
+        self.net = model_utils.get_model('Unit', None, self.device, True)
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.SGD(self.net.parameters(), lr=LR, momentum=0.9, weight_decay=5e-4)
-        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, config.lr_step_size, config.lr_gamma)
-        self.edge_based = False
         self.mobility_manager = MobilityManager(self)
+
+    @property
+    def is_edge_based(self) -> bool:
+        if self._edge_based is not None:
+            return self._edge_based
+        self._edge_based = False
+        for edge in self.get_neighbors([NodeType.EDGE]):
+            server_neighbors = HTTPCommunicator.get_neighbors_from_neighbor(edge)
+            if len(server_neighbors) > 0:
+                self._edge_based = True
+                break
+        return self._edge_based
+
+    def initialize(self, learning_rate):
+        self.net = model_utils.get_model('Client', self.split_layers, self.device, self.is_edge_based)
+        self.optimizer = optim.SGD(self.net.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
+        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, config.lr_step_size, config.lr_gamma)
 
     def gather_global_weights(self):
         msgs: list[ReceivedMessage] = self.gather_msgs(GlobalWeightMessage.MESSAGE_TYPE, [NodeType.EDGE])
@@ -43,7 +57,7 @@ class DecentralizedClient(FedBaseNodeInterface):
         self.net.load_state_dict(pweights)
 
     def scatter_network_speed_to_edges(self):
-        msg = NetworkTestMessage([self.uninet.to(self.device).state_dict()])
+        msg = NetworkTestMessage([self.net.to(self.device).state_dict()])
         self.scatter_msg(msg, [NodeType.EDGE])
         fed_logger.info("test network sent")
 
@@ -59,7 +73,10 @@ class DecentralizedClient(FedBaseNodeInterface):
         self.net.to(self.device)
         self.net.train()
         i = 0
-        if self.split_layers == model_utils.get_unit_model_len() - 1:
+        split_point = self.split_layers
+        if isinstance(self.split_layers, list):
+            split_point = self.split_layers[0]
+        if split_point == model_utils.get_unit_model_len() - 1:
             fed_logger.info("no offloding training start----------------------------")
             self.scatter_msg(IterationFlagMessage(False), [NodeType.EDGE])
             i += 1
@@ -72,7 +89,7 @@ class DecentralizedClient(FedBaseNodeInterface):
                 self.optimizer.step()
             self.scheduler.step()
 
-        elif self.split_layers < model_utils.get_unit_model_len() - 1:
+        elif split_point < model_utils.get_unit_model_len() - 1:
             fed_logger.info(f"offloding training start {self.split_layers}----------------------------")
             self.scatter_msg(IterationFlagMessage(True), [NodeType.EDGE])
             i += 1
