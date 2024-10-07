@@ -9,7 +9,9 @@ class NodeIdentifier:
     def __str__(self):
         return f"{self.ip}:{self.port}"
 
-    def get_exchange_name(self):
+    def get_exchange_name(self, extra_target: str = '') -> str:
+        if extra_target:
+            return f"{self.__str__()}_{extra_target}"
         return self.__str__()
 
     def __eq__(self, other):

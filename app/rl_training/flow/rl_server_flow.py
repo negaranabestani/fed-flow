@@ -12,7 +12,7 @@ import numpy as np
 
 
 def run(options):
-    LR = config.LR
+    LR = config.learning_rate
     fed_logger.info('Preparing Sever.')
     fed_logger.info("start mode: " + str(options.values()))
     offload = options.get('offload')
@@ -383,7 +383,7 @@ def rl_flow(server, options, r, LR):
     server.send_split_layers_config_to_edges()
 
     if r > 49:
-        LR = config.LR * 0.1
+        LR = config.learning_rate * 0.1
 
     fed_logger.info("initializing server")
     server.initialize(server.split_layers)

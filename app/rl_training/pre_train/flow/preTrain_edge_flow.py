@@ -16,7 +16,7 @@ from app.config.logger import fed_logger
 
 
 def run(options_ins):
-    LR = config.LR
+    LR = config.learning_rate
     ip_address = socket.gethostname()
     # fed_logger.info('Preparing Sever.')
     edge_server = FedEdgeServer(options_ins.get('model'), options_ins.get('dataset'),

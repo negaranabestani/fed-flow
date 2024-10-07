@@ -9,7 +9,7 @@ from app.entity.node_identifier import NodeIdentifier
 
 class HTTPCommunicator:
     MAX_RETRIES = 5
-    WAIT_DURATION_SECONDS = 20
+    WAIT_DURATION_SECONDS = 5
 
     @staticmethod
     def _wait_for_neighbor_to_get_ready(node_identifier: NodeIdentifier):
@@ -52,16 +52,16 @@ class HTTPCommunicator:
             raise Exception(
                 f"Failed to get coordinates for node {node_identifier}, status code: {response.status_code}")
 
-            raise Exception(
-                f"Failed to get coordinates for node {node_identifier}, status code: {response.status_code}")
-
     @staticmethod
-    def get_neighbors_from_neighbor(neighbor: NodeIdentifier):
+    def get_neighbors_from_neighbor(neighbor: NodeIdentifier, node_types: list[NodeType] = None) -> list[
+        NodeIdentifier]:
         HTTPCommunicator._wait_for_neighbor_to_get_ready(neighbor)
         request_url = f"http://{neighbor.ip}:{neighbor.port}/get-neighbors-info"
         response = requests.get(request_url)
         if response.status_code == 200:
-            return response.json()
+            result = [NodeIdentifier(info['ip'], info['port']) for info in response.json()]
+            return [neighbor for neighbor in result if
+                    node_types is None or HTTPCommunicator.get_node_type(neighbor) in node_types]
         else:
             raise Exception(
                 f"Failed to fetch neighbors from {neighbor}, status code: {response.status_code}")

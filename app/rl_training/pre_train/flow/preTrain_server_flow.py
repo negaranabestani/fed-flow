@@ -10,7 +10,7 @@ import numpy as np
 
 
 def run(options):
-    LR = config.LR
+    LR = config.learning_rate
     fed_logger.info('Preparing Sever.')
     fed_logger.info('Pre Train Flow Start (Energy of each layer)')
     fed_logger.info('===========================================')
