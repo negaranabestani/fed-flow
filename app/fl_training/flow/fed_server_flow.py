@@ -71,7 +71,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
     fed_logger.info(f"OPTION: {options}")
     for r in range(config.R):
-        fed_logger.info(Fore.LIGHTBLUE_EX + f"number of final K: {config.K}")
+        fed_logger.debug(Fore.LIGHTBLUE_EX + f"number of final K: {config.K}")
         if config.K > 0:
             config.current_round = r
             x.append(r)
@@ -108,7 +108,6 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
                     normalizedState.append(bw / 10_000_000)
             iotBW.append(normalizedState[:config.K])
             edgeBW.append(normalizedState[config.K:config.K + config.S])
-            remainingEnergy.append(state[config.K + config.S:])
 
             fed_logger.info("splitting")
             server.split(normalizedState, options)
@@ -138,6 +137,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
             clientEnergy = []
             for i in range(config.K):
                 clientEnergy.append(energy_tt_list[i][0])
+                remainingEnergy.append(energy_tt_list[i][2])
             avgEnergy.append(sum(clientEnergy) / int(config.K))
             server.e_client_attendance(config.CLIENTS_LIST)
 
@@ -159,65 +159,7 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
             fed_logger.info('Round Finish')
             fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
-            rl_utils.draw_graph(10, 5, x, tt, "Training time", "FL Rounds", "Training Time", "/fed-flow/Graphs",
-                                "trainingTime", True)
-            rl_utils.draw_graph(10, 5, x, avgEnergy, "Energy time", "FL Rounds", "Energy", "/fed-flow/Graphs",
-                                "energy", True)
-
-            x = [i for i in range(len(remainingEnergy) - 1)]
-            plt.figure(figsize=(int(25), int(5)))
-            iotDevice_K = []
-            for k in range(config.K):
-                for i in range(len(remainingEnergy)):
-                    iotDevice_K.append(remainingEnergy[i][k])
-                r = random.random()
-                b = random.random()
-                g = random.random()
-                color = (r, g, b)
-                plt.title(f"Remaining Energy of iot devices")
-                plt.xlabel("timestep")
-                plt.ylabel("remaining energy")
-                plt.plot(x, iotDevice_K, color=color, linewidth='3', label=f"Device {k}")
-            plt.legend()
-            plt.savefig(os.path.join("/fed-flow/Graphs", f"Remaining Energies"))
-            plt.close()
-
-            x = [i for i in range(len(iotBW) - 1)]
-            plt.figure(figsize=(int(25), int(5)))
-            iotDevice_K = []
-            for k in range(config.K):
-                for i in range(len(iotBW)):
-                    iotDevice_K.append(iotBW[i][k])
-                r = random.random()
-                b = random.random()
-                g = random.random()
-                color = (r, g, b)
-                plt.title(f"BW of iot devices")
-                plt.xlabel("timestep")
-                plt.ylabel("BW")
-                plt.plot(x, iotDevice_K, color=color, linewidth='3', label=f"Device {k}")
-            plt.legend()
-            plt.savefig(os.path.join("/fed-flow/Graphs", f"iotBW"))
-            plt.close()
-
-            x = [i for i in range(len(edgeBW) - 1)]
-            plt.figure(figsize=(int(25), int(5)))
-            edgeDevice_K = []
-            for k in range(config.S):
-                for i in range(len(edgeBW)):
-                    edgeDevice_K.append(edgeBW[i][k])
-                r = random.random()
-                b = random.random()
-                g = random.random()
-                color = (r, g, b)
-                plt.title(f"BW of edge devices")
-                plt.xlabel("timestep")
-                plt.ylabel("BW")
-                plt.plot(x, iotDevice_K, color=color, linewidth='3', label=f"Device {k}")
-            plt.legend()
-            plt.savefig(os.path.join("/fed-flow/Graphs", f"edgeBW"))
-            plt.close()
-
+            plot_graph(x, tt, avgEnergy, remainingEnergy, iotBW, edgeBW, res['test_acc_record'])
         else:
             break
     fed_logger.info(f"{socket.gethostname()} quit")
@@ -284,11 +226,13 @@ def run_no_edge_offload(server: FedServerInterface, LR, options):
 def run_no_edge(server: FedServerInterface, options):
     res = {}
     res['training_time'], res['test_acc_record'], res['bandwidth_record'] = [], [], []
-
+    avgEnergy, tt, remainingEnergy = [], [], []
+    iotBW, edgeBW = [], []
+    x = []
     for r in range(config.R):
         if config.K > 0:
             config.current_round = r
-
+            x.append(r)
             fed_logger.info('====================================>')
             fed_logger.info('==> Round {:} Start'.format(r))
 
@@ -307,6 +251,7 @@ def run_no_edge(server: FedServerInterface, options):
 
             # Recording each round training time, bandwidth and test accuracy
             training_time = e_time - s_time
+            tt.append(training_time)
             res['training_time'].append(training_time)
             res['bandwidth_record'].append(server.bandwith())
             with open(config.home + '/results/FedAdapt_res.pkl', 'wb') as f:
@@ -316,6 +261,7 @@ def run_no_edge(server: FedServerInterface, options):
 
             fed_logger.info('Round Finish')
             fed_logger.info('==> Round Training Time: {:}'.format(training_time))
+            plot_graph(x=x, tt=tt, accuracy=res['test_acc_record'])
         else:
             break
     fed_logger.info(f"{socket.gethostname()} quit")
@@ -343,3 +289,72 @@ def run(options_ins):
         server_ins = FedServer(options_ins.get('model'),
                                options_ins.get('dataset'), offload, edge_based)
         run_no_edge(server_ins, options_ins)
+
+
+def plot_graph(x, tt=None, avgEnergy=None, remainingEnergy=None, iotBW=None, edgeBW=None, accuracy=None):
+    if tt:
+        rl_utils.draw_graph(10, 5, x, tt, "Training time", "FL Rounds", "Training Time", "/fed-flow/Graphs",
+                            "trainingTime", True)
+    if avgEnergy:
+        rl_utils.draw_graph(10, 5, x, avgEnergy, "Energy time", "FL Rounds", "Energy", "/fed-flow/Graphs",
+                            "energy", True)
+    if accuracy:
+        rl_utils.draw_graph(10, 5, x, accuracy, "Accuracy", "FL Rounds", "Accuracy", "/fed-flow/Graphs",
+                            "accuracy", True)
+
+    if remainingEnergy:
+        x = [i for i in range(len(remainingEnergy) - 1)]
+        plt.figure(figsize=(int(25), int(5)))
+        iotDevice_K = []
+        for k in range(config.K):
+            for i in range(len(remainingEnergy)):
+                iotDevice_K.append(remainingEnergy[i][k])
+            r = random.random()
+            b = random.random()
+            g = random.random()
+            color = (r, g, b)
+            plt.title(f"Remaining Energy of iot devices")
+            plt.xlabel("timestep")
+            plt.ylabel("remaining energy")
+            plt.plot(x, iotDevice_K, color=color, linewidth='3', label=f"Device {k}")
+        plt.legend()
+        plt.savefig(os.path.join("/fed-flow/Graphs", f"Remaining Energies"))
+        plt.close()
+
+    if iotBW:
+        x = [i for i in range(len(iotBW) - 1)]
+        plt.figure(figsize=(int(25), int(5)))
+        iotDevice_K = []
+        for k in range(config.K):
+            for i in range(len(iotBW)):
+                iotDevice_K.append(iotBW[i][k])
+            r = random.random()
+            b = random.random()
+            g = random.random()
+            color = (r, g, b)
+            plt.title(f"BW of iot devices")
+            plt.xlabel("timestep")
+            plt.ylabel("BW")
+            plt.plot(x, iotDevice_K, color=color, linewidth='3', label=f"Device {k}")
+        plt.legend()
+        plt.savefig(os.path.join("/fed-flow/Graphs", f"iotBW"))
+        plt.close()
+
+    if edgeBW:
+        x = [i for i in range(len(edgeBW) - 1)]
+        plt.figure(figsize=(int(25), int(5)))
+        edgeDevice_K = []
+        for k in range(config.S):
+            for i in range(len(edgeBW)):
+                edgeDevice_K.append(edgeBW[i][k])
+            r = random.random()
+            b = random.random()
+            g = random.random()
+            color = (r, g, b)
+            plt.title(f"BW of edge devices")
+            plt.xlabel("timestep")
+            plt.ylabel("BW")
+            plt.plot(x, edgeDevice_K, color=color, linewidth='3', label=f"Device {k}")
+        plt.legend()
+        plt.savefig(os.path.join("/fed-flow/Graphs", f"edgeBW"))
+        plt.close()
