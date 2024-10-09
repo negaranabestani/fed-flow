@@ -26,7 +26,7 @@ torch.manual_seed(0)
 class Client(FedBaseNodeInterface):
     def __init__(self, ip: str, port: int, model_name, dataset,
                  train_loader, LR, edge_based):
-        Node.__init__(self, ip, port, NodeType.CLIENT)
+        Node.__init__(self, ip, port, NodeType.CLIENT, None)
         Communicator.__init__(self)
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -117,9 +117,6 @@ class Client(FedBaseNodeInterface):
         self.net.load_state_dict(pweights)
 
     def get_server_global_weights(self):
-        """
-        receive global weights
-        """
         msg: GlobalWeightMessage = \
             self.recv_msg(config.CLIENTS_INDEX_TO_NAME[config.index], config.mq_url, GlobalWeightMessage.MESSAGE_TYPE)
         pweights = model_utils.split_weights_client(msg.weights[0], self.net.state_dict())

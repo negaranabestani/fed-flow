@@ -3,6 +3,9 @@ import pickle
 import sys
 import time
 
+from app.entity.aggregators.factory import create_aggregator
+from app.entity.node_type import NodeType
+
 sys.path.append('../../../')
 from app.config import config
 from app.util import model_utils
@@ -258,6 +261,39 @@ def run_no_edge(server: FedServer, options):
         fed_logger.info('==> Round Training Time: {:}'.format(training_time))
 
 
+def run_d2d(server: FedServer, options):
+    training_times = []
+    accuracy = []
+    rounds = []
+    for r in range(config.R):
+        config.current_round = r
+        rounds.append(r)
+        fed_logger.info('====================================>')
+        fed_logger.info('==> Round {:} Start'.format(r + 1))
+        fed_logger.info("resetting leaderships")
+        # server.reset_leadership()
+        fed_logger.info("sending global weights")
+        server.scatter_global_weights([NodeType.CLIENT])
+
+        s_time = time.time()
+        server.choose_random_client_per_cluster()
+        local_weights = server.receive_random_client_weights()
+        server.dec_aggregate(local_weights)
+
+        # Recording each round training time and accuracy
+        e_time = time.time()
+        training_time = e_time - s_time
+        training_times.append(training_time)
+
+        fed_logger.info("testing accuracy")
+        test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
+        fed_logger.info(f"Test Accuracy : {test_acc}")
+        accuracy.append(test_acc)
+        fed_logger.info('Round Finish')
+        fed_logger.info('==> Round {:} End'.format(r + 1))
+        fed_logger.info('==> Round Training Time: {:}'.format(training_time))
+
+
 def run(options_ins):
     LR = config.LR
     fed_logger.info('Preparing Sever.')
@@ -265,20 +301,29 @@ def run(options_ins):
     offload = options_ins.get('offload')
     edge_based = options_ins.get('edgebased')
     estimate_energy = options_ins.get('energy') == "True"
+    d2d = options_ins.get('d2d')
+    aggregator = create_aggregator(options_ins.get('aggregation'))
+
+    if d2d:
+        server_ins = FedServer(options_ins.get('ip'), options_ins.get('port'), options_ins.get('model'),
+                               options_ins.get('dataset'), offload, edge_based, aggregator)
+        server_ins.add_neighbors(config.CURRENT_NODE_NEIGHBORS)
+        run_d2d(server_ins, options_ins)
+
     if edge_based and offload:
         server_ins = FedServer(options_ins.get('ip'), options_ins.get('port'), options_ins.get('model'),
-                               options_ins.get('dataset'), offload, edge_based)
+                               options_ins.get('dataset'), offload, edge_based, aggregator)
         run_edge_based_offload(server_ins, LR, options_ins, estimate_energy)
     elif edge_based and not offload:
         server_ins = FedServer(options_ins.get('ip'), options_ins.get('port'), options_ins.get('model'),
-                               options_ins.get('dataset'), offload, edge_based)
+                               options_ins.get('dataset'), offload, edge_based, aggregator)
         run_edge_based_no_offload(server_ins, LR, options_ins)
     elif offload and not edge_based:
         server_ins = FedServer(options_ins.get('ip'), options_ins.get('port'), options_ins.get('model'),
-                               options_ins.get('dataset'), offload, edge_based)
+                               options_ins.get('dataset'), offload, edge_based, aggregator)
         run_no_edge_offload(server_ins, LR, options_ins)
     else:
         server_ins = FedServer(options_ins.get('ip'), options_ins.get('port'), options_ins.get('model'),
-                               options_ins.get('dataset'), offload, edge_based)
+                               options_ins.get('dataset'), offload, edge_based, aggregator)
         run_no_edge(server_ins, options_ins)
     server_ins.stop_server()

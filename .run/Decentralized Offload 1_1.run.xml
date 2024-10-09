@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Decentralized Offload 1_1" type="CompoundRunConfigurationType">
+    <toRun name="Client Offload Decentralized" type="PythonConfigurationType" />
+    <toRun name="Edge Decentralized Oflload" type="PythonConfigurationType" />
+    <method v="2" />
+  </configuration>
+</component>

@@ -36,6 +36,7 @@ class FedBaseNodeInterface(ABC, Node, Communicator):
     def gather_msgs(self, msg_type: MessageType, neighbors_types: list[NodeType] = None) -> list[
             ReceivedMessage]:  # (ip, msg)
         messages = []
+
         for neighbor in self.get_neighbors():
             neighbor_type = HTTPCommunicator.get_node_type(neighbor)
             if neighbors_types is None or neighbor_type in neighbors_types:

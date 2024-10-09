@@ -1,6 +1,8 @@
+import random
 import sys
 import threading
 import time
+from collections import defaultdict
 
 import numpy as np
 import torch
@@ -9,10 +11,13 @@ import torch.optim as optim
 from colorama import Fore
 from torch import multiprocessing
 
+from app.dto.base_model import BaseModel
 from app.dto.message import JsonMessage, GlobalWeightMessage, NetworkTestMessage, SplitLayerConfigMessage, \
     IterationFlagMessage, BaseMessage
+from app.entity.aggregators.base_aggregator import BaseAggregator
 from app.entity.communicator import Communicator
 from app.entity.fed_base_node_interface import FedBaseNodeInterface
+from app.entity.http_communicator import HTTPCommunicator
 from app.entity.node import Node
 from app.entity.node_type import NodeType
 from app.fl_method import fl_method_parser
@@ -28,8 +33,8 @@ torch.manual_seed(0)
 
 # noinspection PyTypeChecker
 class FedServer(FedBaseNodeInterface):
-    def __init__(self, ip: str, port: int, model_name, dataset, offload, edge_based):
-        Node.__init__(self, ip, port, NodeType.SERVER)
+    def __init__(self, ip: str, port: int, model_name, dataset, offload, edge_based, aggregator: BaseAggregator):
+        Node.__init__(self, ip, port, NodeType.SERVER, None)
         Communicator.__init__(self)
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -54,6 +59,7 @@ class FedServer(FedBaseNodeInterface):
         self.testset = data_utils.get_testset()
         self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
         self.criterion = nn.CrossEntropyLoss()
+        self.aggregator = aggregator
 
     def initialize(self, split_layers, LR):
         self.split_layers = split_layers
@@ -212,25 +218,48 @@ class FedServer(FedBaseNodeInterface):
 
     def aggregate(self, client_ips, aggregate_method, eweights):
         w_local_list = []
-        # fed_logger.info("aggregation start")
+
+        # Log the incoming parameters for debugging
+        fed_logger.info(
+            f"Starting aggregation with client_ips: {client_ips}, aggregate_method: {aggregate_method}, eweights: {eweights}")
+
         for i in range(len(eweights)):
+
             if self.offload:
                 sp = self.split_layers[i]
                 if self.edge_based:
                     sp = self.split_layers[i][0]
+
+                # Log the split layer position
+                fed_logger.info(f"Split layer position (sp): {sp}, model_len: {config.model_len}")
+
                 if sp != (config.model_len - 1):
+                    # Log the model states being concatenated
+                    fed_logger.info(f"Concatenating weights for client {client_ips[i]}")
+
                     w_local = (
                         model_utils.concat_weights(self.uninet.state_dict(), eweights[i],
                                                    self.nets[client_ips[i]].state_dict()),
-                        config.N / config.K)
+                        config.N / config.K
+                    )
                     w_local_list.append(w_local)
                 else:
                     w_local = (eweights[i], config.N / config.K)
             else:
                 w_local = (eweights[i], config.N / config.K)
+
+            # Log the local weights being added
+            fed_logger.info(f"Adding local weight for index {i}: {w_local}")
             w_local_list.append(w_local)
+
+        # Initialize zero model and log before aggregation
         zero_model = model_utils.zero_init(self.uninet).state_dict()
+        fed_logger.info(f"Zero model initialized for aggregation.")
+
+        # Perform aggregation
         aggregated_model = aggregate_method(zero_model, w_local_list, config.N)
+        fed_logger.info(f"Aggregation completed. Aggregated model keys: {aggregated_model.keys()}")
+
         self.uninet.load_state_dict(aggregated_model)
         return aggregated_model
 
@@ -258,7 +287,7 @@ class FedServer(FedBaseNodeInterface):
         fed_logger.info("server test network received")
         network_time_end = time.time()
         self.edge_bandwidth[connection_ip] = data_utils.sizeofmessage(msg.weights) / (
-                    network_time_end - network_time_start)
+                network_time_end - network_time_start)
 
     def client_network(self, edge_ips):
         """
@@ -311,7 +340,8 @@ class FedServer(FedBaseNodeInterface):
     def c_local_weights(self, client_ips):
         cweights = []
         for i in range(len(client_ips)):
-            msg: GlobalWeightMessage = self.recv_msg(config.SERVER_INDEX_TO_NAME[config.index], config.mq_url, GlobalWeightMessage.MESSAGE_TYPE)
+            msg: GlobalWeightMessage = self.recv_msg(config.SERVER_INDEX_TO_NAME[config.index], config.mq_url,
+                                                     GlobalWeightMessage.MESSAGE_TYPE)
             self.tt_end[client_ips[i]] = time.time()
             cweights.append(msg.weights[0])
         return cweights
@@ -378,6 +408,23 @@ class FedServer(FedBaseNodeInterface):
             fed_logger.error("aggregate method is none")
         self.aggregate(config.CLIENTS_LIST, method, eweights)
 
+    def dec_aggregate(self, client_local_weights: dict[str, BaseModel]) -> None:
+        zero_model = model_utils.zero_init(self.uninet).state_dict()
+        w_local_list = self._concat_neighbor_local_weights(client_local_weights)
+        aggregated_model = self.aggregator.aggregate(zero_model, w_local_list)
+        self.uninet.load_state_dict(aggregated_model)
+
+    def _concat_neighbor_local_weights(self, client_local_weights) -> list:
+        w_local_list = []
+        client_neighbors = self.get_neighbors([NodeType.CLIENT])
+        for neighbor in client_neighbors:
+            if HTTPCommunicator.get_is_leader(neighbor):
+                HTTPCommunicator.set_leader(neighbor, neighbor.ip, neighbor.port, False)
+                fed_logger.info(f"client_local_weights: {client_local_weights.keys()}")
+                w_local = (client_local_weights[str(neighbor)], config.N / len(client_neighbors))
+                w_local_list.append(w_local)
+        return w_local_list
+
     def scatter(self, msg: BaseMessage):
         list1 = config.CLIENTS_LIST
         if self.edge_based:
@@ -434,3 +481,60 @@ class FedServer(FedBaseNodeInterface):
 
     def bandwith(self):
         return self.edge_bandwidth
+
+    def receive_random_client_weights(self):
+        client_local_weights = {}
+        for neighbor in self.get_neighbors([NodeType.CLIENT]):
+            is_leader = HTTPCommunicator.get_is_leader(neighbor)
+            if is_leader:
+                msg: GlobalWeightMessage = self.recv_msg(neighbor.get_exchange_name(), config.current_node_mq_url,
+                                                         GlobalWeightMessage.MESSAGE_TYPE)
+                client_local_weights[str(neighbor)] = msg.weights[0]
+        return client_local_weights
+
+    def choose_random_client_per_cluster(self):
+        clusters = defaultdict(list)
+        neighbors = self.get_neighbors([NodeType.CLIENT])
+
+        # Step 2: Group clients by cluster
+        for neighbor in neighbors:
+            try:
+                fed_logger.info(f"Fetching cluster info for neighbor: {neighbor}")
+                cluster_info = HTTPCommunicator.get_cluster(neighbor)
+
+                if not cluster_info:
+                    fed_logger.warning(f"No cluster info returned for neighbor: {neighbor}")
+                    continue
+
+                cluster_id = cluster_info.get('cluster')
+                fed_logger.info(f"Cluster info for neighbor {neighbor}: {cluster_info}")
+
+                if cluster_id:
+                    clusters[cluster_id].append(neighbor)
+                    fed_logger.info(f"Added neighbor {neighbor} to cluster {cluster_id}")
+                else:
+                    fed_logger.warning(f"No valid cluster_id found for neighbor: {neighbor}")
+
+            except Exception as e:
+                fed_logger.error(f"Failed to get cluster info for neighbor {neighbor}: {e}")
+
+        fed_logger.info(f"Cluster groups formed: {clusters}")
+
+        # Step 3: Select random client per cluster and set leader
+        random_clients = {}
+        for cluster, clients in clusters.items():
+            if clients:
+                try:
+                    fed_logger.info(f"Selecting random client for cluster {cluster} from clients: {clients}")
+                    random_client = random.choice(clients)
+                    random_clients[cluster] = random_client
+                    fed_logger.info(f"Setting leader for cluster {cluster}: {random_client}")
+                    HTTPCommunicator.set_leader(random_client, random_client.ip, random_client.port, True)
+                    fed_logger.info(f"Successfully set leader for cluster {cluster}: {random_client}")
+
+                except Exception as e:
+                    fed_logger.error(f"Failed to set leader for cluster {cluster}: {e}")
+
+        fed_logger.info(f"Final random clients per cluster: {random_clients}")
+
+        return random_clients

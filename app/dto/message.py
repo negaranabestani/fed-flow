@@ -122,3 +122,13 @@ class SplitLayerConfigMessage(JsonMessage):
     def deserialize(data: bytes, msg_type: MessageType) -> 'JsonMessage':
         msg = JsonMessage.deserialize(data, msg_type)
         return SplitLayerConfigMessage(msg.data)
+
+
+class RandomValueMessage(JsonMessage):
+    MESSAGE_TYPE = MessageType('RandomValueMessage')
+
+    @staticmethod
+    def deserialize(data: bytes, msg_type: MessageType) -> 'JsonMessage':
+        msg = JsonMessage.deserialize(data, msg_type)
+        return RandomValueMessage(msg.data)
+

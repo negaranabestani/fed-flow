@@ -1,5 +1,6 @@
 import argparse
 from app.config import config
+from app.config.logger import fed_logger
 from app.entity.node_coordinate import NodeCoordinate
 from app.entity.node_identifier import NodeIdentifier
 from app.util import model_utils
@@ -8,6 +9,7 @@ options = {
     '-a': ['--aggregation', 'fed_avg', 'name of the aggregation method'],
     '-e': ['--edgebased', False, 'True if edge servers are available otherwise, False'],
     '-dt': ['--decentralized', False, 'True if running in decentralized mode, False otherwise'],
+    '-d2d': ['--d2d', False, 'True if running in d2d mode, False otherwise'],
     '-mb': ['--mobility', False, 'True if mobility is enabled, False otherwise'],
     '-c': ['--clustering', 'none_clustering', 'name of the clustering method'],
     '-s': ['--splitting', 'none_splitting', 'name of the splitting method'],
@@ -20,6 +22,7 @@ options = {
     '-ip': ['--ip', 'client1', 'IP address of the node'],
     '-en': ['--energy', 'False', 'enable or disable energy estimation'],
     '-r': ['--rabbitmq-url', 'amqp://rabbitmq:rabbitmq@localhost:5672/%2F', 'RabbitMQ endpoint'],
+    '-cl': ['--cluster', 'default_cluster', 'name of the cluster the node belongs to']
 }
 
 
@@ -66,12 +69,16 @@ def parse_argument(parser: argparse.ArgumentParser):
     option["edgebased"] = option.get("edgebased", "False") == "True"
     option["decentralized"] = option.get("decentralized", "False") == 'True'
     option["mobility"] = option.get("mobility", "False") == 'True'
+    option["d2d"] = option.get("d2d", "False") == 'True'
+    option["cluster"] = option.get("cluster", "default_cluster")
+
     if option["decentralized"] and option["edgebased"]:
         raise argparse.ArgumentTypeError("Decentralized and edgebased cannot be both True")
 
     neighbors = option.get("neighbors")
     if neighbors:
         config.CURRENT_NODE_NEIGHBORS = neighbors
+        fed_logger.warning(f"here are the neighbors: {neighbors}")
 
     coordinates = option.get("coordinates")
     if coordinates:

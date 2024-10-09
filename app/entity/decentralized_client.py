@@ -1,27 +1,34 @@
+import random
+
 import torch
 import torch.nn as nn
 from torch import optim
-from tqdm import tqdm
+import tqdm
 
 from app.config import config
 from app.config.logger import fed_logger
-from app.dto.message import GlobalWeightMessage, NetworkTestMessage, SplitLayerConfigMessage, IterationFlagMessage
+from app.dto.message import GlobalWeightMessage, NetworkTestMessage, SplitLayerConfigMessage, IterationFlagMessage, \
+    RandomValueMessage
 from app.dto.received_message import ReceivedMessage
 from app.entity.communicator import Communicator
 from app.entity.fed_base_node_interface import FedBaseNodeInterface
+from app.entity.http_communicator import HTTPCommunicator
 from app.entity.mobility_manager import MobilityManager
 from app.entity.node import Node
 from app.entity.node_type import NodeType
 from app.model.utils import get_available_torch_device
 from app.util import model_utils
+from app.entity.aggregators.base_aggregator import BaseAggregator
+from app.util.energy_estimation import computation_start, computation_end
 
 
 # noinspection PyTypeChecker
 class DecentralizedClient(FedBaseNodeInterface):
 
-    def __init__(self, ip: str, port: int, model_name, dataset, train_loader, LR):
-        Node.__init__(self, ip, port, NodeType.CLIENT)
+    def __init__(self, ip: str, port: int, model_name, dataset, train_loader, LR, cluster, aggregator: BaseAggregator):
+        Node.__init__(self, ip, port, NodeType.CLIENT, cluster)
         Communicator.__init__(self)
+        self.leader_info = None
         self.device = get_available_torch_device()
         self.model_name = model_name
         self.edge_based = True
@@ -35,12 +42,13 @@ class DecentralizedClient(FedBaseNodeInterface):
         self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, config.lr_step_size, config.lr_gamma)
         self.edge_based = False
         self.mobility_manager = MobilityManager(self)
+        self.aggregator = aggregator
 
-    def gather_global_weights(self):
-        msgs: list[ReceivedMessage] = self.gather_msgs(GlobalWeightMessage.MESSAGE_TYPE, [NodeType.EDGE])
+    def gather_global_weights(self, node_type: NodeType):
+        msgs: list[ReceivedMessage] = self.gather_msgs(GlobalWeightMessage.MESSAGE_TYPE, [node_type])
         msg: GlobalWeightMessage = msgs[0].message
-        pweights = model_utils.split_weights_client(msg.weights[0], self.net.state_dict())
-        self.net.load_state_dict(pweights)
+        # pweights = model_utils.split_weights_client(msg.weights[0], self.net.state_dict())
+        self.net.load_state_dict(msg.weights[0])
 
     def scatter_network_speed_to_edges(self):
         msg = NetworkTestMessage([self.uninet.to(self.device).state_dict()])
@@ -105,3 +113,30 @@ class DecentralizedClient(FedBaseNodeInterface):
 
     def scatter_local_weights(self):
         self.scatter_msg(GlobalWeightMessage([self.net.to(self.device).state_dict()]), [NodeType.EDGE])
+
+    def scatter_random_local_weights(self):
+        is_leader = HTTPCommunicator.get_is_leader(self)
+        if is_leader:
+            self.scatter_msg(GlobalWeightMessage([self.net.to(self.device).state_dict()]), [NodeType.SERVER])
+
+    def no_offloading_train(self):
+        self.net.to(self.device)
+        self.net.train()
+        for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(self.train_loader)):
+            inputs, targets = inputs.to(self.device), targets.to(self.device)
+            self.optimizer.zero_grad()
+            outputs = self.net(inputs)
+            loss = self.criterion(outputs, targets)
+            loss.backward()
+            self.optimizer.step()
+
+    def gossip_with_neighbors(self):
+        edge_neighbors = self.get_neighbors([NodeType.CLIENT])
+        msg = GlobalWeightMessage([self.uninet.to(self.device).state_dict()])
+        self.scatter_msg(msg, [NodeType.CLIENT])
+        gathered_msgs = self.gather_msgs(GlobalWeightMessage.MESSAGE_TYPE, [NodeType.CLIENT])
+        gathered_models = [(msg.message.weights[0], config.N / len(edge_neighbors)) for msg in gathered_msgs]
+        zero_model = model_utils.zero_init(self.uninet).state_dict()
+        aggregated_model = self.aggregator.aggregate(zero_model, gathered_models)
+        self.uninet.load_state_dict(aggregated_model)
+

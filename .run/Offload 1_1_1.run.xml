@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Offload 1_1_1" type="CompoundRunConfigurationType">
+    <toRun name="Client Offload" type="PythonConfigurationType" />
+    <toRun name="Edge Oflload" type="PythonConfigurationType" />
+    <toRun name="Server Offload" type="PythonConfigurationType" />
+    <method v="2" />
+  </configuration>
+</component>
