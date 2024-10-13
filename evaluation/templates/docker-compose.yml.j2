@@ -1,0 +1,35 @@
+services:
+  {% include 'node-base.yml' %}
+
+  {%- for client in clients %}
+  {% with node=client %}
+  {%- include 'service-template.yml.j2' with context -%}
+  {% endwith %}
+  {% endfor %}
+
+  {%- for edge in edges %}
+  {% with node=edge %}
+  {%- include 'service-template.yml.j2' with context -%}
+  {% endwith %}
+  {% endfor %}
+
+  {%- for server in servers %}
+  {% with node=server %}
+  {%- include 'service-template.yml.j2' with context -%}
+  {% endwith %}
+  {% endfor %}
+  broker:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq
+      RABBITMQ_MAX_MESSAGE_SIZE: 536870912
+
+volumes:
+  rabbitmq_data:

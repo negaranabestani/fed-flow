@@ -1,0 +1,17 @@
+{{ node.node_name }}:
+    <<: *node_base
+    environment:
+      AGGREGATION: "fedavg"
+      DECENTRALIZED: "{{ node.decentralized }}"
+      MOBILITY: "False"
+      CLUSTERING: "none_clustering"
+      OFFLOADING: "{{ node.offloading }}"
+      SPLITTING_METHOD: "{{ node.splitting_method }}"
+      MODEL: "VGG"
+      DATASET: "cifar10"
+      NODE_INDEX: "{{ node.node_index }}"
+      IP: "{{ node.ip }}"
+      PORT: "{{ node.port }}"
+      RABBITMQ_URL: "amqp://rabbitmq:rabbitmq@broker:5672/{{ node.node_name }}"
+      NEIGHBORS: "{{ node.neighbors }}"
+      NODE_TYPE: "{{ node.node_type }}"
