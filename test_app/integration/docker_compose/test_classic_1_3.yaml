@@ -21,6 +21,7 @@ services:
     working_dir: /fed-flow/app/fl_training/runner
     entrypoint: bash -c "python3 /fed-flow/app/fl_training/runner/fed_server_run.py"
   broker:
+    attach: false
     image: rabbitmq:3.13-management
     ports:
       - "5672:5672"
@@ -47,7 +48,7 @@ services:
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
-    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 2 & wait -n"
+    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 & wait -n"
   client2:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
@@ -65,7 +66,7 @@ services:
       restart_policy:
         condition: on-failure
     working_dir: /fed-flow/app/fl_training/runner
-    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 2 & wait -n"
+    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 1 & wait -n"
   client3:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
