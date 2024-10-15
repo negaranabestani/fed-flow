@@ -55,7 +55,7 @@ def run_edge_based(client: FedClientInterface, LR):
         fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}")
         remaining_energy = float(energy_estimation.remaining_energy())
         fed_logger.info(Fore.MAGENTA + f"remaining energy: {remaining_energy}")
-        client.energy_tt(remaining_energy,energy, tt)
+        client.energy_tt(remaining_energy, energy, tt)
         client.e_next_round_attendance(remaining_energy)
 
         # final.append(energy)
@@ -178,39 +178,38 @@ def run(options_ins):
     indices = list(range(N))
     part_tr = indices[int((N / K) * index): int((N / K) * (index + 1))]
     trainloader = data_utils.get_trainloader(data_utils.get_trainset(), part_tr, cpu_count)
+    estimate_energy = options_ins.get("energy") == "True"
+    simnet = options_ins.get("simulatebandwidth") == "True"
+    if estimate_energy:
+        energy_estimation.init(os.getpid())
 
     offload = options_ins.get('offload')
     edge_based = options_ins.get('edgebased')
     if edge_based and offload:
-        energy_estimation.init(os.getpid())
         client_ins = Client(server=config.CLIENT_MAP[config.CLIENTS_INDEX[index]], datalen=datalen,
                             model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
+                            simnet=simnet
                             )
         run_edge_based(client_ins, LR)
     elif edge_based and not offload:
-        energy_estimation.init(os.getpid())
         client_ins = Client(server=config.CLIENT_MAP[config.CLIENTS_INDEX[index]],
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
+                            simnet=simnet
                             )
         run_no_offload_edge(client_ins, LR)
     elif offload:
-        energy_estimation.init(os.getpid())
         client_ins = Client(server=config.SERVER_ADDR,
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
+                            simnet=simnet
                             )
         run_no_edge_offload(client_ins, LR)
     else:
-        energy_estimation.init(os.getpid())
         client_ins = Client(server=config.SERVER_ADDR,
                             datalen=datalen, model_name=options_ins.get('model'),
                             dataset=options_ins.get('dataset'), train_loader=trainloader, LR=LR, edge_based=edge_based,
+                            simnet=simnet
                             )
         run_no_edge(client_ins, LR)
-    # client_ins.recv_msg(config.CLIENTS_INDEX[index], message_utils.finish)
-
-# parser = argparse.ArgumentParser()
-# options = input_utils.parse_argument(parser)
-# run(options)

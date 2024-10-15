@@ -64,11 +64,8 @@ def start_transmission(process):
 def end_transmission(process, bits):
     # energy_logger.info(Fore.MAGENTA+f"{bits}")
     process.end_tr_time = time.time()
-    if config.simulate_network == True:
-        # energy_logger.info(f"simnet:{config.simulate_network}")
-        b = bits / (process.end_tr_time - process.start_tr_time)
-        b = random.uniform(0.6 * b, 1.2 * b)
-        process.transmission_time += bits / b
+    if process.bandwidth != 0:
+        process.transmission_time += bits / process.bandwidth
     else:
         # b = bits / (process.end_tr_time - process.start_tr_time)
         # energy_logger.info((f"bandwidth: {bits/(process.end_tr_time - process.start_tr_time)}, {bits}"))
@@ -137,3 +134,7 @@ def computation_end(process):
 
 def remaining_energy(process):
     return process.remaining_energy
+
+
+def set_simnet(process, simnetbw):
+    process.bandwidth = simnetbw

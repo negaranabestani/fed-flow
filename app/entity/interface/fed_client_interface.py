@@ -9,11 +9,12 @@ from app.util import model_utils
 
 class FedClientInterface(ABC, Communicator):
     def __init__(self, server, datalen, model_name, dataset,
-                 train_loader, LR, edge_based):
+                 train_loader, LR, edge_based, simnet):
         super(FedClientInterface, self).__init__()
         self.datalen = datalen
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model_name = model_name
+        self.simnet = simnet
         self.edge_based = edge_based
         self.server_id = server
         self.dataset = dataset
@@ -28,7 +29,7 @@ class FedClientInterface(ABC, Communicator):
                                    momentum=0.9)
 
     @abstractmethod
-    def initialize(self, split_layer, LR):
+    def initialize(self, split_layer, LR, simnetbw: None):
         pass
 
     @abstractmethod

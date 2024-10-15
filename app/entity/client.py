@@ -20,10 +20,11 @@ torch.manual_seed(0)
 
 class Client(FedClientInterface):
 
-    def initialize(self, split_layer, LR):
+    def initialize(self, split_layer, LR, simnetbw: None):
 
         self.split_layers = split_layer
-
+        if simnetbw is not None and self.simnet:
+            set_simnet(simnetbw)
         fed_logger.debug('Building Model.')
         self.net = model_utils.get_model('Client', self.split_layers[config.index], self.device, self.edge_based)
         fed_logger.debug(self.net)

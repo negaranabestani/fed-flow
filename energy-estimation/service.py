@@ -16,7 +16,7 @@ from process import Process
 warnings.filterwarnings('ignore')
 
 app = FastAPI()
-config.process = Process(0,config.init_energy)
+config.process = Process(0, config.init_energy)
 
 excluded_endpoints = ["/init/", "/", "/computation-start/", "/computation-end/", "/start-transmission/",
                       "/end-transmission/", "/get-cpu-utilization/"]
@@ -59,13 +59,18 @@ async def end_transmission(bits):
     system_utils.end_transmission(config.process, int(bits))
 
 
+@app.get("/set-simnet/{simnetbw}")
+async def set_simnet(simnetbw):
+    system_utils.set_simnet(config.process, simnetbw)
+
+
 @app.get("/energy/")
 async def energy():
     return system_utils.estimate_total_energy(config, config.process)
 
 
 @app.get("/remaining-energy/")
-async def energy():
+async def remaining_energy():
     return system_utils.remaining_energy(config.process)
 
 
@@ -93,9 +98,4 @@ async def energy_and_time_comp_tr():
 async def get_cpu_utilization(pid):
     return system_utils.get_cpu_u(pid)
 
-
-# uvconfig = uvicorn.Config(app, host="0.0.0.0", port=8023, log_level="critical")
-# server = uvicorn.Server(uvconfig)
-# server.run()
-# logging.critical("energy estimation service started on port "+str(8023))
 uvicorn.run(app, host="0.0.0.0", port=8023)

@@ -267,30 +267,6 @@ def run_no_edge(server: FedServerInterface, options):
     fed_logger.info(f"{socket.gethostname()} quit")
 
 
-def run(options_ins):
-    LR = config.LR
-    fed_logger.info('Preparing Sever.')
-    fed_logger.info("start mode: " + str(options_ins.values()))
-    offload = options_ins.get('offload')
-    edge_based = options_ins.get('edgebased')
-    if edge_based and offload:
-        server_ins = FedServer(options_ins.get('model'),
-                               options_ins.get('dataset'), offload, edge_based)
-        run_edge_based_offload(server_ins, LR, options_ins)
-    elif edge_based and not offload:
-        server_ins = FedServer(options_ins.get('model'),
-                               options_ins.get('dataset'), offload, edge_based)
-        run_edge_based_no_offload(server_ins, LR, options_ins)
-    elif offload and not edge_based:
-        server_ins = FedServer(options_ins.get('model'),
-                               options_ins.get('dataset'), offload, edge_based)
-        run_no_edge_offload(server_ins, LR, options_ins)
-    else:
-        server_ins = FedServer(options_ins.get('model'),
-                               options_ins.get('dataset'), offload, edge_based)
-        run_no_edge(server_ins, options_ins)
-
-
 def plot_graph(x, tt=None, avgEnergy=None, remainingEnergy=None, iotBW=None, edgeBW=None, accuracy=None):
     if tt:
         rl_utils.draw_graph(10, 5, x, tt, "Training time", "FL Rounds", "Training Time", "/fed-flow/Graphs",
@@ -358,3 +334,27 @@ def plot_graph(x, tt=None, avgEnergy=None, remainingEnergy=None, iotBW=None, edg
         plt.legend()
         plt.savefig(os.path.join("/fed-flow/Graphs", f"edgeBW"))
         plt.close()
+
+
+def run(options_ins):
+    LR = config.LR
+    fed_logger.info('Preparing Sever.')
+    fed_logger.info("start mode: " + str(options_ins.values()))
+    offload = options_ins.get('offload')
+    edge_based = options_ins.get('edgebased')
+    if edge_based and offload:
+        server_ins = FedServer(options_ins.get('model'),
+                               options_ins.get('dataset'), offload, edge_based)
+        run_edge_based_offload(server_ins, LR, options_ins)
+    elif edge_based and not offload:
+        server_ins = FedServer(options_ins.get('model'),
+                               options_ins.get('dataset'), offload, edge_based)
+        run_edge_based_no_offload(server_ins, LR, options_ins)
+    elif offload and not edge_based:
+        server_ins = FedServer(options_ins.get('model'),
+                               options_ins.get('dataset'), offload, edge_based)
+        run_no_edge_offload(server_ins, LR, options_ins)
+    else:
+        server_ins = FedServer(options_ins.get('model'),
+                               options_ins.get('dataset'), offload, edge_based)
+        run_no_edge(server_ins, options_ins)
