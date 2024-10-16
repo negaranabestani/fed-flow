@@ -80,6 +80,13 @@ def test_network_edge_to_client():
     return f'{get_round()}_MSG_TEST_NETWORK_EDGE_TO_CLIENT'
 
 
+def simnet_bw_client_to_edge():
+    return f'{get_round()}_MSG_SIMNET_NETWORK_CLIENT_TO_EDGE'
+
+def simnet_bw_edge_to_server():
+    return f'{get_round()}_MSG_SIMNET_NETWORK_EDGE_TO_SERVER'
+
+
 def client_network():
     return f'{get_round()}_MSG_CLIENT_NETWORK'
 

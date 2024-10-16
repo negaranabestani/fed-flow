@@ -23,7 +23,7 @@ def set_simnet(simnet):
     if is_init:
         session = requests.session()
         session.trust_env = False
-        session.get(url=URL + "/set-simnet/")
+        session.get(url=URL + "/set-simnet/" + str(simnet))
 
 
 def computation_start():

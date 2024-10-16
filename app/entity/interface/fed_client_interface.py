@@ -14,7 +14,8 @@ class FedClientInterface(ABC, Communicator):
         self.datalen = datalen
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model_name = model_name
-        self.simnet = simnet
+        self.simnet: bool = simnet
+        self.simnetbw = 10 if self.simnet else 0
         self.edge_based = edge_based
         self.server_id = server
         self.dataset = dataset
@@ -29,7 +30,7 @@ class FedClientInterface(ABC, Communicator):
                                    momentum=0.9)
 
     @abstractmethod
-    def initialize(self, split_layer, LR, simnetbw: None):
+    def initialize(self, split_layer, LR, simnetbw: float = None):
         pass
 
     @abstractmethod
@@ -104,4 +105,7 @@ class FedClientInterface(ABC, Communicator):
 
     @abstractmethod
     def e_next_round_attendance(self, remaining_energy):
+        pass
+
+    def send_simnet_bw_to_edge(self, simnetbw):
         pass

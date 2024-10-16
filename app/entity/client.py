@@ -11,7 +11,6 @@ sys.path.append('../../')
 from app.util import message_utils, model_utils, data_utils
 from app.entity.interface.fed_client_interface import FedClientInterface
 from app.config.logger import fed_logger
-from app.config import config
 from app.util.energy_estimation import *
 
 np.random.seed(0)
@@ -25,6 +24,7 @@ class Client(FedClientInterface):
         self.split_layers = split_layer
         if simnetbw is not None and self.simnet:
             set_simnet(simnetbw)
+        self.simnetbw = simnetbw
         fed_logger.debug('Building Model.')
         self.net = model_utils.get_model('Client', self.split_layers[config.index], self.device, self.edge_based)
         fed_logger.debug(self.net)
@@ -68,6 +68,13 @@ class Client(FedClientInterface):
         fed_logger.info("test network sent")
         return msg
 
+    def send_simnet_bw_to_edge(self, simnetbw):
+        start_transmission()
+        msg = [message_utils.simnet_bw_client_to_edge(), simnetbw]
+        self.send_msg(exchange=config.CLIENTS_INDEX[config.index], msg=msg, is_weight=False)
+        end_transmission(data_utils.sizeofmessage(msg))
+        fed_logger.info("Simnet BW sent")
+
     def get_split_layers_config(self):
         """
         receive splitting data
@@ -78,16 +85,20 @@ class Client(FedClientInterface):
         """
         receive splitting data
         """
-        self.split_layers = \
-            self.recv_msg(config.CLIENTS_INDEX[config.index], message_utils.split_layers_edge_to_client())[1]
+        start_transmission()
+        msg = self.recv_msg(config.CLIENTS_INDEX[config.index], message_utils.split_layers_edge_to_client())
+        self.split_layers = msg[1]
+        end_transmission(data_utils.sizeofmessage(msg))
 
     def get_edge_global_weights(self):
         """
         receive global weights
         """
+        start_transmission()
         weights = \
             self.recv_msg(config.CLIENTS_INDEX[config.index], message_utils.initial_global_weights_edge_to_client(),
                           True)[1]
+        end_transmission(data_utils.sizeofmessage(weights))
         pweights = model_utils.split_weights_client(weights, self.net.state_dict())
         self.net.load_state_dict(pweights)
 
@@ -156,12 +167,14 @@ class Client(FedClientInterface):
 
                 # Wait receiving edge server gradients
                 # fed_logger.info("receiving gradients")
-                gradients = \
-                    self.recv_msg(exchange=config.CLIENTS_INDEX[config.index],
-                                  expect_msg_type=f'{message_utils.server_gradients_edge_to_client() + socket.gethostname()}_{i}',
-                                  is_weight=True)[
-                        1].to(
-                        self.device)
+                start_transmission()
+                msg = self.recv_msg(exchange=config.CLIENTS_INDEX[config.index],
+                                    expect_msg_type=f'{message_utils.server_gradients_edge_to_client() + socket.gethostname()}_{i}',
+                                    is_weight=True)
+                end_transmission(data_utils.sizeofmessage(msg))
+
+                gradients = msg[1].to(self.device)
+
                 # fed_logger.info("received gradients")
                 computation_start()
                 outputs.backward(gradients)

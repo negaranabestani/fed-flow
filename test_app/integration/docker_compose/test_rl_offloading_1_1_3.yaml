@@ -4,7 +4,7 @@ services:
       - ./config.py:/fed-flow/app/config/config.py
       - ./../../../Graphs:/fed-flow/Graphs
       - ./../../../app/logs:/fed-flow/app/logs
-    image: negaranabestani/fedflow:rabbitmq
+    image: autlpdslab/fedflow:rabbitmq
     ports:
       - "5002:5002"
     hostname: server
@@ -34,7 +34,10 @@ services:
   edge1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-    image: negaranabestani/fedflow:rabbitmq
+    image: autlpdslab/fedflow:rabbitmq
+    labels:
+        com.docker-tc.enabled: "1"     # Enables Traffic Control mangement
+        com.docker-tc.limit: "0.5mbps"  # Setting the bandwidth limit to 25mbit
     ports:
       - "5001:5001"
     hostname: edge1
@@ -55,8 +58,10 @@ services:
   client1:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-      - ./econfig1.py:/fed-flow/energy/config.py
-    image: negaranabestani/fedflow:rabbitmq
+    image: autlpdslab/fedflow:rabbitmq
+    labels:
+      com.docker-tc.enabled: "1"     # Enables Traffic Control mangement
+      com.docker-tc.limit: "0.5mbps"  # Setting the bandwidth limit to 25mbit
     hostname: client1
     deploy:
       resources:
@@ -71,14 +76,15 @@ services:
       - server
       - broker
       - edge1
-    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -s fake_splitting -e True & wait -n"
+    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 0 -o True -sb True -s fake_splitting -en True -e True & wait -n"
 
   client2:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
-
-
-    image: negaranabestani/fedflow:rabbitmq
+    image: autlpdslab/fedflow:rabbitmq
+    labels:
+      com.docker-tc.enabled: "1"     # Enables Traffic Control mangement
+      com.docker-tc.limit: "0.5mbps"  # Setting the bandwidth limit to 25mbit
     hostname: client2
     deploy:
       resources:
@@ -93,13 +99,16 @@ services:
       - server
       - broker
       - edge1
-    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 1 -o True -s fake_splitting -e True & wait -n"
+    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 1 -o True -sb True -s fake_splitting -en True -e True & wait -n"
 
   client3:
     volumes:
       - ./config.py:/fed-flow/app/config/config.py
       - ./econfig1.py:/fed-flow/energy/config.py
-    image: negaranabestani/fedflow:rabbitmq
+    image: autlpdslab/fedflow:rabbitmq
+    labels:
+      com.docker-tc.enabled: "1"     # Enables Traffic Control mangement
+      com.docker-tc.limit: "0.5mbps"  # Setting the bandwidth limit to 25mbit
     hostname: client3
     deploy:
       resources:
@@ -114,4 +123,4 @@ services:
       - server
       - broker
       - edge1
-    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 2 -o True -s fake_splitting -e True & wait -n"
+    entrypoint: bash -c "python3 /fed-flow/energy/service.py & python3 /fed-flow/app/fl_training/runner/fed_client_run.py -i 2 -o True -sb True -s fake_splitting -en True -e True & wait -n"

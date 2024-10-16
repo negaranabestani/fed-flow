@@ -33,11 +33,11 @@ def estimate_communication_energy(config, process):
 
 def estimate_total_energy(config, process):
     energy_logger.info(
-        Fore.GREEN + f"conputation: {config.process.comp_time}, trasmission: {config.process.transmission_time}")
+        Fore.GREEN + f"computation: {config.process.comp_time}, transmission: {config.process.transmission_time}")
     comp = estimate_computation_energy(process)
     tr = estimate_communication_energy(config, process)
     energy_logger.info(
-        Fore.MAGENTA + f"energy-conputation: {comp}, energy-trasmission: {tr}")
+        Fore.MAGENTA + f"energy-computation: {comp}, energy-transmission: {tr}")
     ene = comp + tr
 
     cores = int(subprocess.run("nproc", capture_output=True, shell=True, text=True).stdout)

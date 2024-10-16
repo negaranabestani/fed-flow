@@ -25,31 +25,46 @@ def run_edge_based(client: FedClientInterface, LR):
     batch_num = data_size / config.B
     # final=[]
     for r in range(config.R):
+        simnet_BW = 5
+
         config.current_round = r
         fed_logger.info('====================================>')
         fed_logger.info('ROUND: {} START'.format(r))
+
         fed_logger.info("receiving global weights")
         client.get_edge_global_weights()
+
         st = time.time()
-        fed_logger.info("test network")
-        client.edge_test_network()
+
+        if not client.simnet:
+            fed_logger.info("test network")
+            client.edge_test_network()
+        else:
+            fed_logger.info("Sending BW to edge")
+            client.send_simnet_bw_to_edge(simnet_BW)
+
         fed_logger.info("receiving splitting info")
         client.get_split_layers_config_from_edge()
         fed_logger.info("initializing client")
 
         energy_estimation.computation_start()
-        client.initialize(client.split_layers, LR)
+        client.initialize(client.split_layers, LR, simnetbw=simnet_BW)
         energy_estimation.computation_end()
+
         fed_logger.info("start training")
         client.edge_offloading_train()
+
         fed_logger.info("sending local weights")
         energy_estimation.start_transmission()
         msg = client.send_local_weights_to_edge()
         energy_estimation.end_transmission(data_utils.sizeofmessage(msg))
         et = time.time()
+
         fed_logger.info('ROUND: {} END'.format(r))
         fed_logger.info('==> Waiting for aggregration')
+
         tt = et - st
+
         energy = float(energy_estimation.energy())
         # energy /= batch_num
         fed_logger.info(Fore.CYAN + f"Energy_tt : {energy}, {tt}")

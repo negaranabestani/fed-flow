@@ -12,6 +12,7 @@ from app.entity.server import FedServer
 from app.config.logger import fed_logger
 from app.entity.interface.fed_server_interface import FedServerInterface
 from app.util import rl_utils
+from app.util import energy_estimation
 
 import matplotlib.pyplot as plt
 import random
@@ -58,10 +59,8 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
     server.initialize(config.split_layer, LR)
     training_time = 0
     energy_tt_list = []
-    # all_splitting = rl_utils.allPossibleSplitting(7, 1)
     energy_x = []
     training_y = []
-    # split_list = [[[0, 1]], [[1, 2]], [[2, 3]], [[3, 4]], [[4, 5]], [[5, 6]]]
     avgEnergy, tt, remainingEnergy = [], [], []
     iotBW, edgeBW = [], []
     x = []
@@ -82,12 +81,16 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
             server.edge_offloading_global_weights()
 
             s_time = time.time()
-
-            fed_logger.info("receiving client network info")
-            server.client_network(config.EDGE_SERVER_LIST)
-
-            fed_logger.info("test edge servers network")
-            server.test_network(config.EDGE_SERVER_LIST)
+            if not server.simnet:
+                fed_logger.info("receiving client network info")
+                server.client_network(config.EDGE_SERVER_LIST)
+                fed_logger.info("test edge servers network")
+                server.test_network(config.EDGE_SERVER_LIST)
+            else:
+                fed_logger.info("receiving client simnet network info")
+                server.client_network(config.EDGE_SERVER_LIST)
+                fed_logger.info("receiving edge simnet network info")
+                server.get_simnet_edge_network()
 
             fed_logger.info("preparing state...")
             server.offloading = server.get_offloading(server.split_layers)
@@ -100,18 +103,12 @@ def run_edge_based_offload(server: FedServerInterface, LR, options):
 
             state = server.edge_based_state()
             fed_logger.info("state: " + str(state))
-            normalizedState = []
-            for bw in state[:config.K + config.S]:
-                if r < 50:
-                    normalizedState.append(bw / 100_000_000)
-                else:
-                    normalizedState.append(bw / 10_000_000)
-            iotBW.append(normalizedState[:config.K])
-            edgeBW.append(normalizedState[config.K:config.K + config.S])
+            iotBW.append(state[:config.K])
+            edgeBW.append(state[config.K:config.K + config.S])
 
             fed_logger.info("splitting")
-            server.split(normalizedState, options)
-            fed_logger.info(f"Agent Action : {server.split_layers}")
+            server.split(state, options)
+            fed_logger.info(f"Action : {server.split_layers}")
             # server.split_layers = split_list[r]
             server.get_split_layers_config_from_edge()
 
@@ -342,9 +339,12 @@ def run(options_ins):
     fed_logger.info("start mode: " + str(options_ins.values()))
     offload = options_ins.get('offload')
     edge_based = options_ins.get('edgebased')
+    simnet = options_ins.get('simulatebandwidth')
+
     if edge_based and offload:
+        energy_estimation.init(os.getpid())
         server_ins = FedServer(options_ins.get('model'),
-                               options_ins.get('dataset'), offload, edge_based)
+                               options_ins.get('dataset'), offload, edge_based, simnet=simnet)
         run_edge_based_offload(server_ins, LR, options_ins)
     elif edge_based and not offload:
         server_ins = FedServer(options_ins.get('model'),

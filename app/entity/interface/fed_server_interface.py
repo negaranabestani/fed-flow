@@ -13,7 +13,7 @@ from app.util import data_utils, model_utils
 
 
 class FedServerInterface(ABC, Communicator):
-    def __init__(self, model_name, dataset, offload, edge_based):
+    def __init__(self, model_name, dataset, offload, edge_based, simnet: bool = None):
         super(FedServerInterface, self).__init__()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.offload = offload
@@ -33,8 +33,13 @@ class FedServerInterface(ABC, Communicator):
         self.tt_start = {}
         self.tt_end = {}
 
-        self.uninet = model_utils.get_model('Unit', None, self.device, self.edge_based)
+        self.simnet = simnet
+        self.simnetbw = 10 if self.simnet else 0
+        self.client_training_transmissionTime = {}
+        self.start_time_of_computation_each_client = {}
+        self.computation_time_of_each_client = {}
 
+        self.uninet = model_utils.get_model('Unit', None, self.device, self.edge_based)
         self.testset = data_utils.get_testset()
         self.testloader = data_utils.get_testloader(self.testset, multiprocessing.cpu_count())
         self.criterion = nn.CrossEntropyLoss()
@@ -194,4 +199,8 @@ class FedServerInterface(ABC, Communicator):
 
     @abstractmethod
     def e_client_attendance(self, client_ips):
+        pass
+
+    @abstractmethod
+    def get_simnet_edge_network(self):
         pass

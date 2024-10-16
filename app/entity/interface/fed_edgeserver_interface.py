@@ -4,17 +4,17 @@ import torch
 from torch import multiprocessing
 
 from app.config import config
-from app.config.logger import fed_logger
 from app.entity.communicator import Communicator
-from app.util import data_utils, model_utils, message_utils
+from app.util import data_utils, model_utils
 
 
 class FedEdgeServerInterface(ABC, Communicator):
-    def __init__(self, model_name, dataset, offload):
+    def __init__(self, model_name, dataset, offload, simnet: bool = None):
         super(FedEdgeServerInterface, self).__init__()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model_name = model_name
         self.nets = {}
+        self.simnet = simnet
         self.group_labels = None
         self.criterion = None
         self.split_layers = None
@@ -24,6 +24,9 @@ class FedEdgeServerInterface(ABC, Communicator):
         self.threads = None
         self.net_threads = None
         self.central_server_communicator = Communicator()
+        self.transmissionTimes = 0
+        self.start_time_of_computation_each_client = {}
+        self.computation_time_of_each_client = {}
 
         if offload:
             model_len = model_utils.get_unit_model_len()
@@ -79,7 +82,7 @@ class FedEdgeServerInterface(ABC, Communicator):
         pass
 
     @abstractmethod
-    def initialize(self, split_layers, LR, client_ips):
+    def initialize(self, split_layers, LR, client_ips, simnetbw: float = None):
         pass
 
     def scatter(self, msg, is_weight=False):
@@ -108,4 +111,11 @@ class FedEdgeServerInterface(ABC, Communicator):
 
     @abstractmethod
     def client_attendance(self, client_ips):
+        pass
+
+    @abstractmethod
+    def get_simnet_client_network(self):
+        pass
+
+    def send_simnet_bw_to_server(self, simnetbw):
         pass
