@@ -1,8 +1,7 @@
 node_base: &node_base
-    image: autlpdslab/fedflow:mega-v0.0.1
+    image: autlpdslab/fedflow:latest
+    platform: linux/arm64/v8
     working_dir: /fed-flow/app/fl_training/runner
-    volumes:
-      - ./config.py:/fed-flow/app/config/config.py
     depends_on:
       - broker
     environment:
@@ -20,7 +19,7 @@ node_base: &node_base
       RABBITMQ_URL: "amqp://rabbitmq:rabbitmq@broker:5672/"
       NEIGHBORS: ""
       NODE_TYPE: "CLIENT"
-    entrypoint: |
+    entrypoint: >
       bash -c "python3 /fed-flow/app/fl_training/runner/fed_base_run.py
       --aggregation $$AGGREGATION
       --decentralized $$DECENTRALIZED
@@ -35,4 +34,4 @@ node_base: &node_base
       --port $$PORT
       --rabbitmq-url $$RABBITMQ_URL
       --neighbors $$NEIGHBORS
-      --node-type $$NODE_TYPE
+      --node-type $$NODE_TYPE"
