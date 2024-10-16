@@ -1,6 +1,3 @@
-import atexit
-import time
-import requests
 import http
 import threading
 
@@ -12,8 +9,8 @@ from uvicorn import Server
 from app.config import config
 from app.entity.http_communicator import HTTPCommunicator
 from app.entity.node_coordinate import NodeCoordinate
-from app.entity.node_type import NodeType
 from app.entity.node_identifier import NodeIdentifier
+from app.entity.node_type import NodeType
 
 
 class Node:

@@ -3,6 +3,7 @@ from app.config import config
 from app.entity.node_coordinate import NodeCoordinate
 from app.entity.node_identifier import NodeIdentifier
 from app.util import model_utils
+from app.entity.node_type import NodeType
 
 options = {
     '-a': ['--aggregation', 'fed_avg', 'name of the aggregation method'],
@@ -44,6 +45,13 @@ def parse_coordinates(s) -> NodeCoordinate:
         raise argparse.ArgumentTypeError("Coordinates must be 'latitude,longitude,altitude'")
 
 
+def parse_node_type(s) -> NodeType:
+    try:
+        return NodeType.from_value(s)
+    except:
+        raise argparse.ArgumentTypeError("Node type must be 'client', 'edge' or 'server'")
+
+
 def parse_argument(parser: argparse.ArgumentParser):
     """
     Args:
@@ -59,6 +67,7 @@ def parse_argument(parser: argparse.ArgumentParser):
 
     parser.add_argument('--coordinates', type=parse_coordinates,
                         help='Optional coordinates in the format "latitude,longitude,altitude"', default=None)
+    parser.add_argument('--node-type', type=parse_node_type, help='Type of the node', default=NodeType.CLIENT)
 
     args = parser.parse_args()
     option = vars(args)
