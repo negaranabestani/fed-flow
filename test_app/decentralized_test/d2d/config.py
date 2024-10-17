@@ -1,6 +1,7 @@
 import os
 import sys
 
+from app.entity.node_coordinate import NodeCoordinate
 from app.entity.node_identifier import NodeIdentifier
 
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
@@ -12,12 +13,10 @@ dataset_name = ''
 home = sys.path[0].split('fed-flow')[0] + 'fed-flow' + "/app"
 dataset_path = home + '/dataset/data/'
 N = 100  # data # length
-lr_step_size = 20
-lr_gamma = 0.1
 
-mq_url = "amqp://rabbitmq:rabbitmq@broker:5672/%2F"
+mq_url = "amqp://rabbitmq:rabbitmq@localhost:5672/"
 current_node_mq_url = "Will be set by input options"
-mq_host = "broker"
+mq_host = "localhost"
 mq_user = "rabbitmq"
 mq_pass = "rabbitmq"
 mq_port = "5672"
@@ -37,15 +36,14 @@ model_flops = 32.902
 total_flops = 8488192
 # split_layer = [6]  # Initial split layers for no edge base
 split_layer = [[6, 6]]  # Initial split layers
-# split_layer_by_edge = {  # Initial split layers for decentralized
-#     'edge1': [6]
-# }
 model_len = 7
 
 # FL training configration
 R = 2  # FL rounds
-LR = 0.01  # Learning rate
+learning_rate = 0.01  # Learning rate
 B = 100  # Batch size
+lr_step_size = 20
+lr_gamma = 0.1
 
 # RL training configration
 max_episodes = 100  # max training episodes
@@ -70,7 +68,7 @@ SERVER_ADDR = 'server'
 SERVER_PORT = 5002
 EDGESERVER_PORT = {'edge1': 5001}
 
-K = 1  # Number of devices
+K = 6  # Number of devices
 G = 1  # Number of groups
 S = 1
 
@@ -91,3 +89,4 @@ SERVER_INDEX_TO_NAME = {0: 'server1'}
 
 # Topology configration for decentralized mode
 CURRENT_NODE_NEIGHBORS: list[NodeIdentifier] = []  # (ip, port)
+INITIAL_NODE_COORDINATE = NodeCoordinate
