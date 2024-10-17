@@ -61,11 +61,6 @@ class FedClient(FedBaseNodeInterface):
         pweights = model_utils.split_weights_client(msg.weights[0], self.net.state_dict())
         self.net.load_state_dict(pweights)
 
-    def gather_no_split_global_weights(self, node_type: NodeType):
-        msgs: list[ReceivedMessage] = self.gather_msgs(GlobalWeightMessage.MESSAGE_TYPE, [node_type])
-        msg: GlobalWeightMessage = msgs[0].message
-        self.net.load_state_dict(msg.weights[0])
-
     def scatter_network_speed_to_edges(self):
         msg = NetworkTestMessage([self.net.to(self.device).state_dict()])
         self.scatter_msg(msg, [NodeType.EDGE])

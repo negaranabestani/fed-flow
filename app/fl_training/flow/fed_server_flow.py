@@ -89,8 +89,6 @@ def run_d2d(server: FedServer, options):
         rounds.append(r)
         fed_logger.info('====================================>')
         fed_logger.info('==> Round {:} Start'.format(r + 1))
-        fed_logger.info("resetting leaderships")
-        # server.reset_leadership()
         fed_logger.info("sending global weights")
         server.scatter_global_weights([NodeType.CLIENT])
 
@@ -99,15 +97,14 @@ def run_d2d(server: FedServer, options):
         local_weights = server.receive_leaders_local_weights()
         server.d2d_aggregate(local_weights)
 
-        # Recording each round training time and accuracy
         e_time = time.time()
         training_time = e_time - s_time
         training_times.append(training_time)
 
         fed_logger.info("testing accuracy")
-        # test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
-        # fed_logger.info(f"Test Accuracy : {test_acc}")
-        # accuracy.append(test_acc)
+        test_acc = model_utils.test(server.uninet, server.testloader, server.device, server.criterion)
+        fed_logger.info(f"Test Accuracy : {test_acc}")
+        accuracy.append(test_acc)
         fed_logger.info('Round Finish')
         fed_logger.info('==> Round {:} End'.format(r + 1))
         fed_logger.info('==> Round Training Time: {:}'.format(training_time))

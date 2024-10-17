@@ -39,36 +39,14 @@ class FedBaseNodeInterface(ABC, Node, Communicator):
             msg = SplitLayerConfigMessage(self.split_layers[neighbor])
             self.send_msg(self.get_exchange_name(), HTTPCommunicator.get_rabbitmq_url(neighbor), msg)
 
-    def gather_msgs(self, msg_type: MessageType, neighbors_types: list[NodeType] = None) -> list[ReceivedMessage]:
-        fed_logger.info("Starting to gather messages.")
+    def gather_msgs(self, msg_type: MessageType, neighbors_types: list[NodeType] = None) -> list[
+        ReceivedMessage]:  # (ip, msg)
         messages = []
-
         for neighbor in self.get_neighbors():
-            fed_logger.info(f"Processing neighbor: {neighbor} (Type: {type(neighbor)})")
-
-            try:
-                # Log the type of neighbor to check if it's a string or an object
-                neighbor_type = HTTPCommunicator.get_node_type(neighbor)
-                fed_logger.info(f"Neighbor type: {neighbor_type} for neighbor: {neighbor}")
-
-                # Log whether the neighbor_type matches the provided neighbors_types (if any)
-                if neighbors_types is None or neighbor_type in neighbors_types:
-                    fed_logger.info(f"Neighbor {neighbor} is in the allowed types: {neighbors_types}")
-                    msg = self.recv_msg(neighbor.get_exchange_name(), config.current_node_mq_url, msg_type)
-                    fed_logger.info(f"Received message from {neighbor.get_exchange_name()}")
-                    messages.append(ReceivedMessage(msg, neighbor))
-                else:
-                    fed_logger.info(f"Neighbor {neighbor} skipped due to type mismatch.")
-
-            except AttributeError as e:
-                # Catch and log if the 'ip' attribute is missing or any other AttributeError occurs
-                fed_logger.error(f"AttributeError for neighbor {neighbor}: {e}")
-
-            except Exception as e:
-                # Catch any other general errors
-                fed_logger.error(f"An error occurred while processing neighbor {neighbor}: {e}")
-
-        fed_logger.info(f"Finished gathering messages. Total messages gathered: {len(messages)}")
+            neighbor_type = HTTPCommunicator.get_node_type(neighbor)
+            if neighbors_types is None or neighbor_type in neighbors_types:
+                msg = self.recv_msg(neighbor.get_exchange_name(), config.current_node_mq_url, msg_type)
+                messages.append(ReceivedMessage(msg, neighbor))
         return messages
 
     def gather_neighbors_network_bandwidth(self, neighbors_type: NodeType = None):

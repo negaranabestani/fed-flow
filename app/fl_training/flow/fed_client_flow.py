@@ -29,7 +29,7 @@ def run_client(client: FedClient, learning_rate):
         client.scatter_network_speed_to_edges()
         fed_logger.info("receiving splitting info")
         client.gather_split_config()
-        # client.initialize(learning_rate)
+        client.initialize(learning_rate)
         fed_logger.info("start training")
         client.start_offloading_train()
         fed_logger.info("sending local weights")
