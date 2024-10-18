@@ -1,6 +1,11 @@
-FROM autlpdslab/fedflow:base
-COPY requirements4.txt /fed-flow/
-RUN pip install -r /fed-flow/requirements4.txt
-COPY app /fed-flow/app
-COPY energy-estimation /fed-flow/energy
-WORKDIR /fed-flow/
+FROM python:3.10
+
+WORKDIR /fed-flow
+
+ADD requirements.txt .
+RUN pip install -r requirements.txt
+
+ADD . .
+
+WORKDIR /fed-flow/app/fl_training/runner
+CMD ["python3", "fed_base_run.py"]
